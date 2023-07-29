@@ -20,15 +20,19 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.sanket.donatetoday.modules.onboarding.RegistrationScreenMain
+import com.sanket.donatetoday.modules.onboarding.viewmodel.OnBoardingViewModel
 import com.sanket.donatetoday.modules.splash.SplashScreen
 import com.sanket.donatetoday.navigators.customAnimatedComposable
 import com.sanket.donatetoday.navigators.navigator
 import com.sanket.donatetoday.navigators.rememberCustomAnimatedNavController
 import com.sanket.donatetoday.ui.theme.DonateTodayTheme
 import com.sanket.donatetoday.viewmodel.SharedViewModel
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val sharedViewModel by viewModels<SharedViewModel>()
+    private val onBoardingViewModel by viewModels<OnBoardingViewModel>()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -37,11 +41,11 @@ class MainActivity : ComponentActivity() {
             val currentScreen by sharedViewModel.currentScreen.collectAsState()
 
             LaunchedEffect(key1 = currentScreen) {
-                val clearBackStack = when(currentScreen){
+                val clearBackStack = when (currentScreen) {
                     Screen.OnBoardingScreen -> true
                     else -> false
                 }
-                val clearBackStackToRoute = when(currentScreen){
+                val clearBackStackToRoute = when (currentScreen) {
                     Screen.OnBoardingScreen -> Screen.SplashScreen.route
                     else -> null
                 }
@@ -85,7 +89,19 @@ class MainActivity : ComponentActivity() {
                 }
             }
             customAnimatedComposable(route = Screen.OnBoardingScreen.route) {
-                RegistrationScreenMain()
+                val loginData by onBoardingViewModel.loginData.collectAsState()
+                RegistrationScreenMain(
+                    emailAddress = loginData.emailAddress,
+                    password = loginData.password,
+                    onEmailAddressChanged = {
+                        onBoardingViewModel.updateLoginData(emailAddress = it)
+                    },
+                    onPasswordChanged = {
+                        onBoardingViewModel.updateLoginData(password = it)
+                    },
+                    onSignIn = {
+
+                    })
             }
         }
     }

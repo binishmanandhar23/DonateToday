@@ -1,5 +1,6 @@
 package com.sanket.donatetoday.modules.common
 
+import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -11,12 +12,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.Button
+import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Card
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Icon
@@ -36,9 +40,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import com.sanket.donatetoday.R
 import com.sanket.donatetoday.ui.theme.ColorBlack
@@ -211,7 +217,10 @@ fun DonateTodaySingleLineTextField(
     onValueChange: (String) -> Unit,
     label: String,
     labelIcon: ImageVector? = null,
-    keyboardOptions: KeyboardOptions= KeyboardOptions()
+    @DrawableRes labelIconResId: Int? = null,
+    keyboardOptions: KeyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+    keyboardActions: KeyboardActions = KeyboardActions(),
+    visualTransformation: VisualTransformation = VisualTransformation.None,
 ) {
     CoreTextFieldWithBorders(modifier = modifier, errorText = errorText) {
         CoreCustomTextField(value = value, onValueChange = onValueChange, label = {
@@ -221,9 +230,42 @@ fun DonateTodaySingleLineTextField(
             ) {
                 if (labelIcon != null)
                     Icon(imageVector = labelIcon, contentDescription = label)
+                if(labelIconResId != null)
+                    Icon(painter = painterResource(id = labelIconResId), contentDescription = label)
                 Text(text = label)
             }
-        }, keyboardOptions = keyboardOptions)
+        }, keyboardOptions = keyboardOptions, keyboardActions = keyboardActions, singleLine = true, maxLines = 1, visualTransformation = visualTransformation)
+    }
+}
+
+@Composable
+fun DonateTodayButton(
+    modifier: Modifier = Modifier,
+    text: String,
+    allCaps: Boolean = false,
+    shape: CornerBasedShape = MaterialTheme.shapes.medium,
+    fontSize: TextUnit = MaterialTheme.typography.button.fontSize,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 22.dp, vertical = 12.dp),
+    textColor: Color = MaterialTheme.colors.onSecondary,
+    backgroundColor: Color = MaterialTheme.colors.secondary,
+    onClick: () -> Unit
+) {
+    Button(
+        modifier = modifier,
+        onClick = onClick,
+        contentPadding = contentPadding,
+        colors = ButtonDefaults.buttonColors(backgroundColor = backgroundColor),
+        shape = shape
+    ) {
+        Text(
+            text = text.let {
+                if (allCaps)
+                    it.uppercase()
+                else
+                    it
+            },
+            style = MaterialTheme.typography.button.copy(color = textColor, fontSize = fontSize)
+        )
     }
 }
 

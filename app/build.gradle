@@ -1,8 +1,10 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
+    id 'com.google.gms.google-services'
     id 'kotlin-kapt'
     id 'io.realm.kotlin'
+    id 'com.google.dagger.hilt.android'
 }
 
 android {
@@ -78,6 +80,16 @@ dependencies {
     //For BottomSheet options
     implementation "com.google.accompanist:accompanist-navigation-material:0.24.13-rc"
     //-------------------------//
+
+    /*Hilt*/
+    implementation "com.google.dagger:hilt-android:2.44"
+    kapt "com.google.dagger:hilt-compiler:2.44"
+    /*****/
+
+    /*Google Firebase*/
+    implementation platform('com.google.firebase:firebase-bom:32.2.0')
+    implementation 'com.google.firebase:firebase-analytics-ktx'
+    /*****************/
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
