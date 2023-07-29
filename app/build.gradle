@@ -1,6 +1,8 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
+    id 'kotlin-kapt'
+    id 'io.realm.kotlin'
 }
 
 android {
@@ -22,6 +24,7 @@ android {
 
     buildTypes {
         release {
+            //MongoDB: Password -> SF4irXTIxh6kR1aJ
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
@@ -58,6 +61,24 @@ dependencies {
     implementation 'androidx.compose.ui:ui-graphics'
     implementation 'androidx.compose.ui:ui-tooling-preview'
     implementation 'androidx.compose.material:material'
+
+    implementation "androidx.fragment:fragment-ktx:1.6.0"
+    implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.6.1'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1'
+
+    /*Realm*/
+    implementation 'io.realm.kotlin:library-base:1.10.0' // Add to use local realm (no sync)
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1' // Add to use coroutines with the SDK
+    /*******/
+
+    //Accompanist library for animating navigation
+    implementation "com.google.accompanist:accompanist-navigation-animation:0.31.2-alpha"
+    //-------------------------//
+
+    //For BottomSheet options
+    implementation "com.google.accompanist:accompanist-navigation-material:0.24.13-rc"
+    //-------------------------//
+
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
