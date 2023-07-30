@@ -68,6 +68,9 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.6.1'
     implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1'
 
+    // Integration with LiveData
+    implementation 'androidx.compose.runtime:runtime-livedata'
+
     /*Realm*/
     implementation 'io.realm.kotlin:library-base:1.10.0' // Add to use local realm (no sync)
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1' // Add to use coroutines with the SDK
@@ -89,6 +92,10 @@ dependencies {
     /*Google Firebase*/
     implementation platform('com.google.firebase:firebase-bom:32.2.0')
     implementation 'com.google.firebase:firebase-analytics-ktx'
+    /*****************/
+
+    /*Country Code Picker*/
+    implementation 'com.github.togisoft:jetpack_compose_country_code_picker:1.1.4'
     /*****************/
 
     testImplementation 'junit:junit:4.13.2'

@@ -7,6 +7,7 @@ import androidx.compose.material.darkColors
 import androidx.compose.material.lightColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
@@ -14,7 +15,9 @@ import androidx.core.view.WindowCompat
 private val DarkColorScheme = darkColors(
     primary = ColorPrimary,
     secondary = ColorSecondary,
-    secondaryVariant = ColorTertiary
+    secondaryVariant = ColorTertiary,
+    error = Color.Red,
+    onError = ColorWhite
 )
 
 private val LightColorScheme = lightColors(
@@ -26,7 +29,9 @@ private val LightColorScheme = lightColors(
     onPrimary = ColorWhite,
     onBackground = ColorBlack,
     surface = ColorLightCyan,
-    onSurface = ColorBlack
+    onSurface = ColorBlack,
+    error = Color.Red,
+    onError = ColorWhite
 
     /* Other default colors to override
     background = Color(0xFFFFFBFE),

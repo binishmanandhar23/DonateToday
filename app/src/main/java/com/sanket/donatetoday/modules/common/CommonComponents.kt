@@ -12,9 +12,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -24,15 +29,23 @@ import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Card
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.material.TextFieldColors
 import androidx.compose.material.TextFieldDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -43,9 +56,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isUnspecified
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.sanket.donatetoday.R
 import com.sanket.donatetoday.ui.theme.ColorBlack
 import com.sanket.donatetoday.ui.theme.ColorPrimary
@@ -82,6 +100,49 @@ fun AppLogo(modifier: Modifier = Modifier, animate: Boolean = false) {
         Text(
             text = stringResource(id = R.string.app_name),
             style = MaterialTheme.typography.h2.copy(fontWeight = FontWeight.Bold)
+        )
+    }
+}
+
+@Composable
+fun AppLogoHorizontal(
+    modifier: Modifier = Modifier,
+    logoSize: Dp? = null,
+    animate: Boolean = false,
+    textSize: TextUnit = MaterialTheme.typography.h2.fontSize
+) {
+    val infiniteTransition = rememberInfiniteTransition()
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 500),
+            repeatMode = RepeatMode.Reverse
+        )
+    )
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Image(
+            modifier = Modifier.scale(if (animate) scale else 1f).let {
+                if (logoSize != null)
+                    it.size(logoSize)
+                else
+                    it
+            },
+            painter = painterResource(id = R.drawable.ic_donate_today),
+            contentDescription = stringResource(
+                id = R.string.app_name
+            )
+        )
+        AutoSizeText(
+            text = stringResource(id = R.string.app_name),
+            style = MaterialTheme.typography.h2.copy(
+                fontSize = textSize,
+                fontWeight = FontWeight.Bold
+            )
         )
     }
 }
@@ -173,9 +234,18 @@ fun CoreCustomTextField(
 fun CoreTextFieldWithBorders(
     modifier: Modifier = Modifier,
     errorText: String? = null,
+    errorIcon: ImageVector? = null,
+    errorTextColor: Color = MaterialTheme.colors.error,
+    errorIconColor: Color = Color.Red,
     content: @Composable BoxScope.() -> Unit
 ) {
-    TextFieldOuterBox(modifier = modifier, errorText = errorText) {
+    TextFieldOuterBox(
+        modifier = modifier,
+        errorText = errorText,
+        errorIcon = errorIcon,
+        errorIconColor = errorIconColor,
+        errorTextColor = errorTextColor
+    ) {
         content(this)
     }
 }
@@ -184,9 +254,12 @@ fun CoreTextFieldWithBorders(
 fun TextFieldOuterBox(
     modifier: Modifier = Modifier,
     errorText: String? = null,
+    errorIcon: ImageVector? = null,
+    errorTextColor: Color = MaterialTheme.colors.error,
+    errorIconColor: Color = Color.Red,
     content: @Composable BoxScope.() -> Unit
 ) {
-    Column {
+    Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
         Box(
             modifier = modifier.border(
                 width = 0.5.dp,
@@ -195,15 +268,22 @@ fun TextFieldOuterBox(
             ),
             content = content
         )
-        if (!errorText.isNullOrEmpty()) {
-            Text(
-                modifier = Modifier.padding(horizontal = 5.dp),
-                text = errorText,
-                style = MaterialTheme.typography.body2.copy(
-                    color = MaterialTheme.colors.error,
-                    fontWeight = FontWeight.Light
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            if (errorIcon != null)
+                Icon(imageVector = errorIcon, contentDescription = errorText, tint = errorIconColor)
+            if (!errorText.isNullOrEmpty()) {
+                Text(
+                    modifier = Modifier.padding(horizontal = 5.dp),
+                    text = errorText,
+                    style = MaterialTheme.typography.body2.copy(
+                        color = errorTextColor,
+                        fontWeight = FontWeight.Light
+                    )
                 )
-            )
+            }
         }
     }
 
@@ -214,6 +294,9 @@ fun DonateTodaySingleLineTextField(
     modifier: Modifier = Modifier,
     value: String,
     errorText: String? = null,
+    errorIcon: ImageVector? = null,
+    errorTextColor: Color = MaterialTheme.colors.error,
+    errorIconColor: Color = Color.Red,
     onValueChange: (String) -> Unit,
     label: String,
     labelIcon: ImageVector? = null,
@@ -222,19 +305,38 @@ fun DonateTodaySingleLineTextField(
     keyboardActions: KeyboardActions = KeyboardActions(),
     visualTransformation: VisualTransformation = VisualTransformation.None,
 ) {
-    CoreTextFieldWithBorders(modifier = modifier, errorText = errorText) {
-        CoreCustomTextField(value = value, onValueChange = onValueChange, label = {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (labelIcon != null)
-                    Icon(imageVector = labelIcon, contentDescription = label)
-                if(labelIconResId != null)
-                    Icon(painter = painterResource(id = labelIconResId), contentDescription = label)
-                Text(text = label)
-            }
-        }, keyboardOptions = keyboardOptions, keyboardActions = keyboardActions, singleLine = true, maxLines = 1, visualTransformation = visualTransformation)
+    CoreTextFieldWithBorders(
+        modifier = modifier,
+        errorText = errorText,
+        errorIcon = errorIcon,
+        errorTextColor = errorTextColor,
+        errorIconColor = errorIconColor
+    ) {
+        CoreCustomTextField(
+            modifier = modifier,
+            value = value,
+            onValueChange = onValueChange,
+            label = {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (labelIcon != null)
+                        Icon(imageVector = labelIcon, contentDescription = label)
+                    if (labelIconResId != null)
+                        Icon(
+                            painter = painterResource(id = labelIconResId),
+                            contentDescription = label
+                        )
+                    Text(text = label)
+                }
+            },
+            keyboardOptions = keyboardOptions,
+            keyboardActions = keyboardActions,
+            singleLine = true,
+            maxLines = 1,
+            visualTransformation = visualTransformation
+        )
     }
 }
 
@@ -265,6 +367,111 @@ fun DonateTodayButton(
                     it
             },
             style = MaterialTheme.typography.button.copy(color = textColor, fontSize = fontSize)
+        )
+    }
+}
+
+@Composable
+fun DonateTodayDialogContainer(
+    modifier: Modifier = Modifier,
+    dialogProperties: DialogProperties = DialogProperties(),
+    onDismissRequest: () -> Unit,
+    contentPadding: PaddingValues,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Dialog(onDismissRequest = onDismissRequest, properties = dialogProperties) {
+        CardContainer(modifier = modifier) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(paddingValues = contentPadding)
+            ) {
+                IconButton(
+                    modifier = Modifier.align(Alignment.TopEnd),
+                    onClick = onDismissRequest
+                ) {
+                    Image(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Close button"
+                    )
+                }
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 46.dp, bottom = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    content(this)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AutoSizeText(
+    modifier: Modifier = Modifier,
+    text: String,
+    style: TextStyle = MaterialTheme.typography.body1
+) {
+    var resizableTextSize by remember(style) {
+        mutableStateOf(style)
+    }
+    val defaultFontSize = remember {
+        16.sp
+    }
+    var shouldDraw by remember {
+        mutableStateOf(false)
+    }
+
+    Text(modifier = modifier.drawWithContent {
+        if (shouldDraw)
+            drawContent()
+    }, text = text, style = resizableTextSize, onTextLayout = {
+        if (it.didOverflowWidth) {
+            resizableTextSize =
+                resizableTextSize.copy(fontSize = (if (resizableTextSize.fontSize.isUnspecified) defaultFontSize else resizableTextSize.fontSize) * 0.95f)
+        } else
+            shouldDraw = true
+    }, softWrap = false)
+}
+
+@Composable
+fun DonateTodayToolbar(
+    modifier: Modifier = Modifier,
+    toolbarText: String? = null,
+    onBack: () -> Unit
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 10.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(modifier = Modifier.weight(0.2f), onClick = onBack) {
+            Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back button")
+        }
+        if (toolbarText != null)
+            AutoSizeText(
+                modifier = Modifier
+                    .weight(0.5f)
+                    .padding(end = 10.dp),
+                text = toolbarText,
+                style = MaterialTheme.typography.h3.copy(
+                    color = MaterialTheme.colors.onSurface,
+                    letterSpacing = 0.14.sp,
+                    textAlign = TextAlign.Start
+                )
+            )
+        AppLogoHorizontal(
+            modifier = Modifier
+                .weight(0.3f)
+                .fillMaxWidth(),
+            animate = true,
+            logoSize = 30.dp,
+            textSize = MaterialTheme.typography.subtitle1.fontSize
         )
     }
 }

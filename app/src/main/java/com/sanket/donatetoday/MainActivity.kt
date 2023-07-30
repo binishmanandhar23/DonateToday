@@ -2,10 +2,7 @@ package com.sanket.donatetoday
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,16 +10,22 @@ import androidx.compose.material.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import com.google.accompanist.navigation.animation.AnimatedNavHost
+import com.sanket.donatetoday.modules.common.dialog.CustomDialog
+import com.sanket.donatetoday.modules.common.dialog.enums.DialogTypes
+import com.sanket.donatetoday.modules.common.dialog.rememberDialogState
+import com.sanket.donatetoday.modules.onboarding.LoginScreenMain
 import com.sanket.donatetoday.modules.onboarding.RegistrationScreenMain
+import com.sanket.donatetoday.modules.onboarding.SignUpOptionDialog
+import com.sanket.donatetoday.modules.onboarding.enums.RegisterAs
 import com.sanket.donatetoday.modules.onboarding.viewmodel.OnBoardingViewModel
 import com.sanket.donatetoday.modules.splash.SplashScreen
+import com.sanket.donatetoday.navigators.Screen
 import com.sanket.donatetoday.navigators.customAnimatedComposable
+import com.sanket.donatetoday.navigators.data.ScreenNavigator
 import com.sanket.donatetoday.navigators.navigator
 import com.sanket.donatetoday.navigators.rememberCustomAnimatedNavController
 import com.sanket.donatetoday.ui.theme.DonateTodayTheme
@@ -39,19 +42,25 @@ class MainActivity : ComponentActivity() {
             // A surface container using the 'background' color from the theme
             val mainNavController = rememberCustomAnimatedNavController()
             val currentScreen by sharedViewModel.currentScreen.collectAsState()
+            val customDialogState = rememberDialogState()
 
             LaunchedEffect(key1 = currentScreen) {
-                val clearBackStack = when (currentScreen) {
+                val clearBackStack = when (currentScreen?.screen) {
                     Screen.OnBoardingScreen -> true
                     else -> false
                 }
-                val clearBackStackToRoute = when (currentScreen) {
+                val clearBackStackToRoute = when (currentScreen?.screen) {
                     Screen.OnBoardingScreen -> Screen.SplashScreen.route
                     else -> null
                 }
                 if (currentScreen != null)
                     mainNavController.navigator(
-                        route = currentScreen!!.route,
+                        route = currentScreen!!.screen.route.let { route ->
+                            if (currentScreen?.values.isNullOrEmpty())
+                                route
+                            else
+                                route + "/${currentScreen?.values?.joinToString("/")}"
+                        },
                         clearBackStack = clearBackStack,
                         clearBackStackToRoute = clearBackStackToRoute
                     )
@@ -61,10 +70,41 @@ class MainActivity : ComponentActivity() {
                 Surface(
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    MainNavHost(
-                        mainNavController = mainNavController,
-                        currentScreen = currentScreen
-                    )
+                    CustomDialog(
+                        customDialogState = customDialogState,
+                        dialogContent = { dialogType, extraString ->
+                            when (dialogType) {
+                                DialogTypes.SignUpOption -> SignUpOptionDialog(asDonor = {
+                                    sharedViewModel.goToScreen(
+                                        screenNavigator = ScreenNavigator(
+                                            screen = Screen.RegistrationScreen, values = listOf(
+                                                RegisterAs.Donor.registerAs
+                                            )
+                                        )
+                                    )
+                                    customDialogState.hide()
+                                }, asOrganization = {
+                                    sharedViewModel.goToScreen(
+                                        screenNavigator = ScreenNavigator(
+                                            screen = Screen.RegistrationScreen, values = listOf(
+                                                RegisterAs.Organization.registerAs
+                                            )
+                                        )
+                                    )
+                                    customDialogState.hide()
+                                })
+
+                                else -> Unit
+                            }
+                        }) {
+                        MainNavHost(
+                            mainNavController = mainNavController,
+                            currentScreen = currentScreen?.screen,
+                            onSignUp = {
+                                customDialogState.show(dialog = DialogTypes.SignUpOption)
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -76,7 +116,8 @@ class MainActivity : ComponentActivity() {
     private fun MainNavHost(
         mainNavController: NavHostController,
         currentScreen: Screen?,
-        startDestination: Screen = Screen.SplashScreen
+        startDestination: Screen = Screen.SplashScreen,
+        onSignUp: () -> Unit
     ) {
 
         AnimatedNavHost(
@@ -85,12 +126,12 @@ class MainActivity : ComponentActivity() {
         ) {
             customAnimatedComposable(route = Screen.SplashScreen.route) {
                 SplashScreen {
-                    sharedViewModel.goToScreen(Screen.OnBoardingScreen)
+                    sharedViewModel.goToScreen(ScreenNavigator(screen = Screen.OnBoardingScreen))
                 }
             }
             customAnimatedComposable(route = Screen.OnBoardingScreen.route) {
                 val loginData by onBoardingViewModel.loginData.collectAsState()
-                RegistrationScreenMain(
+                LoginScreenMain(
                     emailAddress = loginData.emailAddress,
                     password = loginData.password,
                     onEmailAddressChanged = {
@@ -101,7 +142,20 @@ class MainActivity : ComponentActivity() {
                     },
                     onSignIn = {
 
-                    })
+                    }, onSignUp = onSignUp
+                )
+            }
+
+            customAnimatedComposable(route = Screen.RegistrationScreen.route + "/{${RegisterAs::class.java.simpleName}}") { navBackStackEntry ->
+                RegisterAs.getRegisterAs(navBackStackEntry.arguments?.getString(RegisterAs::class.java.simpleName))
+                    ?.let { registerAs ->
+                        val registrationData by onBoardingViewModel.registrationData.collectAsState()
+                        RegistrationScreenMain(registrationData = registrationData,registerAs = registerAs, onBack = {
+                            mainNavController.popBackStack()
+                        }, onUpdate = {
+                            onBoardingViewModel.updateRegistrationData(registrationData = it.copy(registerAs = registerAs))
+                        })
+                    }
             }
         }
     }
