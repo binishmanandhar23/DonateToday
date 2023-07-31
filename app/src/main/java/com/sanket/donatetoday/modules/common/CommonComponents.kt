@@ -1,6 +1,8 @@
 package com.sanket.donatetoday.modules.common
 
 import androidx.annotation.DrawableRes
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -15,6 +17,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -37,11 +40,15 @@ import androidx.compose.material.TextFieldColors
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,6 +74,9 @@ import androidx.compose.ui.window.DialogProperties
 import com.sanket.donatetoday.R
 import com.sanket.donatetoday.ui.theme.ColorBlack
 import com.sanket.donatetoday.ui.theme.ColorPrimary
+import com.togitech.ccp.component.TogiCodeDialog
+import com.togitech.ccp.component.TogiCountryCodePicker
+import com.togitech.ccp.data.utils.getLibCountries
 
 val UniversalHorizontalPaddingInDp = 22.dp
 val UniversalVerticalPaddingInDp = 18.dp
@@ -301,6 +311,7 @@ fun DonateTodaySingleLineTextField(
     label: String,
     labelIcon: ImageVector? = null,
     @DrawableRes labelIconResId: Int? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
     keyboardOptions: KeyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
     keyboardActions: KeyboardActions = KeyboardActions(),
     visualTransformation: VisualTransformation = VisualTransformation.None,
@@ -335,7 +346,8 @@ fun DonateTodaySingleLineTextField(
             keyboardActions = keyboardActions,
             singleLine = true,
             maxLines = 1,
-            visualTransformation = visualTransformation
+            visualTransformation = visualTransformation,
+            trailingIcon = trailingIcon
         )
     }
 }
@@ -472,6 +484,54 @@ fun DonateTodayToolbar(
             animate = true,
             logoSize = 30.dp,
             textSize = MaterialTheme.typography.subtitle1.fontSize
+        )
+    }
+}
+
+@Composable
+fun DonateTodayPhoneNumberInput(
+    modifier: Modifier = Modifier,
+    phoneNumber: String,
+    countryPhoneCode: String,
+    onPhoneNumberChange: (String) -> Unit,
+    onCountryPhoneCode: (String) -> Unit
+) {
+    val selectedCountry =
+        getLibCountries.find { it.countryPhoneCode == countryPhoneCode } ?: getLibCountries.first()
+    val correct by remember(phoneNumber) {
+        derivedStateOf {
+            phoneNumber.length == 10
+        }
+    }
+    Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        TextFieldOuterBox {
+            TogiCodeDialog(
+                padding = 15.dp,
+                defaultSelectedCountry = selectedCountry,
+                pickedCountry = {
+                    onCountryPhoneCode(it.countryPhoneCode)
+                })
+        }
+        Spacer(modifier = Modifier.size(10.dp))
+        DonateTodaySingleLineTextField(
+            value = phoneNumber,
+            onValueChange = {
+                if (it.length < 11)
+                    onPhoneNumberChange(it)
+            },
+            label = "Telephone No.",
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            trailingIcon = {
+                AnimatedVisibility(visible = phoneNumber.isNotEmpty()) {
+                    AnimatedContent(targetState = correct) {
+                        Icon(
+                            imageVector = if (it) Icons.Default.Check else Icons.Default.Warning,
+                            contentDescription = if (it) "Correct" else "Incorrect",
+                            tint = MaterialTheme.colors.primary
+                        )
+                    }
+                }
+            }
         )
     }
 }

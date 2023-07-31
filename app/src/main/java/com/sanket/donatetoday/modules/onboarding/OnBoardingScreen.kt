@@ -1,5 +1,6 @@
 package com.sanket.donatetoday.modules.onboarding
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
@@ -13,6 +14,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
@@ -29,16 +32,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sanket.donatetoday.R
 import com.sanket.donatetoday.modules.common.AppLogo
 import com.sanket.donatetoday.modules.common.CardContainer
 import com.sanket.donatetoday.modules.common.DonateTodayButton
+import com.sanket.donatetoday.modules.common.DonateTodayPhoneNumberInput
 import com.sanket.donatetoday.modules.common.DonateTodaySingleLineTextField
 import com.sanket.donatetoday.modules.common.DonateTodayToolbar
 import com.sanket.donatetoday.modules.common.UniversalHorizontalPaddingInDp
@@ -150,6 +156,9 @@ fun RegistrationScreenMain(
     onBack: () -> Unit,
     onUpdate: (RegistrationData) -> Unit
 ) {
+    var showPassword by remember {
+        mutableStateOf(false)
+    }
     var confirmPassword by remember(registrationData) {
         mutableStateOf("")
     }
@@ -242,7 +251,18 @@ fun RegistrationScreenMain(
                             keyboardType = KeyboardType.Password,
                             imeAction = ImeAction.Next
                         ),
-                        visualTransformation = PasswordVisualTransformation()
+                        visualTransformation = if(showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { showPassword = !showPassword }) {
+                                AnimatedContent(targetState = showPassword) {
+                                    Icon(
+                                        painter = painterResource(id = if(it) R.drawable.ic_hide_password else R.drawable.ic_show_password),
+                                        contentDescription = if(it) "Hide Password" else "Show Password",
+                                        tint = MaterialTheme.colors.primary
+                                    )
+                                }
+                            }
+                        }
                     )
                     DonateTodaySingleLineTextField(
                         modifier = Modifier.fillMaxWidth(),
@@ -258,8 +278,24 @@ fun RegistrationScreenMain(
                             keyboardType = KeyboardType.Password,
                             imeAction = ImeAction.Next
                         ),
-                        visualTransformation = PasswordVisualTransformation()
+                        visualTransformation = if(showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { showPassword = !showPassword }) {
+                                AnimatedContent(targetState = showPassword) {
+                                    Icon(
+                                        painter = painterResource(id = if(it) R.drawable.ic_hide_password else R.drawable.ic_show_password),
+                                        contentDescription = if(it) "Hide Password" else "Show Password",
+                                        tint = MaterialTheme.colors.primary
+                                    )
+                                }
+                            }
+                        }
                     )
+                    DonateTodayPhoneNumberInput(modifier = Modifier.fillMaxWidth(), countryPhoneCode = registrationData.countryPhoneCode, phoneNumber = registrationData.phoneNo, onPhoneNumberChange = {
+                        onUpdate(registrationData.copy(phoneNo = it))
+                    }, onCountryPhoneCode = {
+                        onUpdate(registrationData.copy(countryPhoneCode = it))
+                    })
                 }
             }
         }

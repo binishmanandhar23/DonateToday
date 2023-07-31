@@ -9,6 +9,7 @@ data class RegistrationData(
     val password: String = "",
     val name: String = "",
     val phoneNo: String = "",
+    val countryPhoneCode: String = "",
     val cardNo: String = "",
     val donationItemTypes: List<DonationItemTypes> = emptyList(),
 )
