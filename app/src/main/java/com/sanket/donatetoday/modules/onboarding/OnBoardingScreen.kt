@@ -44,6 +44,7 @@ import com.sanket.donatetoday.R
 import com.sanket.donatetoday.modules.common.AppLogo
 import com.sanket.donatetoday.modules.common.CardContainer
 import com.sanket.donatetoday.modules.common.DonateTodayButton
+import com.sanket.donatetoday.modules.common.DonateTodayCardNumberInput
 import com.sanket.donatetoday.modules.common.DonateTodayPhoneNumberInput
 import com.sanket.donatetoday.modules.common.DonateTodaySingleLineTextField
 import com.sanket.donatetoday.modules.common.DonateTodayToolbar
@@ -296,6 +297,11 @@ fun RegistrationScreenMain(
                     }, onCountryPhoneCode = {
                         onUpdate(registrationData.copy(countryPhoneCode = it))
                     })
+                    DonateTodayCardNumberInput(
+                        modifier = Modifier.fillMaxWidth(),
+                        cardNumber = "",
+                        onCardNumberChanged = {}
+                    )
                 }
             }
         }

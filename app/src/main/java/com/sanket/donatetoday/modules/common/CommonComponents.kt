@@ -311,6 +311,7 @@ fun DonateTodaySingleLineTextField(
     label: String,
     labelIcon: ImageVector? = null,
     @DrawableRes labelIconResId: Int? = null,
+    leadingIcon: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
     keyboardOptions: KeyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
     keyboardActions: KeyboardActions = KeyboardActions(),
@@ -347,7 +348,8 @@ fun DonateTodaySingleLineTextField(
             singleLine = true,
             maxLines = 1,
             visualTransformation = visualTransformation,
-            trailingIcon = trailingIcon
+            trailingIcon = trailingIcon,
+            leadingIcon = leadingIcon
         )
     }
 }
@@ -534,5 +536,26 @@ fun DonateTodayPhoneNumberInput(
             }
         )
     }
+}
+
+@Composable
+fun DonateTodayCardNumberInput(
+    modifier: Modifier,
+    cardNumber: String,
+    onCardNumberChanged: (String) -> Unit
+) {
+    DonateTodaySingleLineTextField(
+        modifier = modifier,
+        value = cardNumber,
+        onValueChange = onCardNumberChanged,
+        label = "Enter your card number",
+        leadingIcon = {
+            Image(
+                modifier = Modifier.padding(horizontal = 5.dp),
+                painter = painterResource(id = R.drawable.ic_maestro_logo),
+                contentDescription = "Maestro"
+            )
+        }
+    )
 }
 
