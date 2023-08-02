@@ -1,8 +1,12 @@
 package com.sanket.donatetoday.modules.onboarding
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +23,7 @@ import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Email
@@ -30,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -44,7 +50,9 @@ import com.sanket.donatetoday.R
 import com.sanket.donatetoday.modules.common.AppLogo
 import com.sanket.donatetoday.modules.common.CardContainer
 import com.sanket.donatetoday.modules.common.DonateTodayButton
-import com.sanket.donatetoday.modules.common.DonateTodayCardNumberInput
+import com.sanket.donatetoday.modules.common.DonateTodayCardInfoFields
+import com.sanket.donatetoday.modules.common.DonateTodayCheckBox
+import com.sanket.donatetoday.modules.common.DonateTodayDivider
 import com.sanket.donatetoday.modules.common.DonateTodayPhoneNumberInput
 import com.sanket.donatetoday.modules.common.DonateTodaySingleLineTextField
 import com.sanket.donatetoday.modules.common.DonateTodayToolbar
@@ -163,6 +171,10 @@ fun RegistrationScreenMain(
     var confirmPassword by remember(registrationData) {
         mutableStateOf("")
     }
+    var addCardInfo by remember {
+        mutableStateOf(false)
+    }
+    val rotateCardInfo by animateFloatAsState(targetValue = if (addCardInfo) 180f else 0f)
     val errorText by remember(registrationData.password) {
         derivedStateOf {
             if (registrationData.password.isNotEmpty() && confirmPassword.isNotEmpty() && registrationData.password != confirmPassword)
@@ -189,7 +201,11 @@ fun RegistrationScreenMain(
         else
             Color.Red
     )
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .animateContentSize()
+    ) {
         stickyHeader {
             DonateTodayToolbar(
                 toolbarText = if (registerAs == RegisterAs.Donor) "Sign up as Donor" else "Sign up as Organization",
@@ -252,13 +268,13 @@ fun RegistrationScreenMain(
                             keyboardType = KeyboardType.Password,
                             imeAction = ImeAction.Next
                         ),
-                        visualTransformation = if(showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                        visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
                             IconButton(onClick = { showPassword = !showPassword }) {
                                 AnimatedContent(targetState = showPassword) {
                                     Icon(
-                                        painter = painterResource(id = if(it) R.drawable.ic_hide_password else R.drawable.ic_show_password),
-                                        contentDescription = if(it) "Hide Password" else "Show Password",
+                                        painter = painterResource(id = if (it) R.drawable.ic_hide_password else R.drawable.ic_show_password),
+                                        contentDescription = if (it) "Hide Password" else "Show Password",
                                         tint = MaterialTheme.colors.primary
                                     )
                                 }
@@ -279,29 +295,52 @@ fun RegistrationScreenMain(
                             keyboardType = KeyboardType.Password,
                             imeAction = ImeAction.Next
                         ),
-                        visualTransformation = if(showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                        visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
                             IconButton(onClick = { showPassword = !showPassword }) {
                                 AnimatedContent(targetState = showPassword) {
                                     Icon(
-                                        painter = painterResource(id = if(it) R.drawable.ic_hide_password else R.drawable.ic_show_password),
-                                        contentDescription = if(it) "Hide Password" else "Show Password",
+                                        painter = painterResource(id = if (it) R.drawable.ic_hide_password else R.drawable.ic_show_password),
+                                        contentDescription = if (it) "Hide Password" else "Show Password",
                                         tint = MaterialTheme.colors.primary
                                     )
                                 }
                             }
                         }
                     )
-                    DonateTodayPhoneNumberInput(modifier = Modifier.fillMaxWidth(), countryPhoneCode = registrationData.countryPhoneCode, phoneNumber = registrationData.phoneNo, onPhoneNumberChange = {
-                        onUpdate(registrationData.copy(phoneNo = it))
-                    }, onCountryPhoneCode = {
-                        onUpdate(registrationData.copy(countryPhoneCode = it))
-                    })
-                    DonateTodayCardNumberInput(
+                    DonateTodayPhoneNumberInput(
                         modifier = Modifier.fillMaxWidth(),
-                        cardNumber = "",
-                        onCardNumberChanged = {}
-                    )
+                        countryPhoneCode = registrationData.countryPhoneCode,
+                        phoneNumber = registrationData.phoneNo,
+                        onPhoneNumberChange = {
+                            onUpdate(registrationData.copy(phoneNo = it))
+                        },
+                        onCountryPhoneCode = {
+                            onUpdate(registrationData.copy(countryPhoneCode = it))
+                        })
+                    DonateTodayDivider()
+                    DonateTodayCheckBox(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { addCardInfo = !addCardInfo },
+                        text = "Card Details (Optional)",
+                        isChecked = addCardInfo,
+                        onCheckedChanged = {
+                            addCardInfo = it
+                        }, trailingIcon = {
+                            Icon(modifier = Modifier.rotate(rotateCardInfo), imageVector = Icons.Default.ArrowDropDown, contentDescription = "Dropdown")
+                        })
+                    AnimatedVisibility(visible = addCardInfo) {
+                        DonateTodayCardInfoFields(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = UniversalInnerHorizontalPaddingInDp),
+                            creditCardData = registrationData.cardInfo,
+                            onCardDataUpdate = {
+                                onUpdate(registrationData.copy(cardInfo = it))
+                            })
+                    }
+                    DonateTodayDivider()
                 }
             }
         }

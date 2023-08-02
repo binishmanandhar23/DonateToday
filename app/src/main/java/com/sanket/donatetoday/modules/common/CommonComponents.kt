@@ -17,19 +17,19 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CornerBasedShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Card
+import androidx.compose.material.Checkbox
+import androidx.compose.material.Divider
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
@@ -74,6 +74,8 @@ import androidx.compose.ui.window.DialogProperties
 import com.sanket.donatetoday.R
 import com.sanket.donatetoday.ui.theme.ColorBlack
 import com.sanket.donatetoday.ui.theme.ColorPrimary
+import com.sanket.donatetoday.utils.card.CardValidator
+import com.sanket.donatetoday.utils.card.enums.Cards
 import com.togitech.ccp.component.TogiCodeDialog
 import com.togitech.ccp.component.TogiCountryCodePicker
 import com.togitech.ccp.data.utils.getLibCountries
@@ -539,23 +541,33 @@ fun DonateTodayPhoneNumberInput(
 }
 
 @Composable
-fun DonateTodayCardNumberInput(
-    modifier: Modifier,
-    cardNumber: String,
-    onCardNumberChanged: (String) -> Unit
+fun DonateTodayCheckBox(
+    modifier: Modifier = Modifier,
+    text: String,
+    isChecked: Boolean = false,
+    trailingIcon: (@Composable RowScope.() -> Unit)? = null,
+    onCheckedChanged: (Boolean) -> Unit
 ) {
-    DonateTodaySingleLineTextField(
+    Row(
         modifier = modifier,
-        value = cardNumber,
-        onValueChange = onCardNumberChanged,
-        label = "Enter your card number",
-        leadingIcon = {
-            Image(
-                modifier = Modifier.padding(horizontal = 5.dp),
-                painter = painterResource(id = R.drawable.ic_maestro_logo),
-                contentDescription = "Maestro"
-            )
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Checkbox(checked = isChecked, onCheckedChange = onCheckedChanged)
+            Text(text = text)
         }
-    )
+        trailingIcon?.invoke(this)
+    }
 }
+
+@Composable
+fun DonateTodayDivider(
+    modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colors.secondaryVariant,
+    thickness: Dp = 1.dp
+) = Divider(modifier = modifier, color = color, thickness = thickness)
 
