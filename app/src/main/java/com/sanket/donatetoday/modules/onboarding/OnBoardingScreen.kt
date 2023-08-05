@@ -39,19 +39,24 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.capitalize
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sanket.donatetoday.R
+import com.sanket.donatetoday.enums.UserType
+import com.sanket.donatetoday.models.User
 import com.sanket.donatetoday.modules.common.AppLogo
 import com.sanket.donatetoday.modules.common.CardContainer
 import com.sanket.donatetoday.modules.common.DonateTodayButton
 import com.sanket.donatetoday.modules.common.DonateTodayCardInfoFields
 import com.sanket.donatetoday.modules.common.DonateTodayCheckBox
+import com.sanket.donatetoday.modules.common.DonateTodayCheckBoxItems
 import com.sanket.donatetoday.modules.common.DonateTodayDivider
 import com.sanket.donatetoday.modules.common.DonateTodayPhoneNumberInput
 import com.sanket.donatetoday.modules.common.DonateTodaySingleLineTextField
@@ -61,9 +66,10 @@ import com.sanket.donatetoday.modules.common.UniversalInnerHorizontalPaddingInDp
 import com.sanket.donatetoday.modules.common.UniversalInnerVerticalPaddingInDp
 import com.sanket.donatetoday.modules.common.UniversalVerticalPaddingInDp
 import com.sanket.donatetoday.modules.common.UniversalVerticalSpacingInDp
-import com.sanket.donatetoday.modules.onboarding.data.RegistrationData
-import com.sanket.donatetoday.enums.UserType
-import com.sanket.donatetoday.models.User
+import com.sanket.donatetoday.modules.common.data.CreditCardData
+import com.sanket.donatetoday.modules.common.enums.DonationItemTypes
+import com.sanket.donatetoday.modules.common.map.DonateTodayAddPlaces
+import com.sanket.donatetoday.utils.emptyIfNull
 
 @Composable
 fun LoginScreenMain(
@@ -163,7 +169,9 @@ fun LoginScreenMain(
 fun RegistrationScreenMain(
     user: User,
     onBack: () -> Unit,
-    onUpdate: (User) -> Unit
+    onUpdate: (User) -> Unit,
+    onSignUp: () -> Unit,
+    onAddNewPlace: () -> Unit
 ) {
     var showPassword by remember {
         mutableStateOf(false)
@@ -201,7 +209,7 @@ fun RegistrationScreenMain(
         targetValue = if (user.password.isNotEmpty() && confirmPassword.isNotEmpty() && user.password == confirmPassword)
             Color.Green
         else
-            Color.Red
+            Color.Red, label = ""
     )
     LazyColumn(
         modifier = Modifier
@@ -210,7 +218,7 @@ fun RegistrationScreenMain(
     ) {
         stickyHeader {
             DonateTodayToolbar(
-                toolbarText = if (userType == UserType.Donor) "Sign up as Donor" else "Sign up as Organization",
+                toolbarText = if (user.userType == UserType.Donor.type) "Sign up as Donor" else "Sign up as Organization",
                 onBack = onBack
             )
         }
@@ -273,7 +281,7 @@ fun RegistrationScreenMain(
                         visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
                             IconButton(onClick = { showPassword = !showPassword }) {
-                                AnimatedContent(targetState = showPassword) {
+                                AnimatedContent(targetState = showPassword, label = "") {
                                     Icon(
                                         painter = painterResource(id = if (it) R.drawable.ic_hide_password else R.drawable.ic_show_password),
                                         contentDescription = if (it) "Hide Password" else "Show Password",
@@ -300,7 +308,7 @@ fun RegistrationScreenMain(
                         visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
                             IconButton(onClick = { showPassword = !showPassword }) {
-                                AnimatedContent(targetState = showPassword) {
+                                AnimatedContent(targetState = showPassword, label = "") {
                                     Icon(
                                         painter = painterResource(id = if (it) R.drawable.ic_hide_password else R.drawable.ic_show_password),
                                         contentDescription = if (it) "Hide Password" else "Show Password",
@@ -312,20 +320,36 @@ fun RegistrationScreenMain(
                     )
                     DonateTodayPhoneNumberInput(
                         modifier = Modifier.fillMaxWidth(),
-                        countryPhoneCode = user.countryPhoneCode,
-                        phoneNumber = user.phoneNo,
+                        countryPhoneCode = user.countryPhoneCode.emptyIfNull(),
+                        phoneNumber = user.phoneNo.emptyIfNull(),
                         onPhoneNumberChange = {
                             onUpdate(user.copy(phoneNo = it))
                         },
                         onCountryPhoneCode = {
                             onUpdate(user.copy(countryPhoneCode = it))
                         })
+                    DonateTodayCheckBoxItems(
+                        modifier = Modifier.fillMaxWidth(),
+                        header = if (user.userType == UserType.Donor.type) "Items you'll likely donate:" else "Items you'll receive for donation:",
+                        items = DonationItemTypes.values().map { it.type },
+                        selectedItems = user.donationItemTypes,
+                        onCheckedChanged = { index, item, checked ->
+                            val items = user.donationItemTypes.toMutableList()
+                            if(checked)
+                                items.add(item.lowercase())
+                            else
+                                items.remove(item.lowercase())
+                            onUpdate(user.copy(donationItemTypes = items))
+                        }
+                    )
                     DonateTodayDivider()
                     DonateTodayCheckBox(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { addCardInfo = !addCardInfo },
                         text = "Card Details (Optional)",
+                        textColor = MaterialTheme.colors.secondary,
+                        fontWeight = FontWeight.Bold,
                         isChecked = addCardInfo,
                         onCheckedChanged = {
                             addCardInfo = it
@@ -337,12 +361,15 @@ fun RegistrationScreenMain(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = UniversalInnerHorizontalPaddingInDp),
-                            creditCardData = user.cardInfo,
+                            creditCardData = user.cardInfo?: CreditCardData(),
                             onCardDataUpdate = {
                                 onUpdate(user.copy(cardInfo = it))
                             })
                     }
                     DonateTodayDivider()
+                    DonateTodayAddPlaces(modifier = Modifier.fillMaxWidth(), onAddNewPlace = onAddNewPlace)
+                    DonateTodayDivider()
+                    DonateTodayButton(text = "Sign up", onClick = onSignUp)
                 }
             }
         }

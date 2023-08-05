@@ -7,11 +7,13 @@ import com.sanket.donatetoday.models.User
 import com.sanket.donatetoday.modules.common.data.CreditCardData
 import com.sanket.donatetoday.modules.common.enums.DonationItemTypes
 import com.sanket.donatetoday.repository.OnBoardingRepository
+import com.sanket.donatetoday.ui.states.LoginUIState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -20,14 +22,15 @@ class OnBoardingViewModel @Inject constructor(private val onBoardingRepository: 
     private var _user = MutableStateFlow(User())
     val user = _user.asStateFlow()
 
-    private var _isUserLoggedIn = MutableStateFlow(false)
-    val isUserLoggedIn = _isUserLoggedIn.asStateFlow()
+    private var _loginUIState = MutableStateFlow<LoginUIState?>(null)
+    val loginUIState = _loginUIState.asStateFlow()
 
 
     fun isUserLoggedIn() = viewModelScope.launch {
-        _isUserLoggedIn.update {
-            onBoardingRepository.isUserLoggedIn()
-        }
+        if (onBoardingRepository.isUserLoggedIn())
+            _loginUIState.update {
+                LoginUIState.Success()
+            }
     }
 
     fun updateUserData(
@@ -59,6 +62,25 @@ class OnBoardingViewModel @Inject constructor(private val onBoardingRepository: 
         }
 
 
-    fun updateUserData(user: User) = _user.update { user }
+    fun updateUserData(user: User) = _user.update { user.copy(refreshId = UUID.randomUUID()) }
+
+
+    fun onSignIn() = viewModelScope.launch {
+        onBoardingRepository.onSignIn(
+            email = user.value.emailAddress,
+            password = user.value.password
+        ) {
+            _loginUIState.update { _ -> it }
+        }
+    }
+
+    fun onSignUp() = viewModelScope.launch {
+        onBoardingRepository.onSignUp(
+            email = user.value.emailAddress,
+            password = user.value.password
+        ){
+            _loginUIState.update { _ -> it }
+        }
+    }
 
 }

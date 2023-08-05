@@ -59,10 +59,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.capitalize
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
@@ -88,14 +90,14 @@ val UniversalInnerVerticalPaddingInDp = 22.dp
 
 @Composable
 fun AppLogo(modifier: Modifier = Modifier, animate: Boolean = false) {
-    val infiniteTransition = rememberInfiniteTransition()
+    val infiniteTransition = rememberInfiniteTransition(label = "")
     val scale by infiniteTransition.animateFloat(
         initialValue = 1f,
         targetValue = 1.1f,
         animationSpec = infiniteRepeatable(
             animation = tween(durationMillis = 500),
             repeatMode = RepeatMode.Reverse
-        )
+        ), label = ""
     )
     Column(
         modifier = modifier,
@@ -123,14 +125,14 @@ fun AppLogoHorizontal(
     animate: Boolean = false,
     textSize: TextUnit = MaterialTheme.typography.h2.fontSize
 ) {
-    val infiniteTransition = rememberInfiniteTransition()
+    val infiniteTransition = rememberInfiniteTransition(label = "")
     val scale by infiniteTransition.animateFloat(
         initialValue = 1f,
         targetValue = 1.1f,
         animationSpec = infiniteRepeatable(
             animation = tween(durationMillis = 500),
             repeatMode = RepeatMode.Reverse
-        )
+        ), label = ""
     )
     Row(
         modifier = modifier,
@@ -501,7 +503,7 @@ fun DonateTodayPhoneNumberInput(
     onCountryPhoneCode: (String) -> Unit
 ) {
     val selectedCountry =
-        getLibCountries.find { it.countryPhoneCode == countryPhoneCode } ?: getLibCountries.first()
+        getLibCountries.find { it.countryPhoneCode == countryPhoneCode } ?: getLibCountries.find { it.countryCode == "us" } ?: getLibCountries.first()
     val correct by remember(phoneNumber) {
         derivedStateOf {
             phoneNumber.length == 10
@@ -527,7 +529,7 @@ fun DonateTodayPhoneNumberInput(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             trailingIcon = {
                 AnimatedVisibility(visible = phoneNumber.isNotEmpty()) {
-                    AnimatedContent(targetState = correct) {
+                    AnimatedContent(targetState = correct, label = "") {
                         Icon(
                             imageVector = if (it) Icons.Default.Check else Icons.Default.Warning,
                             contentDescription = if (it) "Correct" else "Incorrect",
@@ -544,6 +546,8 @@ fun DonateTodayPhoneNumberInput(
 fun DonateTodayCheckBox(
     modifier: Modifier = Modifier,
     text: String,
+    textColor: Color = MaterialTheme.colors.onBackground,
+    fontWeight: FontWeight = FontWeight.Normal,
     isChecked: Boolean = false,
     trailingIcon: (@Composable RowScope.() -> Unit)? = null,
     onCheckedChanged: (Boolean) -> Unit
@@ -558,7 +562,7 @@ fun DonateTodayCheckBox(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Checkbox(checked = isChecked, onCheckedChange = onCheckedChanged)
-            Text(text = text)
+            Text(text = text, color = textColor, fontWeight = fontWeight)
         }
         trailingIcon?.invoke(this)
     }
@@ -570,4 +574,27 @@ fun DonateTodayDivider(
     color: Color = MaterialTheme.colors.secondaryVariant,
     thickness: Dp = 1.dp
 ) = Divider(modifier = modifier, color = color, thickness = thickness)
+
+@Composable
+fun DonateTodayCheckBoxItems(
+    modifier: Modifier = Modifier,
+    header: String,
+    items: List<String>,
+    selectedItems: List<String>,
+    onCheckedChanged: (index: Int, item: String, checked: Boolean) -> Unit
+) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(text = header, style = MaterialTheme.typography.h5.copy(color = MaterialTheme.colors.secondary, fontWeight = FontWeight.Bold))
+        items.forEachIndexed { index, s ->
+            DonateTodayCheckBox(
+                text = s.capitalize(Locale.current),
+                isChecked = selectedItems.contains(s),
+                onCheckedChanged = {
+                    onCheckedChanged(index, s, it)
+                })
+        }
+    }
+}
+
+
 
