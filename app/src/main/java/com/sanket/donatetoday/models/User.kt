@@ -1,8 +1,10 @@
 package com.sanket.donatetoday.models
 
+import com.google.firebase.database.IgnoreExtraProperties
 import com.sanket.donatetoday.modules.common.data.CreditCardData
 import java.util.UUID
 
+@IgnoreExtraProperties
 data class User(
      val id: String = UUID.randomUUID().toString(),
      val name: String = "",
@@ -13,7 +15,4 @@ data class User(
      val cardInfo: CreditCardData? = null,
      val donationItemTypes: List<String> = emptyList(),
      val userType: String? = null,
-
-     @Transient
-     val refreshId: UUID = UUID.randomUUID()
 )

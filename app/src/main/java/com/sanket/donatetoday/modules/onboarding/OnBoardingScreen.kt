@@ -176,7 +176,7 @@ fun RegistrationScreenMain(
     var showPassword by remember {
         mutableStateOf(false)
     }
-    var confirmPassword by remember(user) {
+    var confirmPassword by remember {
         mutableStateOf("")
     }
     var addCardInfo by remember {

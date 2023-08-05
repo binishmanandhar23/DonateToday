@@ -62,7 +62,7 @@ class OnBoardingViewModel @Inject constructor(private val onBoardingRepository: 
         }
 
 
-    fun updateUserData(user: User) = _user.update { user.copy(refreshId = UUID.randomUUID()) }
+    fun updateUserData(user: User) = _user.update { user }
 
 
     fun onSignIn() = viewModelScope.launch {
@@ -76,8 +76,7 @@ class OnBoardingViewModel @Inject constructor(private val onBoardingRepository: 
 
     fun onSignUp() = viewModelScope.launch {
         onBoardingRepository.onSignUp(
-            email = user.value.emailAddress,
-            password = user.value.password
+            user = user.value
         ){
             _loginUIState.update { _ -> it }
         }

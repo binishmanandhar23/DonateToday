@@ -22,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.sanket.donatetoday.R
@@ -47,7 +48,7 @@ private fun DonateTodayCardNumberInput(
         onValueChange = onCardNumberChanged,
         label = "Enter your card number",
         leadingIcon = {
-            AnimatedContent(targetState = cardType) {
+            AnimatedContent(targetState = cardType, label = "") {
                 Image(
                     modifier = Modifier.padding(horizontal = 5.dp),
                     painter = painterResource(
@@ -101,7 +102,7 @@ private fun DonateTodayCreditCardExpiry(
         mutableStateOf(localDate?.year)
     }
     var month by remember(localDate) {
-        mutableStateOf(if(localDate == null) null else localDate.monthValue + 1)
+        mutableStateOf(localDate?.monthValue)
     }
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp)) {
         Text(text = "Expires on", style = MaterialTheme.typography.h5)
@@ -115,17 +116,20 @@ private fun DonateTodayCreditCardExpiry(
                 .padding(end = 5.dp),
                 value = year?.toString() ?: "",
                 onValueChange = {
-                    if (it.toIntOrNull() != 0 && it.length < 5)
+                    if(it.toIntOrNull() == null)
+                        year = null
+                    else if (it.toInt() in 1..9999) {
                         year = it.toIntOrNull()
-                    onDateChange(
-                        DateUtils.convertYearAndMonthToMainDateFormat(
-                            year = year,
-                            month = month
-                        ) ?: ""
-                    )
+                        onDateChange(
+                            DateUtils.convertYearAndMonthToMainDateFormat(
+                                year = year,
+                                month = month
+                            ) ?: ""
+                        )
+                    }
                 },
                 label = "YYYY",
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next)
             )
             Text(text = "/")
             DonateTodaySingleLineTextField(modifier = Modifier
@@ -133,17 +137,20 @@ private fun DonateTodayCreditCardExpiry(
                 .padding(start = 5.dp),
                 value = month?.toString() ?: "",
                 onValueChange = { monthString ->
-                    if (monthString.toIntOrNull() != 0 && (monthString.toIntOrNull() != null && monthString.toInt() > 0) && (monthString.toIntOrNull() != null && monthString.toInt() < 13))
+                    if(monthString.toIntOrNull() == null)
+                        month = null
+                    else if (monthString.toInt() != 0 && monthString.toInt() > 0 && monthString.toInt() < 13) {
                         month = monthString.toIntOrNull()
-                    onDateChange(
-                        DateUtils.convertYearAndMonthToMainDateFormat(
-                            year = year,
-                            month = month
-                        ) ?: ""
-                    )
+                        onDateChange(
+                            DateUtils.convertYearAndMonthToMainDateFormat(
+                                year = year,
+                                month = month
+                            ) ?: ""
+                        )
+                    }
                 },
                 label = "MM",
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done)
             )
         }
     }

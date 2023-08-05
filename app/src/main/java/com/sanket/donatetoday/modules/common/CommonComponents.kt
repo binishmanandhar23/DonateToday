@@ -317,7 +317,7 @@ fun DonateTodaySingleLineTextField(
     @DrawableRes labelIconResId: Int? = null,
     leadingIcon: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
-    keyboardOptions: KeyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+    keyboardOptions: KeyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
     keyboardActions: KeyboardActions = KeyboardActions(),
     visualTransformation: VisualTransformation = VisualTransformation.None,
 ) {
@@ -526,7 +526,7 @@ fun DonateTodayPhoneNumberInput(
                     onPhoneNumberChange(it)
             },
             label = "Telephone No.",
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
             trailingIcon = {
                 AnimatedVisibility(visible = phoneNumber.isNotEmpty()) {
                     AnimatedContent(targetState = correct, label = "") {
