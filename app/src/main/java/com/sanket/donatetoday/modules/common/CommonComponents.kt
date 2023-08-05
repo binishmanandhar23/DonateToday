@@ -1,5 +1,6 @@
 package com.sanket.donatetoday.modules.common
 
+import android.view.MotionEvent
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -9,6 +10,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,6 +24,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -51,11 +54,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInteropFilter
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -81,6 +89,8 @@ import com.sanket.donatetoday.utils.card.enums.Cards
 import com.togitech.ccp.component.TogiCodeDialog
 import com.togitech.ccp.component.TogiCountryCodePicker
 import com.togitech.ccp.data.utils.getLibCountries
+import java.lang.Math.PI
+import java.lang.Math.atan2
 
 val UniversalHorizontalPaddingInDp = 22.dp
 val UniversalVerticalPaddingInDp = 18.dp
@@ -503,7 +513,8 @@ fun DonateTodayPhoneNumberInput(
     onCountryPhoneCode: (String) -> Unit
 ) {
     val selectedCountry =
-        getLibCountries.find { it.countryPhoneCode == countryPhoneCode } ?: getLibCountries.find { it.countryCode == "us" } ?: getLibCountries.first()
+        getLibCountries.find { it.countryPhoneCode == countryPhoneCode }
+            ?: getLibCountries.find { it.countryCode == "us" } ?: getLibCountries.first()
     val correct by remember(phoneNumber) {
         derivedStateOf {
             phoneNumber.length == 10
@@ -526,7 +537,10 @@ fun DonateTodayPhoneNumberInput(
                     onPhoneNumberChange(it)
             },
             label = "Telephone No.",
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number,
+                imeAction = ImeAction.Done
+            ),
             trailingIcon = {
                 AnimatedVisibility(visible = phoneNumber.isNotEmpty()) {
                     AnimatedContent(targetState = correct, label = "") {
@@ -584,7 +598,13 @@ fun DonateTodayCheckBoxItems(
     onCheckedChanged: (index: Int, item: String, checked: Boolean) -> Unit
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text(text = header, style = MaterialTheme.typography.h5.copy(color = MaterialTheme.colors.secondary, fontWeight = FontWeight.Bold))
+        Text(
+            text = header,
+            style = MaterialTheme.typography.h5.copy(
+                color = MaterialTheme.colors.secondary,
+                fontWeight = FontWeight.Bold
+            )
+        )
         items.forEachIndexed { index, s ->
             DonateTodayCheckBox(
                 text = s.capitalize(Locale.current),
@@ -592,6 +612,84 @@ fun DonateTodayCheckBoxItems(
                 onCheckedChanged = {
                     onCheckedChanged(index, s, it)
                 })
+        }
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+fun DonateTodayKnob(
+    modifier: Modifier = Modifier,
+    limitingAngle: Float = 25f,
+    onValueChange: (Float) -> Unit
+) {
+    var rotation by remember {
+        mutableStateOf(limitingAngle)
+    }
+    var touchX by remember {
+        mutableStateOf(0f)
+    }
+    var touchY by remember {
+        mutableStateOf(0f)
+    }
+    var centerX by remember {
+        mutableStateOf(0f)
+    }
+    var centerY by remember {
+        mutableStateOf(0f)
+    }
+
+    CardContainer(modifier = Modifier
+        .onGloballyPositioned {
+            val windowBounds = it.boundsInWindow()
+            centerX = windowBounds.size.width / 2f
+            centerY = windowBounds.size.height / 2f
+        }
+        .pointerInteropFilter { event ->
+            touchX = event.x
+            touchY = event.y
+            val angle = -kotlin.math.atan2(
+                (centerX - touchX).toDouble(),
+                (centerY - touchY).toDouble()
+            ) * (180f / PI).toFloat()
+
+            when (event.action) {
+                MotionEvent.ACTION_DOWN,
+                MotionEvent.ACTION_MOVE -> {
+                    if (angle !in -limitingAngle..limitingAngle) {
+                        val fixedAngle = if (angle in -180f..-limitingAngle) {
+                            360f + angle
+                        } else {
+                            angle
+                        }
+                        rotation = fixedAngle.toFloat()
+
+                        val percent =
+                            (fixedAngle - limitingAngle) / (360f - 2 * limitingAngle)
+                        onValueChange(percent.toFloat())
+                        true
+                    } else false
+                }
+
+                else -> false
+            }
+        }
+        .rotate(rotation), shape = CircleShape) {
+        Box {
+            Box(
+                modifier = Modifier
+                    .size(10.dp)
+                    .background(color = MaterialTheme.colors.primary, shape = CircleShape)
+                    .align(Alignment.TopCenter)
+                    .padding(top = 5.dp)
+            )
+            Box(
+                modifier = modifier
+                    .align(Alignment.Center)
+                    .padding(10.dp)
+                    .background(color = MaterialTheme.colors.secondaryVariant, shape = CircleShape)
+
+            )
         }
     }
 }

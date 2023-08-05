@@ -122,6 +122,7 @@ class MainActivity : ComponentActivity() {
                             ) {
                                 MainNavHost(
                                     mainNavController = mainNavController,
+                                    snackBarState = customSnackBarState,
                                     currentScreen = currentScreen?.screen,
                                     onSignUp = {
                                         customDialogState.show(dialog = DialogTypes.SignUpOption)
@@ -140,6 +141,7 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun MainNavHost(
         mainNavController: NavHostController,
+        snackBarState: SnackBarState,
         currentScreen: Screen?,
         startDestination: Screen = Screen.SplashScreen,
         onSignUp: () -> Unit
@@ -167,7 +169,7 @@ class MainActivity : ComponentActivity() {
                     },
                     onSignIn = {
                         onBoardingViewModel.onSignIn()
-                    }, onSignUp = onSignUp
+                    }, onSignUp = onSignUp,
                 )
             }
 
