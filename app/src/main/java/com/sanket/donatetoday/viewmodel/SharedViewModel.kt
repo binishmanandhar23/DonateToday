@@ -15,5 +15,5 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
     private var _currentScreen = MutableStateFlow<ScreenNavigator?>(null)
     val currentScreen = _currentScreen.asStateFlow()
 
-    fun goToScreen(screenNavigator: ScreenNavigator) = _currentScreen.update { screenNavigator }
+    fun goToScreen(screenNavigator: ScreenNavigator?) = _currentScreen.update { screenNavigator }
 }

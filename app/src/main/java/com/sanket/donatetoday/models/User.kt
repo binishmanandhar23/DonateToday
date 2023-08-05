@@ -15,4 +15,5 @@ data class User(
      val cardInfo: CreditCardData? = null,
      val donationItemTypes: List<String> = emptyList(),
      val userType: String? = null,
+     val verified: Boolean = false,
 )

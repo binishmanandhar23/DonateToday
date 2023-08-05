@@ -40,24 +40,27 @@ class OnBoardingViewModel @Inject constructor(private val onBoardingRepository: 
         countryCode: String? = null,
         cardData: CreditCardData? = null,
         donationItemTypes: List<DonationItemTypes>? = null,
-        userType: UserType? = null
+        userType: UserType? = null,
+        verified: Boolean? = false
     ) =
         _user.update {
             var newUser = it
             if (emailAddress != null)
-                newUser = it.copy(emailAddress = emailAddress)
+                newUser = newUser.copy(emailAddress = emailAddress)
             if (password != null)
-                newUser = it.copy(password = password)
+                newUser = newUser.copy(password = password)
             if (telephoneNo != null)
-                newUser = it.copy(phoneNo = telephoneNo)
+                newUser = newUser.copy(phoneNo = telephoneNo)
             if (countryCode != null)
-                newUser = it.copy(countryPhoneCode = countryCode)
+                newUser = newUser.copy(countryPhoneCode = countryCode)
             if (cardData != null)
-                newUser = it.copy(cardInfo = cardData)
+                newUser = newUser.copy(cardInfo = cardData)
             if (donationItemTypes != null)
-                newUser = it.copy(donationItemTypes = donationItemTypes.map { item -> item.type })
+                newUser = newUser.copy(donationItemTypes = donationItemTypes.map { item -> item.type })
             if (userType != null)
-                newUser = it.copy(userType = userType.type)
+                newUser = newUser.copy(userType = userType.type)
+            if (verified != null)
+                newUser = newUser.copy(verified = verified)
             newUser
         }
 

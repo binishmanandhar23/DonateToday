@@ -14,6 +14,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
@@ -89,24 +90,24 @@ class MainActivity : ComponentActivity() {
                             dialogContent = { dialogType, extraString ->
                                 when (dialogType) {
                                     DialogTypes.SignUpOption -> SignUpOptionDialog(asDonor = {
-                                        onBoardingViewModel.updateUserData(userType = UserType.Donor)
+                                        onBoardingViewModel.updateUserData(
+                                            userType = UserType.Donor,
+                                            verified = true
+                                        )
                                         sharedViewModel.goToScreen(
                                             screenNavigator = ScreenNavigator(
                                                 screen = Screen.RegistrationScreen,
-                                                values = listOf(
-                                                    UserType.Donor.type
-                                                )
                                             )
                                         )
                                         customDialogState.hide()
                                     }, asOrganization = {
-                                        onBoardingViewModel.updateUserData(userType = UserType.Organization)
+                                        onBoardingViewModel.updateUserData(
+                                            userType = UserType.Organization,
+                                            verified = false
+                                        )
                                         sharedViewModel.goToScreen(
                                             screenNavigator = ScreenNavigator(
                                                 screen = Screen.RegistrationScreen,
-                                                values = listOf(
-                                                    UserType.Organization.type
-                                                )
                                             )
                                         )
                                         customDialogState.hide()
@@ -170,22 +171,19 @@ class MainActivity : ComponentActivity() {
                 )
             }
 
-            customAnimatedComposable(route = Screen.RegistrationScreen.route + "/{${UserType::class.java.simpleName}}") { navBackStackEntry ->
-                UserType.getRegisterAs(navBackStackEntry.arguments?.getString(UserType::class.java.simpleName))
-                    ?.let { registerAs ->
-                        val user by onBoardingViewModel.user.collectAsState()
-                        RegistrationScreenMain(user = user, onBack = {
-                            mainNavController.popBackStack()
-                        }, onUpdate = {
-                            onBoardingViewModel.updateUserData(user = it)
-                        }, onSignUp = {
-                            onBoardingViewModel.onSignUp()
-                        }, onAddNewPlace = {
-                            mainNavController.navigator(route = BottomSheet.MapSheet.route)
-                        })
-                    }
+            customAnimatedComposable(route = Screen.RegistrationScreen.route) {
+                val user by onBoardingViewModel.user.collectAsState()
+                RegistrationScreenMain(user = user, onBack = {
+                    mainNavController.customPopBackStack()
+                }, onUpdate = {
+                    onBoardingViewModel.updateUserData(user = it)
+                }, onSignUp = {
+                    onBoardingViewModel.onSignUp()
+                }, onAddNewPlace = {
+                    mainNavController.navigator(route = BottomSheet.MapSheet.route)
+                })
             }
-            bottomSheet(route = BottomSheet.MapSheet.route){
+            bottomSheet(route = BottomSheet.MapSheet.route) {
                 DonateTodayMap(modifier = Modifier.fillMaxSize())
             }
         }
@@ -236,5 +234,10 @@ class MainActivity : ComponentActivity() {
                 else -> Unit
             }
         }
+    }
+
+    private fun NavController.customPopBackStack(){
+        sharedViewModel.goToScreen(screenNavigator = null)
+        popBackStack()
     }
 }
