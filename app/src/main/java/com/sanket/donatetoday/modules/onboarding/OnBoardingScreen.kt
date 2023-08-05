@@ -62,7 +62,8 @@ import com.sanket.donatetoday.modules.common.UniversalInnerVerticalPaddingInDp
 import com.sanket.donatetoday.modules.common.UniversalVerticalPaddingInDp
 import com.sanket.donatetoday.modules.common.UniversalVerticalSpacingInDp
 import com.sanket.donatetoday.modules.onboarding.data.RegistrationData
-import com.sanket.donatetoday.modules.onboarding.enums.RegisterAs
+import com.sanket.donatetoday.enums.UserType
+import com.sanket.donatetoday.models.User
 
 @Composable
 fun LoginScreenMain(
@@ -160,43 +161,44 @@ fun LoginScreenMain(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun RegistrationScreenMain(
-    registerAs: RegisterAs,
-    registrationData: RegistrationData,
+    user: User,
     onBack: () -> Unit,
-    onUpdate: (RegistrationData) -> Unit
+    onUpdate: (User) -> Unit
 ) {
     var showPassword by remember {
         mutableStateOf(false)
     }
-    var confirmPassword by remember(registrationData) {
+    var confirmPassword by remember(user) {
         mutableStateOf("")
     }
     var addCardInfo by remember {
         mutableStateOf(false)
     }
-    val rotateCardInfo by animateFloatAsState(targetValue = if (addCardInfo) 180f else 0f)
-    val errorText by remember(registrationData.password) {
+    val rotateCardInfo by animateFloatAsState(targetValue = if (addCardInfo) 180f else 0f,
+        label = ""
+    )
+    val errorText by remember(user.password) {
         derivedStateOf {
-            if (registrationData.password.isNotEmpty() && confirmPassword.isNotEmpty() && registrationData.password != confirmPassword)
+            if (user.password.isNotEmpty() && confirmPassword.isNotEmpty() && user.password != confirmPassword)
                 "Passwords don't match"
-            else if (registrationData.password.isNotEmpty() && confirmPassword.isNotEmpty() && registrationData.password == confirmPassword)
+            else if (user.password.isNotEmpty() && confirmPassword.isNotEmpty() && user.password == confirmPassword)
                 "Passwords match"
             else
                 null
         }
     }
-    val errorIcon by remember(registrationData.password) {
+    val errorIcon by remember(user.password) {
         derivedStateOf {
-            if (registrationData.password.isNotEmpty() && confirmPassword.isNotEmpty() && registrationData.password != confirmPassword)
+            if (user.password.isNotEmpty() && confirmPassword.isNotEmpty() && user.password != confirmPassword)
                 Icons.Default.Close
-            else if (registrationData.password.isNotEmpty() && confirmPassword.isNotEmpty() && registrationData.password == confirmPassword)
+            else if (user.password.isNotEmpty() && confirmPassword.isNotEmpty() && user.password == confirmPassword)
                 Icons.Default.Check
             else
                 null
         }
     }
     val errorColor by animateColorAsState(
-        targetValue = if (registrationData.password.isNotEmpty() && confirmPassword.isNotEmpty() && registrationData.password == confirmPassword)
+        targetValue = if (user.password.isNotEmpty() && confirmPassword.isNotEmpty() && user.password == confirmPassword)
             Color.Green
         else
             Color.Red
@@ -208,7 +210,7 @@ fun RegistrationScreenMain(
     ) {
         stickyHeader {
             DonateTodayToolbar(
-                toolbarText = if (registerAs == RegisterAs.Donor) "Sign up as Donor" else "Sign up as Organization",
+                toolbarText = if (userType == UserType.Donor) "Sign up as Donor" else "Sign up as Organization",
                 onBack = onBack
             )
         }
@@ -235,9 +237,9 @@ fun RegistrationScreenMain(
                 ) {
                     DonateTodaySingleLineTextField(
                         modifier = Modifier.fillMaxWidth(),
-                        value = registrationData.emailAddress,
+                        value = user.emailAddress,
                         onValueChange = {
-                            onUpdate(registrationData.copy(emailAddress = it))
+                            onUpdate(user.copy(emailAddress = it))
                         },
                         label = "E-mail Address",
                         keyboardOptions = KeyboardOptions(
@@ -247,11 +249,11 @@ fun RegistrationScreenMain(
                     )
                     DonateTodaySingleLineTextField(
                         modifier = Modifier.fillMaxWidth(),
-                        value = registrationData.name,
+                        value = user.name,
                         onValueChange = {
-                            onUpdate(registrationData.copy(name = it))
+                            onUpdate(user.copy(name = it))
                         },
-                        label = if (registerAs == RegisterAs.Donor) "Name" else "Organization's Name",
+                        label = if (user.userType == UserType.Donor.type) "Name" else "Organization's Name",
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Text,
                             imeAction = ImeAction.Next
@@ -259,9 +261,9 @@ fun RegistrationScreenMain(
                     )
                     DonateTodaySingleLineTextField(
                         modifier = Modifier.fillMaxWidth(),
-                        value = registrationData.password,
+                        value = user.password,
                         onValueChange = {
-                            onUpdate(registrationData.copy(password = it))
+                            onUpdate(user.copy(password = it))
                         },
                         label = "Password",
                         keyboardOptions = KeyboardOptions(
@@ -310,13 +312,13 @@ fun RegistrationScreenMain(
                     )
                     DonateTodayPhoneNumberInput(
                         modifier = Modifier.fillMaxWidth(),
-                        countryPhoneCode = registrationData.countryPhoneCode,
-                        phoneNumber = registrationData.phoneNo,
+                        countryPhoneCode = user.countryPhoneCode,
+                        phoneNumber = user.phoneNo,
                         onPhoneNumberChange = {
-                            onUpdate(registrationData.copy(phoneNo = it))
+                            onUpdate(user.copy(phoneNo = it))
                         },
                         onCountryPhoneCode = {
-                            onUpdate(registrationData.copy(countryPhoneCode = it))
+                            onUpdate(user.copy(countryPhoneCode = it))
                         })
                     DonateTodayDivider()
                     DonateTodayCheckBox(
@@ -335,9 +337,9 @@ fun RegistrationScreenMain(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = UniversalInnerHorizontalPaddingInDp),
-                            creditCardData = registrationData.cardInfo,
+                            creditCardData = user.cardInfo,
                             onCardDataUpdate = {
-                                onUpdate(registrationData.copy(cardInfo = it))
+                                onUpdate(user.copy(cardInfo = it))
                             })
                     }
                     DonateTodayDivider()

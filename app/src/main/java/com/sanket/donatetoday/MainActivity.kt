@@ -12,6 +12,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.sanket.donatetoday.modules.common.dialog.CustomDialog
@@ -20,8 +21,8 @@ import com.sanket.donatetoday.modules.common.dialog.rememberDialogState
 import com.sanket.donatetoday.modules.onboarding.LoginScreenMain
 import com.sanket.donatetoday.modules.onboarding.RegistrationScreenMain
 import com.sanket.donatetoday.modules.onboarding.SignUpOptionDialog
-import com.sanket.donatetoday.modules.onboarding.enums.RegisterAs
-import com.sanket.donatetoday.modules.onboarding.viewmodel.OnBoardingViewModel
+import com.sanket.donatetoday.enums.UserType
+import com.sanket.donatetoday.viewmodel.OnBoardingViewModel
 import com.sanket.donatetoday.modules.splash.SplashScreen
 import com.sanket.donatetoday.navigators.Screen
 import com.sanket.donatetoday.navigators.customAnimatedComposable
@@ -31,11 +32,25 @@ import com.sanket.donatetoday.navigators.rememberCustomAnimatedNavController
 import com.sanket.donatetoday.ui.theme.DonateTodayTheme
 import com.sanket.donatetoday.viewmodel.SharedViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val sharedViewModel by viewModels<SharedViewModel>()
     private val onBoardingViewModel by viewModels<OnBoardingViewModel>()
+
+
+    override fun onStart() {
+        super.onStart()
+        onBoardingViewModel.isUserLoggedIn()
+        lifecycleScope.launch {
+            onBoardingViewModel.isUserLoggedIn.collect{
+                if(!it)
+                    sharedViewModel.goToScreen(ScreenNavigator(screen = Screen.OnBoardingScreen))
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -75,19 +90,21 @@ class MainActivity : ComponentActivity() {
                         dialogContent = { dialogType, extraString ->
                             when (dialogType) {
                                 DialogTypes.SignUpOption -> SignUpOptionDialog(asDonor = {
+                                    onBoardingViewModel.updateUserData(userType = UserType.Donor)
                                     sharedViewModel.goToScreen(
                                         screenNavigator = ScreenNavigator(
                                             screen = Screen.RegistrationScreen, values = listOf(
-                                                RegisterAs.Donor.registerAs
+                                                UserType.Donor.type
                                             )
                                         )
                                     )
                                     customDialogState.hide()
                                 }, asOrganization = {
+                                    onBoardingViewModel.updateUserData(userType = UserType.Organization)
                                     sharedViewModel.goToScreen(
                                         screenNavigator = ScreenNavigator(
                                             screen = Screen.RegistrationScreen, values = listOf(
-                                                RegisterAs.Organization.registerAs
+                                                UserType.Organization.type
                                             )
                                         )
                                     )
@@ -130,30 +147,30 @@ class MainActivity : ComponentActivity() {
                 }
             }
             customAnimatedComposable(route = Screen.OnBoardingScreen.route) {
-                val loginData by onBoardingViewModel.loginData.collectAsState()
+                val user by onBoardingViewModel.user.collectAsState()
                 LoginScreenMain(
-                    emailAddress = loginData.emailAddress,
-                    password = loginData.password,
+                    emailAddress = user.emailAddress,
+                    password = user.password,
                     onEmailAddressChanged = {
-                        onBoardingViewModel.updateLoginData(emailAddress = it)
+                        onBoardingViewModel.updateUserData(emailAddress = it)
                     },
                     onPasswordChanged = {
-                        onBoardingViewModel.updateLoginData(password = it)
+                        onBoardingViewModel.updateUserData(password = it)
                     },
                     onSignIn = {
-
+                        
                     }, onSignUp = onSignUp
                 )
             }
 
-            customAnimatedComposable(route = Screen.RegistrationScreen.route + "/{${RegisterAs::class.java.simpleName}}") { navBackStackEntry ->
-                RegisterAs.getRegisterAs(navBackStackEntry.arguments?.getString(RegisterAs::class.java.simpleName))
+            customAnimatedComposable(route = Screen.RegistrationScreen.route + "/{${UserType::class.java.simpleName}}") { navBackStackEntry ->
+                UserType.getRegisterAs(navBackStackEntry.arguments?.getString(UserType::class.java.simpleName))
                     ?.let { registerAs ->
-                        val registrationData by onBoardingViewModel.registrationData.collectAsState()
-                        RegistrationScreenMain(registrationData = registrationData,registerAs = registerAs, onBack = {
+                        val user by onBoardingViewModel.user.collectAsState()
+                        RegistrationScreenMain(user = user, onBack = {
                             mainNavController.popBackStack()
                         }, onUpdate = {
-                            onBoardingViewModel.updateRegistrationData(registrationData = it.copy(registerAs = registerAs))
+                            onBoardingViewModel.updateUserData(user = it)
                         })
                     }
             }
