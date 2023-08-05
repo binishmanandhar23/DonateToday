@@ -367,8 +367,13 @@ fun RegistrationScreenMain(
                             })
                     }
                     DonateTodayDivider()
-                    DonateTodayAddPlaces(modifier = Modifier.fillMaxWidth(), onAddNewPlace = onAddNewPlace)
-                    DonateTodayDivider()
+                    if(user.userType == UserType.Organization.type) {
+                        DonateTodayAddPlaces(
+                            modifier = Modifier.fillMaxWidth(),
+                            onAddNewPlace = onAddNewPlace
+                        )
+                        DonateTodayDivider()
+                    }
                     DonateTodayButton(text = "Sign up", onClick = onSignUp)
                 }
             }
