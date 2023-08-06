@@ -18,6 +18,8 @@ data class UserDTO(
     val donationItemTypes: List<String> = emptyList(),
     override var userType: String? = null,
     override var verified: Boolean = false,
+    override var totalGoal: Int = 0,
+    override var reached: Int = 0,
 ) : User
 
 
@@ -30,7 +32,9 @@ fun UserDTO.toUserEntity() = UserEntity(
     cardInfo = cardInfo?.toCreditCardDataEntity(),
     donationItemTypes = donationItemTypes.toRealmList(),
     userType = userType,
-    verified = verified
+    verified = verified,
+    totalGoal = totalGoal,
+    reached = reached
 )
 
 fun UserEntity.toUserDTO() = UserDTO(
@@ -42,6 +46,8 @@ fun UserEntity.toUserDTO() = UserDTO(
     cardInfo = cardInfo?.toCreditCardDataDTO(),
     donationItemTypes = donationItemTypes.toList(),
     userType = userType,
-    verified = verified
+    verified = verified,
+    totalGoal = totalGoal,
+    reached = reached
 )
 

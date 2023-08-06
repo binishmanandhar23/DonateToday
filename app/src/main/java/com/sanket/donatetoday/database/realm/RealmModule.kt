@@ -1,5 +1,8 @@
 package com.sanket.donatetoday.database.realm
 
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import com.sanket.donatetoday.models.entity.CreditCardDataEntity
 import com.sanket.donatetoday.models.entity.UserEntity
 import dagger.Module
@@ -16,9 +19,18 @@ object RealmModule {
     @Provides
     @Singleton
     fun provideRealm(): Realm {
-        val config = RealmConfiguration.Builder(
-            schema = setOf(UserEntity::class, CreditCardDataEntity::class)
-        ).deleteRealmIfMigrationNeeded().build()
-        return Realm.open(config)
+        return try {
+            val config = RealmConfiguration.Builder(
+                schema = setOf(UserEntity::class, CreditCardDataEntity::class)
+            ).build()
+            Realm.open(config)
+        } catch (ex: Exception){
+            Firebase.auth.signOut()
+            val config = RealmConfiguration.Builder(
+                schema = setOf(UserEntity::class, CreditCardDataEntity::class)
+            ).deleteRealmIfMigrationNeeded().build()
+            Realm.open(config)
+        }
+
     }
 }

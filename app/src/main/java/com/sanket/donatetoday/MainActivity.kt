@@ -26,6 +26,8 @@ import com.sanket.donatetoday.modules.onboarding.LoginScreenMain
 import com.sanket.donatetoday.modules.onboarding.RegistrationScreenMain
 import com.sanket.donatetoday.modules.onboarding.SignUpOptionDialog
 import com.sanket.donatetoday.enums.UserType
+import com.sanket.donatetoday.modules.common.DonateTodayMonthlyGoalDialog
+import com.sanket.donatetoday.modules.common.dialog.CustomDialogState
 import com.sanket.donatetoday.modules.common.loader.DonateTodayLoader
 import com.sanket.donatetoday.modules.common.loader.LoaderState
 import com.sanket.donatetoday.modules.common.loader.rememberLoaderState
@@ -37,6 +39,7 @@ import com.sanket.donatetoday.modules.common.snackbar.SnackBarState
 import com.sanket.donatetoday.modules.common.snackbar.rememberSnackBarState
 import com.sanket.donatetoday.modules.home.DashboardScreenContainer
 import com.sanket.donatetoday.modules.home.HomeScreenContainer
+import com.sanket.donatetoday.modules.home.getters.DashboardGetters
 import com.sanket.donatetoday.viewmodel.OnBoardingViewModel
 import com.sanket.donatetoday.modules.splash.SplashScreen
 import com.sanket.donatetoday.navigators.BottomSheet
@@ -118,6 +121,15 @@ class MainActivity : ComponentActivity() {
                                             )
                                             customDialogState.hide()
                                         })
+                                        DialogTypes.MonthlyGoal -> {
+                                            val user by sharedViewModel.user.collectAsState()
+                                            DonateTodayMonthlyGoalDialog(
+                                                totalGoal = user.totalGoal,
+                                                onGoalChanged = {
+                                                    sharedViewModel.updateUser(userDTO = user.copy(totalGoal = it))
+                                                }
+                                            )
+                                        }
 
                                         else -> Unit
                                     }
@@ -129,6 +141,7 @@ class MainActivity : ComponentActivity() {
                                     MainNavHost(
                                         mainNavController = mainNavController,
                                         snackBarState = customSnackBarState,
+                                        dialogState = customDialogState,
                                         currentScreen = currentScreen?.screen,
                                         onSignUp = {
                                             customDialogState.show(dialog = DialogTypes.SignUpOption)
@@ -149,6 +162,7 @@ class MainActivity : ComponentActivity() {
     private fun MainNavHost(
         mainNavController: NavHostController,
         snackBarState: SnackBarState,
+        dialogState: CustomDialogState,
         currentScreen: Screen?,
         startDestination: Screen = Screen.SplashScreen,
         onSignUp: () -> Unit
@@ -176,7 +190,8 @@ class MainActivity : ComponentActivity() {
                     },
                     onSignIn = {
                         onBoardingViewModel.onSignIn()
-                    }, onSignUp = onSignUp,
+                    },
+                    onSignUp = onSignUp,
                 )
             }
 
@@ -193,9 +208,15 @@ class MainActivity : ComponentActivity() {
                 })
             }
 
-            customAnimatedComposable(route = Screen.HomeScreen.route){
-                val userDTO by onBoardingViewModel.user.collectAsState()
-                HomeScreenContainer(userDTO = userDTO)
+            customAnimatedComposable(route = Screen.HomeScreen.route) {
+                val userDTO by sharedViewModel.user.collectAsState()
+                HomeScreenContainer(
+                    dashboardGetters = DashboardGetters(
+                        userDTO = userDTO,
+                        onEditMonthlyGoal = {
+                            dialogState.show(dialog = DialogTypes.MonthlyGoal)
+                        })
+                )
             }
             bottomSheet(route = BottomSheet.MapSheet.route) {
                 DonateTodayMap(modifier = Modifier.fillMaxSize())
@@ -237,8 +258,12 @@ class MainActivity : ComponentActivity() {
             when (loginUIState) {
                 is LoginUIState.Success -> sharedViewModel.goToScreen(ScreenNavigator(screen = Screen.HomeScreen))
                     .also {
+                        sharedViewModel.getUser(email = onBoardingViewModel.user.value.emailAddress)
                         loaderState.hide()
-                        snackBarState.show(overridingText = loginUIState?.message, overridingDelay = SnackBarLengthMedium)
+                        snackBarState.show(
+                            overridingText = loginUIState?.message,
+                            overridingDelay = SnackBarLengthMedium
+                        )
                     }
 
                 is LoginUIState.Error -> snackBarState.show(
@@ -254,7 +279,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun NavController.customPopBackStack(){
+    private fun NavController.customPopBackStack() {
         sharedViewModel.goToScreen(screenNavigator = null)
         popBackStack()
     }

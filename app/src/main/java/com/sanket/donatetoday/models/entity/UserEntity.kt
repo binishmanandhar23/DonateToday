@@ -4,8 +4,10 @@ import com.sanket.donatetoday.models.User
 import io.realm.kotlin.ext.realmListOf
 import io.realm.kotlin.types.RealmList
 import io.realm.kotlin.types.RealmObject
+import io.realm.kotlin.types.annotations.PrimaryKey
 
 class UserEntity : RealmObject, User {
+    @PrimaryKey
     override var id: String = ""
     override var name: String = ""
     override var emailAddress: String = ""
@@ -16,6 +18,8 @@ class UserEntity : RealmObject, User {
     var donationItemTypes: RealmList<String> = realmListOf()
     override var userType: String? = null
     override var verified: Boolean = false
+    override var totalGoal: Int = 0
+    override var reached: Int = 0
 
     constructor(
         id: String,
@@ -26,7 +30,9 @@ class UserEntity : RealmObject, User {
         cardInfo: CreditCardDataEntity? = null,
         donationItemTypes: RealmList<String> = realmListOf(),
         userType: String? = null,
-        verified: Boolean = false
+        verified: Boolean = false,
+        totalGoal: Int = 0,
+        reached: Int = 0
     ): super() {
         this.id = id
         this.name = name
@@ -37,6 +43,8 @@ class UserEntity : RealmObject, User {
         this.donationItemTypes = donationItemTypes
         this.userType = userType
         this.verified = verified
+        this.totalGoal = totalGoal
+        this.reached = reached
     }
 
     constructor(): super()

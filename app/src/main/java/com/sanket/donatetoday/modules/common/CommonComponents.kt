@@ -89,6 +89,7 @@ import com.sanket.donatetoday.R
 import com.sanket.donatetoday.ui.theme.ColorBlack
 import com.sanket.donatetoday.ui.theme.ColorPrimary
 import com.sanket.donatetoday.ui.theme.ColorWhite
+import com.sanket.donatetoday.utils.MaximumMonthlyGoal
 import com.sanket.donatetoday.utils.card.CardValidator
 import com.sanket.donatetoday.utils.card.enums.Cards
 import com.togitech.ccp.component.TogiCodeDialog
@@ -96,6 +97,9 @@ import com.togitech.ccp.component.TogiCountryCodePicker
 import com.togitech.ccp.data.utils.getLibCountries
 import java.lang.Math.PI
 import java.lang.Math.atan2
+import java.lang.Math.max
+import java.lang.Math.min
+import kotlin.math.roundToInt
 
 val UniversalHorizontalPaddingInDp = 22.dp
 val UniversalVerticalPaddingInDp = 18.dp
@@ -626,10 +630,11 @@ fun DonateTodayCheckBoxItems(
 fun DonateTodayKnob(
     modifier: Modifier = Modifier,
     limitingAngle: Float = 1f,
+    percentage: Float = 0f,
     onValueChange: (Float) -> Unit
 ) {
-    var rotation by remember {
-        mutableStateOf(limitingAngle)
+    var rotation by remember(percentage) {
+        mutableStateOf((percentage * 360f) - (2 * limitingAngle * percentage) + limitingAngle)
     }
     var touchX by remember {
         mutableStateOf(0f)
@@ -671,6 +676,7 @@ fun DonateTodayKnob(
 
                         val percent =
                             (fixedAngle - limitingAngle) / (360f - 2 * limitingAngle)
+
                         onValueChange(percent.toFloat())
                         true
                     } else false
@@ -740,6 +746,27 @@ fun DonateTodayBottomTabs(modifier: Modifier = Modifier, listOfIcons: List<Image
             }
         }
     }
+}
+
+
+@Composable
+fun DonateTodayMonthlyGoalDialog(totalGoal: Int, onGoalChanged: (Int) -> Unit){
+    val progress by remember(totalGoal) {
+        derivedStateOf {
+            totalGoal / MaximumMonthlyGoal.toFloat()
+        }
+    }
+    Text(
+        text = "Set your monthly goal",
+        style = MaterialTheme.typography.h3.copy(fontWeight = FontWeight.Bold)
+    )
+    DonateTodayKnob(modifier = Modifier.size(180.dp), percentage = progress, onValueChange = {
+        onGoalChanged((it * (MaximumMonthlyGoal + 50)).coerceAtMost(MaximumMonthlyGoal.toFloat()).roundToInt())
+    })
+    Text(
+        text = "$${totalGoal}",
+        style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold)
+    )
 }
 
 

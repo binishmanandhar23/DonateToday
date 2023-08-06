@@ -9,4 +9,6 @@ interface User {
     var countryPhoneCode: String?
     var userType: String?
     var verified: Boolean
+    var totalGoal: Int
+    var reached: Int
 }
