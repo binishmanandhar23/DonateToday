@@ -33,3 +33,15 @@ fun UserDTO.toUserEntity() = UserEntity(
     verified = verified
 )
 
+fun UserEntity.toUserDTO() = UserDTO(
+    id = id,
+    name = name,
+    emailAddress = emailAddress,
+    password = password,
+    countryPhoneCode = countryPhoneCode,
+    cardInfo = cardInfo?.toCreditCardDataDTO(),
+    donationItemTypes = donationItemTypes.toList(),
+    userType = userType,
+    verified = verified
+)
+

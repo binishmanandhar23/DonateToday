@@ -194,7 +194,8 @@ class MainActivity : ComponentActivity() {
             }
 
             customAnimatedComposable(route = Screen.HomeScreen.route){
-                HomeScreenContainer()
+                val userDTO by onBoardingViewModel.user.collectAsState()
+                HomeScreenContainer(userDTO = userDTO)
             }
             bottomSheet(route = BottomSheet.MapSheet.route) {
                 DonateTodayMap(modifier = Modifier.fillMaxSize())

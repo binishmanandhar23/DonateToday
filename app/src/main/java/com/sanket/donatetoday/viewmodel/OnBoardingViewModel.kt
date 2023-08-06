@@ -28,7 +28,8 @@ class OnBoardingViewModel @Inject constructor(private val onBoardingRepository: 
     fun isUserLoggedIn() = viewModelScope.launch {
         if (onBoardingRepository.isUserLoggedIn()) {
             _loginUIState.update { LoginUIState.Loading }
-            onBoardingRepository.getUser(onSuccess = {
+            onBoardingRepository.syncCurrentUserDataToDatabase(onSuccess = {
+                _userDTO.update { _ -> it }
                 _loginUIState.update { _ ->
                     LoginUIState.Success("Welcome back! ${it.name}")
                 }
@@ -82,6 +83,7 @@ class OnBoardingViewModel @Inject constructor(private val onBoardingRepository: 
             email = user.value.emailAddress,
             password = user.value.password,
             onSuccess = {
+                _userDTO.update { _ -> it }
                 _loginUIState.update { _ ->
                     LoginUIState.Success("Welcome back! ${it.name}")
                 }

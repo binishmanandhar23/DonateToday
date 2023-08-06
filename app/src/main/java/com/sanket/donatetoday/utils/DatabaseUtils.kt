@@ -14,13 +14,16 @@ object DatabaseUtils {
         this.child(FirebasePaths.Emails.node).setValue(listOfEmailDTO)
 
 
-    fun DatabaseReference.addUser(userDTO: UserDTO) = this.child(FirebasePaths.Users.node).let {
+    fun DatabaseReference.addUser(userDTO: UserDTO, onSuccess: (() -> Unit)? = null, onError: (() -> Unit)? = null) = this.child(FirebasePaths.Users.node).let {
         when (userDTO.userType) {
             UserType.Donor.type -> it.child(FirebasePaths.Donors.node)
             UserType.Organization.type -> it.child(FirebasePaths.Organizations.node)
             else -> it
         }
-    }.child(userDTO.id).setValue(userDTO)
+    }.child(userDTO.id).setValue(userDTO).addOnSuccessListener {
+      onSuccess?.invoke()
+    }.addOnFailureListener { onError?.invoke()
+    }
 
     fun DatabaseReference.addDonationItems(userDTO: UserDTO) =
         this.child(FirebasePaths.DonationItems.node).let { ref ->

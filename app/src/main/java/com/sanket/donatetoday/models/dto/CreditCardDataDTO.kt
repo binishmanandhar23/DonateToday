@@ -12,3 +12,6 @@ data class CreditCardDataDTO(
 
 fun CreditCardDataDTO.toCreditCardDataEntity() =
     CreditCardDataEntity(cardNo = cardNo, cardHolderName = cardHolderName, expiresOn = expiresOn)
+
+fun CreditCardDataEntity.toCreditCardDataDTO() =
+    CreditCardDataDTO(cardNo = cardNo, cardHolderName = cardHolderName, expiresOn = expiresOn)
