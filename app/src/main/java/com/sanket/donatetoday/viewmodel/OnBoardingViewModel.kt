@@ -3,8 +3,8 @@ package com.sanket.donatetoday.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sanket.donatetoday.enums.UserType
-import com.sanket.donatetoday.models.User
-import com.sanket.donatetoday.modules.common.data.CreditCardData
+import com.sanket.donatetoday.models.dto.UserDTO
+import com.sanket.donatetoday.models.dto.CreditCardDataDTO
 import com.sanket.donatetoday.modules.common.enums.DonationItemTypes
 import com.sanket.donatetoday.repository.OnBoardingRepository
 import com.sanket.donatetoday.ui.states.LoginUIState
@@ -13,24 +13,31 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
 class OnBoardingViewModel @Inject constructor(private val onBoardingRepository: OnBoardingRepository) :
     ViewModel() {
-    private var _user = MutableStateFlow(User())
-    val user = _user.asStateFlow()
+    private var _userDTO = MutableStateFlow(UserDTO())
+    val user = _userDTO.asStateFlow()
 
     private var _loginUIState = MutableStateFlow<LoginUIState?>(null)
     val loginUIState = _loginUIState.asStateFlow()
 
 
     fun isUserLoggedIn() = viewModelScope.launch {
-        if (onBoardingRepository.isUserLoggedIn())
-            _loginUIState.update {
-                LoginUIState.Success()
-            }
+        if (onBoardingRepository.isUserLoggedIn()) {
+            _loginUIState.update { LoginUIState.Loading }
+            onBoardingRepository.getUser(onSuccess = {
+                _loginUIState.update { _ ->
+                    LoginUIState.Success("Welcome back! ${it.name}")
+                }
+            }, onError = {
+                    _loginUIState.update {
+                        LoginUIState.Error(it?.message)
+                    }
+            })
+        }
     }
 
     fun updateUserData(
@@ -38,12 +45,12 @@ class OnBoardingViewModel @Inject constructor(private val onBoardingRepository: 
         password: String? = null,
         telephoneNo: String? = null,
         countryCode: String? = null,
-        cardData: CreditCardData? = null,
+        cardData: CreditCardDataDTO? = null,
         donationItemTypes: List<DonationItemTypes>? = null,
         userType: UserType? = null,
         verified: Boolean? = false
     ) =
-        _user.update {
+        _userDTO.update {
             var newUser = it
             if (emailAddress != null)
                 newUser = newUser.copy(emailAddress = emailAddress)
@@ -56,7 +63,8 @@ class OnBoardingViewModel @Inject constructor(private val onBoardingRepository: 
             if (cardData != null)
                 newUser = newUser.copy(cardInfo = cardData)
             if (donationItemTypes != null)
-                newUser = newUser.copy(donationItemTypes = donationItemTypes.map { item -> item.type })
+                newUser =
+                    newUser.copy(donationItemTypes = donationItemTypes.map { item -> item.type })
             if (userType != null)
                 newUser = newUser.copy(userType = userType.type)
             if (verified != null)
@@ -65,22 +73,31 @@ class OnBoardingViewModel @Inject constructor(private val onBoardingRepository: 
         }
 
 
-    fun updateUserData(user: User) = _user.update { user }
+    fun updateUserData(userDTO: UserDTO) = _userDTO.update { userDTO }
 
 
     fun onSignIn() = viewModelScope.launch {
+        _loginUIState.update { LoginUIState.Loading }
         onBoardingRepository.onSignIn(
             email = user.value.emailAddress,
-            password = user.value.password
-        ) {
-            _loginUIState.update { _ -> it }
-        }
+            password = user.value.password,
+            onSuccess = {
+                _loginUIState.update { _ ->
+                    LoginUIState.Success("Welcome back! ${it.name}")
+                }
+            },
+            onError = {
+                _loginUIState.update {
+                    LoginUIState.Error(it?.message)
+                }
+            }
+        )
     }
 
     fun onSignUp() = viewModelScope.launch {
         onBoardingRepository.onSignUp(
-            user = user.value
-        ){
+            userDTO = user.value
+        ) {
             _loginUIState.update { _ -> it }
         }
     }

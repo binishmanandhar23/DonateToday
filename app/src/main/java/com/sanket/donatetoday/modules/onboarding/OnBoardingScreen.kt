@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -40,18 +39,16 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.capitalize
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sanket.donatetoday.R
 import com.sanket.donatetoday.enums.UserType
-import com.sanket.donatetoday.models.User
+import com.sanket.donatetoday.models.dto.UserDTO
 import com.sanket.donatetoday.modules.common.AppLogo
 import com.sanket.donatetoday.modules.common.CardContainer
 import com.sanket.donatetoday.modules.common.DonateTodayButton
@@ -59,7 +56,6 @@ import com.sanket.donatetoday.modules.common.DonateTodayCardInfoFields
 import com.sanket.donatetoday.modules.common.DonateTodayCheckBox
 import com.sanket.donatetoday.modules.common.DonateTodayCheckBoxItems
 import com.sanket.donatetoday.modules.common.DonateTodayDivider
-import com.sanket.donatetoday.modules.common.DonateTodayKnob
 import com.sanket.donatetoday.modules.common.DonateTodayPhoneNumberInput
 import com.sanket.donatetoday.modules.common.DonateTodaySingleLineTextField
 import com.sanket.donatetoday.modules.common.DonateTodayToolbar
@@ -68,7 +64,7 @@ import com.sanket.donatetoday.modules.common.UniversalInnerHorizontalPaddingInDp
 import com.sanket.donatetoday.modules.common.UniversalInnerVerticalPaddingInDp
 import com.sanket.donatetoday.modules.common.UniversalVerticalPaddingInDp
 import com.sanket.donatetoday.modules.common.UniversalVerticalSpacingInDp
-import com.sanket.donatetoday.modules.common.data.CreditCardData
+import com.sanket.donatetoday.models.dto.CreditCardDataDTO
 import com.sanket.donatetoday.modules.common.enums.DonationItemTypes
 import com.sanket.donatetoday.modules.common.map.DonateTodayAddPlaces
 import com.sanket.donatetoday.utils.emptyIfNull
@@ -169,9 +165,9 @@ fun LoginScreenMain(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun RegistrationScreenMain(
-    user: User,
+    userDTO: UserDTO,
     onBack: () -> Unit,
-    onUpdate: (User) -> Unit,
+    onUpdate: (UserDTO) -> Unit,
     onSignUp: () -> Unit,
     onAddNewPlace: () -> Unit
 ) {
@@ -187,28 +183,28 @@ fun RegistrationScreenMain(
     val rotateCardInfo by animateFloatAsState(targetValue = if (addCardInfo) 180f else 0f,
         label = ""
     )
-    val errorText by remember(user.password) {
+    val confirmPasswordErrorText by remember(userDTO.password) {
         derivedStateOf {
-            if (user.password.isNotEmpty() && confirmPassword.isNotEmpty() && user.password != confirmPassword)
+            if (userDTO.password.isNotEmpty() && confirmPassword.isNotEmpty() && userDTO.password != confirmPassword)
                 "Passwords don't match"
-            else if (user.password.isNotEmpty() && confirmPassword.isNotEmpty() && user.password == confirmPassword)
+            else if (userDTO.password.isNotEmpty() && confirmPassword.isNotEmpty() && userDTO.password == confirmPassword)
                 "Passwords match"
             else
                 null
         }
     }
-    val errorIcon by remember(user.password) {
+    val confirmPasswordErrorIcon by remember(userDTO.password) {
         derivedStateOf {
-            if (user.password.isNotEmpty() && confirmPassword.isNotEmpty() && user.password != confirmPassword)
+            if (userDTO.password.isNotEmpty() && confirmPassword.isNotEmpty() && userDTO.password != confirmPassword)
                 Icons.Default.Close
-            else if (user.password.isNotEmpty() && confirmPassword.isNotEmpty() && user.password == confirmPassword)
+            else if (userDTO.password.isNotEmpty() && confirmPassword.isNotEmpty() && userDTO.password == confirmPassword)
                 Icons.Default.Check
             else
                 null
         }
     }
     val errorColor by animateColorAsState(
-        targetValue = if (user.password.isNotEmpty() && confirmPassword.isNotEmpty() && user.password == confirmPassword)
+        targetValue = if (userDTO.password.isNotEmpty() && confirmPassword.isNotEmpty() && userDTO.password == confirmPassword)
             Color.Green
         else
             Color.Red, label = ""
@@ -220,7 +216,7 @@ fun RegistrationScreenMain(
     ) {
         stickyHeader {
             DonateTodayToolbar(
-                toolbarText = if (user.userType == UserType.Donor.type) "Sign up as Donor" else "Sign up as Organization",
+                toolbarText = if (userDTO.userType == UserType.Donor.type) "Sign up as Donor" else "Sign up as Organization",
                 onBack = onBack
             )
         }
@@ -247,9 +243,9 @@ fun RegistrationScreenMain(
                 ) {
                     DonateTodaySingleLineTextField(
                         modifier = Modifier.fillMaxWidth(),
-                        value = user.emailAddress,
+                        value = userDTO.emailAddress,
                         onValueChange = {
-                            onUpdate(user.copy(emailAddress = it))
+                            onUpdate(userDTO.copy(emailAddress = it))
                         },
                         label = "E-mail Address",
                         keyboardOptions = KeyboardOptions(
@@ -259,11 +255,11 @@ fun RegistrationScreenMain(
                     )
                     DonateTodaySingleLineTextField(
                         modifier = Modifier.fillMaxWidth(),
-                        value = user.name,
+                        value = userDTO.name,
                         onValueChange = {
-                            onUpdate(user.copy(name = it))
+                            onUpdate(userDTO.copy(name = it))
                         },
-                        label = if (user.userType == UserType.Donor.type) "Name" else "Organization's Name",
+                        label = if (userDTO.userType == UserType.Donor.type) "Name" else "Organization's Name",
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Text,
                             imeAction = ImeAction.Next
@@ -271,15 +267,16 @@ fun RegistrationScreenMain(
                     )
                     DonateTodaySingleLineTextField(
                         modifier = Modifier.fillMaxWidth(),
-                        value = user.password,
+                        value = userDTO.password,
                         onValueChange = {
-                            onUpdate(user.copy(password = it))
+                            onUpdate(userDTO.copy(password = it))
                         },
                         label = "Password",
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Password,
                             imeAction = ImeAction.Next
                         ),
+
                         visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
                             IconButton(onClick = { showPassword = !showPassword }) {
@@ -300,8 +297,8 @@ fun RegistrationScreenMain(
                             confirmPassword = it
                         },
                         label = "Confirm Password",
-                        errorIcon = errorIcon,
-                        errorText = errorText,
+                        errorIcon = confirmPasswordErrorIcon,
+                        errorText = confirmPasswordErrorText,
                         errorIconColor = errorColor, errorTextColor = errorColor,
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Password,
@@ -322,26 +319,26 @@ fun RegistrationScreenMain(
                     )
                     DonateTodayPhoneNumberInput(
                         modifier = Modifier.fillMaxWidth(),
-                        countryPhoneCode = user.countryPhoneCode.emptyIfNull(),
-                        phoneNumber = user.phoneNo.emptyIfNull(),
+                        countryPhoneCode = userDTO.countryPhoneCode.emptyIfNull(),
+                        phoneNumber = userDTO.phoneNo.emptyIfNull(),
                         onPhoneNumberChange = {
-                            onUpdate(user.copy(phoneNo = it))
+                            onUpdate(userDTO.copy(phoneNo = it))
                         },
                         onCountryPhoneCode = {
-                            onUpdate(user.copy(countryPhoneCode = it))
+                            onUpdate(userDTO.copy(countryPhoneCode = it))
                         })
                     DonateTodayCheckBoxItems(
                         modifier = Modifier.fillMaxWidth(),
-                        header = if (user.userType == UserType.Donor.type) "Items you'll likely donate:" else "Items you'll receive for donation:",
+                        header = if (userDTO.userType == UserType.Donor.type) "Items you'll likely donate:" else "Items you'll receive for donation:",
                         items = DonationItemTypes.values().map { it.type },
-                        selectedItems = user.donationItemTypes,
+                        selectedItems = userDTO.donationItemTypes,
                         onCheckedChanged = { index, item, checked ->
-                            val items = user.donationItemTypes.toMutableList()
+                            val items = userDTO.donationItemTypes.toMutableList()
                             if(checked)
                                 items.add(item.lowercase())
                             else
                                 items.remove(item.lowercase())
-                            onUpdate(user.copy(donationItemTypes = items))
+                            onUpdate(userDTO.copy(donationItemTypes = items))
                         }
                     )
                     DonateTodayDivider()
@@ -363,13 +360,13 @@ fun RegistrationScreenMain(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = UniversalInnerHorizontalPaddingInDp),
-                            creditCardData = user.cardInfo?: CreditCardData(),
+                            creditCardDataDTO = userDTO.cardInfo?: CreditCardDataDTO(),
                             onCardDataUpdate = {
-                                onUpdate(user.copy(cardInfo = it))
+                                onUpdate(userDTO.copy(cardInfo = it))
                             })
                     }
                     DonateTodayDivider()
-                    if(user.userType == UserType.Organization.type) {
+                    if(userDTO.userType == UserType.Organization.type) {
                         DonateTodayAddPlaces(
                             modifier = Modifier.fillMaxWidth(),
                             onAddNewPlace = onAddNewPlace

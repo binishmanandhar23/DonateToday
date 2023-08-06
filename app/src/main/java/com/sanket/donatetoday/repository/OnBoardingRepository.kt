@@ -4,60 +4,75 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ktx.getValue
 import com.sanket.donatetoday.database.firebase.enums.FirebasePaths
-import com.sanket.donatetoday.enums.UserType
-import com.sanket.donatetoday.models.User
+import com.sanket.donatetoday.models.dto.EmailDTO
+import com.sanket.donatetoday.models.dto.UserDTO
+import com.sanket.donatetoday.models.dto.toUserEntity
+import com.sanket.donatetoday.models.entity.UserEntity
 import com.sanket.donatetoday.ui.states.LoginUIState
+import com.sanket.donatetoday.utils.DatabaseUtils.addDonationItems
+import com.sanket.donatetoday.utils.DatabaseUtils.addListOfEmails
+import com.sanket.donatetoday.utils.DatabaseUtils.addUser
+import com.sanket.donatetoday.utils.DatabaseUtils.getUser
+import io.realm.kotlin.Realm
+import io.realm.kotlin.UpdatePolicy
 import javax.inject.Inject
 
-class OnBoardingRepository @Inject constructor(private val database: DatabaseReference, private val auth: FirebaseAuth) {
+class OnBoardingRepository @Inject constructor(private val database: DatabaseReference, private val auth: FirebaseAuth, private val realm: Realm) {
 
     fun isUserLoggedIn() = auth.currentUser != null
 
+    fun getUser(email: String? = auth.currentUser?.email, onSuccess: (UserDTO) -> Unit,onError: (String?) -> Unit) {
+        if(email == null){
+            onError("User not found")
+            return
+        }
+        database.getUser(email = email, onSuccess = onSuccess, onError = onError)
+    }
 
-    fun onSignIn(email: String, password: String, onState: (LoginUIState) -> Unit) {
-        onState(LoginUIState.Loading)
+
+    fun onSignIn(email: String, password: String, onSuccess: (UserDTO) -> Unit, onError: (String?) -> Unit) {
         auth.signInWithEmailAndPassword(email, password).addOnCompleteListener { task ->
             if (task.isSuccessful) {
-                onState(LoginUIState.Success("Welcome back!"))
+                getUser(email = email, onSuccess = onSuccess, onError = onError)
             } else
-                onState(LoginUIState.Error(task.exception?.message))
+                onError(task.exception?.message)
         }
     }
 
-    fun onSignUp(user: User, onState: (LoginUIState) -> Unit) {
+    fun onSignUp(userDTO: UserDTO, onState: (LoginUIState) -> Unit) {
         onState(LoginUIState.Loading)
         database.child(FirebasePaths.Emails.node).get().addOnSuccessListener { dataSnapshot ->
-            (dataSnapshot.getValue<List<String>>()).let {
-                if(it == null){
-                    database.child(FirebasePaths.Emails.node).setValue(listOf(user.emailAddress))
-                    setSignUpData(user = user, onState = onState)
-                } else if(it.contains(user.emailAddress)) {
+            (dataSnapshot.getValue<List<EmailDTO>>()).let { listOfEmailDTO ->
+                if(listOfEmailDTO == null){
+                    setSignUpData(userDTO = userDTO, onState = onState)
+                } else if(listOfEmailDTO.map { it.email }.contains(userDTO.emailAddress)) {
                     onState(LoginUIState.Error("Email already exists"))
                 } else{
-                    val newList = it.toMutableList()
-                    newList.add(user.emailAddress)
-                    database.child(FirebasePaths.Emails.node).setValue(newList)
+                    val newList = listOfEmailDTO.toMutableList()
+                    newList.add(EmailDTO(email = userDTO.emailAddress, id = userDTO.id, userType = userDTO.userType))
+                    database.addListOfEmails(listOfEmailDTO = newList)
                 }
             }
         }.addOnFailureListener {
-            setSignUpData(user = user, onState = onState)
+            setSignUpData(userDTO = userDTO, onState = onState)
         }
     }
 
-    private fun setSignUpData(user: User, onState: (LoginUIState) -> Unit){
-        auth.createUserWithEmailAndPassword(user.emailAddress, user.password).addOnCompleteListener { task ->
+    private fun setSignUpData(userDTO: UserDTO, onState: (LoginUIState) -> Unit){
+        auth.createUserWithEmailAndPassword(userDTO.emailAddress, userDTO.password).addOnCompleteListener { task ->
             if (task.isSuccessful) {
-                database.child(FirebasePaths.Emails.node).setValue(listOf(user.emailAddress))
-                database.child(FirebasePaths.Users.node).let {
-                    when (user.userType) {
-                        UserType.Donor.type -> it.child(FirebasePaths.Donors.node)
-                        UserType.Organization.type -> it.child(FirebasePaths.Organizations.node)
-                        else -> it
-                    }
-                }.child(user.id).setValue(user)
+                database.addListOfEmails(listOfEmailDTO = listOf(EmailDTO(email = userDTO.emailAddress, id = userDTO.id, userType = userDTO.userType)))
+                database.addDonationItems(userDTO = userDTO)
+                database.addUser(userDTO = userDTO)
+                saveUserToRealm(userEntity = userDTO.toUserEntity())
                 onState(LoginUIState.Success("Successfully created user"))
             } else
                 onState(LoginUIState.Error(task.exception?.message))
         }
     }
+
+    private fun saveUserToRealm(userEntity: UserEntity) =
+        realm.writeBlocking {
+            copyToRealm(userEntity, updatePolicy = UpdatePolicy.ALL)
+        }
 }

@@ -26,7 +26,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.sanket.donatetoday.R
-import com.sanket.donatetoday.modules.common.data.CreditCardData
+import com.sanket.donatetoday.models.dto.CreditCardDataDTO
 import com.sanket.donatetoday.utils.DateUtils
 import com.sanket.donatetoday.utils.card.CardValidator
 import com.sanket.donatetoday.utils.card.enums.Cards
@@ -159,25 +159,25 @@ private fun DonateTodayCreditCardExpiry(
 @Composable
 fun DonateTodayCardInfoFields(
     modifier: Modifier = Modifier,
-    creditCardData: CreditCardData,
-    onCardDataUpdate: (CreditCardData) -> Unit
+    creditCardDataDTO: CreditCardDataDTO,
+    onCardDataUpdate: (CreditCardDataDTO) -> Unit
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         DonateTodayCardNumberInput(
             modifier = modifier,
-            cardNumber = creditCardData.cardNo,
+            cardNumber = creditCardDataDTO.cardNo,
             onCardNumberChanged = {
-                onCardDataUpdate(creditCardData.copy(cardNo = it))
+                onCardDataUpdate(creditCardDataDTO.copy(cardNo = it))
             }
         )
         DonateTodayCreditCardHolderName(
             modifier = modifier,
-            cardHolderName = creditCardData.cardHolderName,
+            cardHolderName = creditCardDataDTO.cardHolderName,
             onCardHolderNameChanged = {
-                onCardDataUpdate(creditCardData.copy(cardHolderName = it))
+                onCardDataUpdate(creditCardDataDTO.copy(cardHolderName = it))
             })
-        DonateTodayCreditCardExpiry(modifier = modifier, expiryDate = creditCardData.expiresOn, onDateChange = {
-            onCardDataUpdate(creditCardData.copy(expiresOn = it))
+        DonateTodayCreditCardExpiry(modifier = modifier, expiryDate = creditCardDataDTO.expiresOn, onDateChange = {
+            onCardDataUpdate(creditCardDataDTO.copy(expiresOn = it))
         })
     }
 }

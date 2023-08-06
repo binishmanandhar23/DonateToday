@@ -13,7 +13,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.google.accompanist.navigation.animation.AnimatedNavHost
@@ -27,11 +26,16 @@ import com.sanket.donatetoday.modules.onboarding.LoginScreenMain
 import com.sanket.donatetoday.modules.onboarding.RegistrationScreenMain
 import com.sanket.donatetoday.modules.onboarding.SignUpOptionDialog
 import com.sanket.donatetoday.enums.UserType
+import com.sanket.donatetoday.modules.common.loader.DonateTodayLoader
+import com.sanket.donatetoday.modules.common.loader.LoaderState
+import com.sanket.donatetoday.modules.common.loader.rememberLoaderState
 import com.sanket.donatetoday.modules.common.map.DonateTodayMap
 import com.sanket.donatetoday.modules.common.snackbar.CustomSnackBar
 import com.sanket.donatetoday.modules.common.snackbar.SnackBarLengthLong
+import com.sanket.donatetoday.modules.common.snackbar.SnackBarLengthMedium
 import com.sanket.donatetoday.modules.common.snackbar.SnackBarState
 import com.sanket.donatetoday.modules.common.snackbar.rememberSnackBarState
+import com.sanket.donatetoday.modules.home.DashboardScreenContainer
 import com.sanket.donatetoday.viewmodel.OnBoardingViewModel
 import com.sanket.donatetoday.modules.splash.SplashScreen
 import com.sanket.donatetoday.navigators.BottomSheet
@@ -45,7 +49,6 @@ import com.sanket.donatetoday.ui.states.LoginUIState
 import com.sanket.donatetoday.ui.theme.DonateTodayTheme
 import com.sanket.donatetoday.viewmodel.SharedViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -66,68 +69,71 @@ class MainActivity : ComponentActivity() {
             val bottomSheetNavigator = rememberCustomBottomSheetNavigator()
             val mainNavController = rememberCustomAnimatedNavController(bottomSheetNavigator)
             val currentScreen by sharedViewModel.currentScreen.collectAsState()
+            val loaderState = rememberLoaderState()
             val customDialogState = rememberDialogState()
             val customSnackBarState = rememberSnackBarState()
 
             Launchers(
                 mainNavController = mainNavController,
                 currentScreen = currentScreen,
-                snackBarState = customSnackBarState
+                snackBarState = customSnackBarState,
+                loaderState = loaderState
             )
 
             DonateTodayTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize()
                 ) {
-
-                    CustomSnackBar(
-                        text = "",
-                        snackBarState = customSnackBarState,
-                        useBox = true
-                    ) {
-                        CustomDialog(
-                            customDialogState = customDialogState,
-                            dialogContent = { dialogType, extraString ->
-                                when (dialogType) {
-                                    DialogTypes.SignUpOption -> SignUpOptionDialog(asDonor = {
-                                        onBoardingViewModel.updateUserData(
-                                            userType = UserType.Donor,
-                                            verified = true
-                                        )
-                                        sharedViewModel.goToScreen(
-                                            screenNavigator = ScreenNavigator(
-                                                screen = Screen.RegistrationScreen,
+                    DonateTodayLoader(loaderState = loaderState) {
+                        CustomSnackBar(
+                            text = "",
+                            snackBarState = customSnackBarState,
+                            useBox = true
+                        ) {
+                            CustomDialog(
+                                customDialogState = customDialogState,
+                                dialogContent = { dialogType, extraString ->
+                                    when (dialogType) {
+                                        DialogTypes.SignUpOption -> SignUpOptionDialog(asDonor = {
+                                            onBoardingViewModel.updateUserData(
+                                                userType = UserType.Donor,
+                                                verified = true
                                             )
-                                        )
-                                        customDialogState.hide()
-                                    }, asOrganization = {
-                                        onBoardingViewModel.updateUserData(
-                                            userType = UserType.Organization,
-                                            verified = false
-                                        )
-                                        sharedViewModel.goToScreen(
-                                            screenNavigator = ScreenNavigator(
-                                                screen = Screen.RegistrationScreen,
+                                            sharedViewModel.goToScreen(
+                                                screenNavigator = ScreenNavigator(
+                                                    screen = Screen.RegistrationScreen,
+                                                )
                                             )
-                                        )
-                                        customDialogState.hide()
-                                    })
+                                            customDialogState.hide()
+                                        }, asOrganization = {
+                                            onBoardingViewModel.updateUserData(
+                                                userType = UserType.Organization,
+                                                verified = false
+                                            )
+                                            sharedViewModel.goToScreen(
+                                                screenNavigator = ScreenNavigator(
+                                                    screen = Screen.RegistrationScreen,
+                                                )
+                                            )
+                                            customDialogState.hide()
+                                        })
 
-                                    else -> Unit
-                                }
-                            }) {
-                            ModalBottomSheetLayout(
-                                bottomSheetNavigator = bottomSheetNavigator,
-                                scrimColor = MaterialTheme.colors.background.copy(alpha = 0.8f)
-                            ) {
-                                MainNavHost(
-                                    mainNavController = mainNavController,
-                                    snackBarState = customSnackBarState,
-                                    currentScreen = currentScreen?.screen,
-                                    onSignUp = {
-                                        customDialogState.show(dialog = DialogTypes.SignUpOption)
+                                        else -> Unit
                                     }
-                                )
+                                }) {
+                                ModalBottomSheetLayout(
+                                    bottomSheetNavigator = bottomSheetNavigator,
+                                    scrimColor = MaterialTheme.colors.background.copy(alpha = 0.8f)
+                                ) {
+                                    MainNavHost(
+                                        mainNavController = mainNavController,
+                                        snackBarState = customSnackBarState,
+                                        currentScreen = currentScreen?.screen,
+                                        onSignUp = {
+                                            customDialogState.show(dialog = DialogTypes.SignUpOption)
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
@@ -175,15 +181,19 @@ class MainActivity : ComponentActivity() {
 
             customAnimatedComposable(route = Screen.RegistrationScreen.route) {
                 val user by onBoardingViewModel.user.collectAsState()
-                RegistrationScreenMain(user = user, onBack = {
+                RegistrationScreenMain(userDTO = user, onBack = {
                     mainNavController.customPopBackStack()
                 }, onUpdate = {
-                    onBoardingViewModel.updateUserData(user = it)
+                    onBoardingViewModel.updateUserData(userDTO = it)
                 }, onSignUp = {
                     onBoardingViewModel.onSignUp()
                 }, onAddNewPlace = {
                     mainNavController.navigator(route = BottomSheet.MapSheet.route)
                 })
+            }
+
+            customAnimatedComposable(route = Screen.HomeScreen.route){
+                DashboardScreenContainer()
             }
             bottomSheet(route = BottomSheet.MapSheet.route) {
                 DonateTodayMap(modifier = Modifier.fillMaxSize())
@@ -195,7 +205,8 @@ class MainActivity : ComponentActivity() {
     private fun Launchers(
         mainNavController: NavHostController,
         currentScreen: ScreenNavigator?,
-        snackBarState: SnackBarState
+        snackBarState: SnackBarState,
+        loaderState: LoaderState
     ) {
         val loginUIState by onBoardingViewModel.loginUIState.collectAsState()
         LaunchedEffect(key1 = currentScreen) {
@@ -222,17 +233,20 @@ class MainActivity : ComponentActivity() {
 
         LaunchedEffect(key1 = loginUIState) {
             when (loginUIState) {
-                is LoginUIState.Success -> sharedViewModel.goToScreen(ScreenNavigator(screen = Screen.OnBoardingScreen))
+                is LoginUIState.Success -> sharedViewModel.goToScreen(ScreenNavigator(screen = Screen.HomeScreen))
                     .also {
-                        snackBarState.hide()
+                        loaderState.hide()
+                        snackBarState.show(overridingText = loginUIState?.message, overridingDelay = SnackBarLengthMedium)
                     }
 
                 is LoginUIState.Error -> snackBarState.show(
                     overridingText = "Error! ${loginUIState?.message}",
                     overridingDelay = SnackBarLengthLong
-                )
+                ).also {
+                    loaderState.hide()
+                }
 
-                is LoginUIState.Loading -> snackBarState.show(overridingText = "Loading...")
+                is LoginUIState.Loading -> loaderState.show()
                 else -> Unit
             }
         }

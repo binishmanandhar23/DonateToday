@@ -620,7 +620,7 @@ fun DonateTodayCheckBoxItems(
 @Composable
 fun DonateTodayKnob(
     modifier: Modifier = Modifier,
-    limitingAngle: Float = 25f,
+    limitingAngle: Float = 1f,
     onValueChange: (Float) -> Unit
 ) {
     var rotation by remember {
