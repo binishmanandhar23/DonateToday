@@ -4,7 +4,9 @@ import android.view.MotionEvent
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -22,6 +24,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -47,6 +50,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -84,6 +88,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.sanket.donatetoday.R
 import com.sanket.donatetoday.ui.theme.ColorBlack
 import com.sanket.donatetoday.ui.theme.ColorPrimary
+import com.sanket.donatetoday.ui.theme.ColorWhite
 import com.sanket.donatetoday.utils.card.CardValidator
 import com.sanket.donatetoday.utils.card.enums.Cards
 import com.togitech.ccp.component.TogiCodeDialog
@@ -690,6 +695,49 @@ fun DonateTodayKnob(
                     .background(color = MaterialTheme.colors.secondaryVariant, shape = CircleShape)
 
             )
+        }
+    }
+}
+
+@Composable
+fun DonateTodayBottomTabs(modifier: Modifier = Modifier, listOfIcons: List<ImageVector>,selectedIndex: Int, onSelected: (index: Int) -> Unit){
+    val size = remember {
+        50f
+    }
+    var previousIndex by remember {
+        mutableStateOf(selectedIndex)
+    }
+    var offsetX by remember {
+        mutableStateOf(0f)
+    }
+
+    LaunchedEffect(key1 = selectedIndex){
+        animate(initialValue = previousIndex * size, targetValue = selectedIndex * size) { value, _ ->
+            offsetX = value
+            previousIndex = selectedIndex
+        }
+    }
+
+    CardContainer(modifier = modifier,elevation = 10.dp) {
+        Box {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .size(size.dp)
+                    .offset(x = offsetX.dp)
+                    .background(
+                        color = MaterialTheme.colors.primary,
+                        shape = MaterialTheme.shapes.medium
+                    )
+            )
+            Row {
+                listOfIcons.forEachIndexed { index, imageVector ->
+                    val tintColor by animateColorAsState(targetValue = if (index == selectedIndex) ColorWhite else ColorBlack, label = "")
+                    IconButton(modifier = Modifier.size(size.dp), onClick = { onSelected(index) }) {
+                        Icon(imageVector = imageVector, contentDescription = "", tint = tintColor)
+                    }
+                }
+            }
         }
     }
 }

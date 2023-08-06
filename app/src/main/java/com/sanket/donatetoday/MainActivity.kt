@@ -36,6 +36,7 @@ import com.sanket.donatetoday.modules.common.snackbar.SnackBarLengthMedium
 import com.sanket.donatetoday.modules.common.snackbar.SnackBarState
 import com.sanket.donatetoday.modules.common.snackbar.rememberSnackBarState
 import com.sanket.donatetoday.modules.home.DashboardScreenContainer
+import com.sanket.donatetoday.modules.home.HomeScreenContainer
 import com.sanket.donatetoday.viewmodel.OnBoardingViewModel
 import com.sanket.donatetoday.modules.splash.SplashScreen
 import com.sanket.donatetoday.navigators.BottomSheet
@@ -193,7 +194,7 @@ class MainActivity : ComponentActivity() {
             }
 
             customAnimatedComposable(route = Screen.HomeScreen.route){
-                DashboardScreenContainer()
+                HomeScreenContainer()
             }
             bottomSheet(route = BottomSheet.MapSheet.route) {
                 DonateTodayMap(modifier = Modifier.fillMaxSize())
