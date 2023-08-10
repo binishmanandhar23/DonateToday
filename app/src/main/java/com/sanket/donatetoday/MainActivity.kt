@@ -19,6 +19,7 @@ import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.google.accompanist.navigation.material.ModalBottomSheetLayout
 import com.google.accompanist.navigation.material.bottomSheet
+import com.google.firebase.auth.FirebaseAuth
 import com.sanket.donatetoday.modules.common.dialog.CustomDialog
 import com.sanket.donatetoday.modules.common.dialog.enums.DialogTypes
 import com.sanket.donatetoday.modules.common.dialog.rememberDialogState
@@ -39,6 +40,7 @@ import com.sanket.donatetoday.modules.common.snackbar.SnackBarState
 import com.sanket.donatetoday.modules.common.snackbar.rememberSnackBarState
 import com.sanket.donatetoday.modules.home.DashboardScreenContainer
 import com.sanket.donatetoday.modules.home.HomeScreenContainer
+import com.sanket.donatetoday.modules.home.enums.SettingsEnums
 import com.sanket.donatetoday.modules.home.getters.DashboardGetters
 import com.sanket.donatetoday.viewmodel.OnBoardingViewModel
 import com.sanket.donatetoday.modules.splash.SplashScreen
@@ -215,6 +217,11 @@ class MainActivity : ComponentActivity() {
                         userDTO = userDTO,
                         onEditMonthlyGoal = {
                             dialogState.show(dialog = DialogTypes.MonthlyGoal)
+                        }, onSettingsClick = { settingsEnums ->
+                            when(settingsEnums){
+                                SettingsEnums.Logout -> mainNavController.logout()
+                                else -> Unit
+                            }
                         })
                 )
             }
@@ -282,5 +289,10 @@ class MainActivity : ComponentActivity() {
     private fun NavController.customPopBackStack() {
         sharedViewModel.goToScreen(screenNavigator = null)
         popBackStack()
+    }
+
+    private fun NavController.logout(){
+        FirebaseAuth.getInstance().signOut()
+        navigator(route = Screen.OnBoardingScreen.route, clearBackStack = true)
     }
 }

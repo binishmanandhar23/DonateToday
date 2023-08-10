@@ -92,6 +92,7 @@ import com.sanket.donatetoday.ui.theme.ColorWhite
 import com.sanket.donatetoday.utils.MaximumMonthlyGoal
 import com.sanket.donatetoday.utils.card.CardValidator
 import com.sanket.donatetoday.utils.card.enums.Cards
+import com.sanket.donatetoday.utils.getInitial
 import com.togitech.ccp.component.TogiCodeDialog
 import com.togitech.ccp.component.TogiCountryCodePicker
 import com.togitech.ccp.data.utils.getLibCountries
@@ -706,7 +707,12 @@ fun DonateTodayKnob(
 }
 
 @Composable
-fun DonateTodayBottomTabs(modifier: Modifier = Modifier, listOfIcons: List<ImageVector>,selectedIndex: Int, onSelected: (index: Int) -> Unit){
+fun DonateTodayBottomTabs(
+    modifier: Modifier = Modifier,
+    listOfIcons: List<ImageVector>,
+    selectedIndex: Int,
+    onSelected: (index: Int) -> Unit
+) {
     val size = remember {
         50f
     }
@@ -717,14 +723,17 @@ fun DonateTodayBottomTabs(modifier: Modifier = Modifier, listOfIcons: List<Image
         mutableStateOf(0f)
     }
 
-    LaunchedEffect(key1 = selectedIndex){
-        animate(initialValue = previousIndex * size, targetValue = selectedIndex * size) { value, _ ->
+    LaunchedEffect(key1 = selectedIndex) {
+        animate(
+            initialValue = previousIndex * size,
+            targetValue = selectedIndex * size
+        ) { value, _ ->
             offsetX = value
             previousIndex = selectedIndex
         }
     }
 
-    CardContainer(modifier = modifier,elevation = 10.dp) {
+    CardContainer(modifier = modifier, elevation = 10.dp) {
         Box {
             Box(
                 modifier = Modifier
@@ -738,7 +747,10 @@ fun DonateTodayBottomTabs(modifier: Modifier = Modifier, listOfIcons: List<Image
             )
             Row {
                 listOfIcons.forEachIndexed { index, imageVector ->
-                    val tintColor by animateColorAsState(targetValue = if (index == selectedIndex) ColorWhite else ColorBlack, label = "")
+                    val tintColor by animateColorAsState(
+                        targetValue = if (index == selectedIndex) ColorWhite else ColorBlack,
+                        label = ""
+                    )
                     IconButton(modifier = Modifier.size(size.dp), onClick = { onSelected(index) }) {
                         Icon(imageVector = imageVector, contentDescription = "", tint = tintColor)
                     }
@@ -750,7 +762,7 @@ fun DonateTodayBottomTabs(modifier: Modifier = Modifier, listOfIcons: List<Image
 
 
 @Composable
-fun DonateTodayMonthlyGoalDialog(totalGoal: Int, onGoalChanged: (Int) -> Unit){
+fun DonateTodayMonthlyGoalDialog(totalGoal: Int, onGoalChanged: (Int) -> Unit) {
     val progress by remember(totalGoal) {
         derivedStateOf {
             totalGoal / MaximumMonthlyGoal.toFloat()
@@ -761,11 +773,30 @@ fun DonateTodayMonthlyGoalDialog(totalGoal: Int, onGoalChanged: (Int) -> Unit){
         style = MaterialTheme.typography.h3.copy(fontWeight = FontWeight.Bold)
     )
     DonateTodayKnob(modifier = Modifier.size(180.dp), percentage = progress, onValueChange = {
-        onGoalChanged((it * (MaximumMonthlyGoal + 50)).coerceAtMost(MaximumMonthlyGoal.toFloat()).roundToInt())
+        onGoalChanged(
+            (it * (MaximumMonthlyGoal + 50)).coerceAtMost(MaximumMonthlyGoal.toFloat()).roundToInt()
+        )
     })
     Text(
         text = "$${totalGoal}",
         style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold)
+    )
+}
+
+@Composable
+fun DonateTodayProfilePicture(name: String?) = Box {
+    Box(
+        modifier = Modifier
+            .size(50.dp)
+            .background(color = MaterialTheme.colors.primary, shape = CircleShape)
+    )
+    Text(
+        modifier = Modifier.align(Alignment.Center),
+        text = name.getInitial() ?: "",
+        style = MaterialTheme.typography.h3.copy(
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colors.onPrimary
+        )
     )
 }
 
