@@ -1,5 +1,7 @@
 package com.sanket.donatetoday.modules.home
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animate
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -7,13 +9,17 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -45,8 +51,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.sanket.donatetoday.enums.UserType
+import com.sanket.donatetoday.models.dto.DonationItemUserModel
 import com.sanket.donatetoday.models.dto.UserDTO
 import com.sanket.donatetoday.modules.common.AppLogoHorizontal
 import com.sanket.donatetoday.modules.common.CardContainer
@@ -124,15 +132,24 @@ fun DashboardScreenContainer(dashboardGetters: DashboardGetters) {
                         horizontal = UniversalHorizontalPaddingInDp,
                         vertical = UniversalVerticalPaddingInDp
                     )
+                    .animateContentSize(),
+                verticalArrangement = Arrangement.spacedBy(25.dp)
             ) {
                 DashboardInformation(
                     modifier = Modifier.fillMaxWidth(),
                     userDTO = dashboardGetters.userDTO,
                     onEditMonthlyGoal = dashboardGetters.onEditMonthlyGoal
                 )
+                if (dashboardGetters.userDTO.userType == UserType.Donor.type)
+                    UserDashboard(listOfDonationItemUserModel = dashboardGetters.listOfDonationItemUserModel, onClick = dashboardGetters.onDonationItemUserModelClick)
             }
         }
     }
+}
+
+@Composable
+fun UserDashboard(listOfDonationItemUserModel: List<DonationItemUserModel>, onClick: (DonationItemUserModel) -> Unit) {
+    DashboardLists(modifier = Modifier.fillMaxWidth(), title = "Recommended", items = listOfDonationItemUserModel, onClick = onClick)
 }
 
 @Composable
@@ -183,7 +200,8 @@ fun DashboardInformation(
             targetValue = userDTO.reached.toFloat() / userDTO.totalGoal.toFloat(),
             animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
             block = { value, _ ->
-                actualProgress = value
+                if (!value.isNaN())
+                    actualProgress = value
             })
     }
     Column(
@@ -248,12 +266,57 @@ fun DashboardInformation(
     }
 }
 
+@Composable
+fun DashboardLists(
+    modifier: Modifier = Modifier,
+    title: String,
+    items: List<DonationItemUserModel>,
+    onClick: (DonationItemUserModel) -> Unit
+) {
+    AnimatedVisibility(modifier = modifier, visible = items.isNotEmpty()) {
+        Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.h5.copy(fontWeight = FontWeight.Bold, color = MaterialTheme.colors.primary)
+            )
+            LazyRow {
+                items(items) {
+                    DashboardListItem(modifier = Modifier.width(100.dp), item = it, onClick = {
+                        onClick(it)
+                    })
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DashboardListItem(modifier: Modifier = Modifier, item: DonationItemUserModel, onClick: () -> Unit) {
+    Column(modifier = modifier.clickable(onClick = onClick), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+        DonateTodayProfilePicture(
+            name = item.name,
+            size = 100.dp,
+            backgroundColor = MaterialTheme.colors.secondary,
+            shape = MaterialTheme.shapes.medium
+        )
+        Text(
+            text = item.name,
+            style = MaterialTheme.typography.body1,
+            overflow = TextOverflow.Ellipsis,
+            maxLines = 2
+        )
+    }
+}
+
 
 @Composable
 fun SettingsMainContainer(dashboardGetters: DashboardGetters) {
     val settingsItems = remember {
         listOf(
-            SettingsItem(settingsEnums = SettingsEnums.EditProfile, icon = Icons.Default.AccountCircle),
+            SettingsItem(
+                settingsEnums = SettingsEnums.EditProfile,
+                icon = Icons.Default.AccountCircle
+            ),
             SettingsItem(settingsEnums = SettingsEnums.Logout, icon = Icons.Default.Logout),
         )
     }

@@ -1,9 +1,11 @@
 package com.sanket.donatetoday
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.MaterialTheme
@@ -12,6 +14,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
@@ -27,6 +32,7 @@ import com.sanket.donatetoday.modules.onboarding.LoginScreenMain
 import com.sanket.donatetoday.modules.onboarding.RegistrationScreenMain
 import com.sanket.donatetoday.modules.onboarding.SignUpOptionDialog
 import com.sanket.donatetoday.enums.UserType
+import com.sanket.donatetoday.models.dto.UserDTO
 import com.sanket.donatetoday.modules.common.DonateTodayMonthlyGoalDialog
 import com.sanket.donatetoday.modules.common.dialog.CustomDialogState
 import com.sanket.donatetoday.modules.common.loader.DonateTodayLoader
@@ -42,6 +48,7 @@ import com.sanket.donatetoday.modules.home.DashboardScreenContainer
 import com.sanket.donatetoday.modules.home.HomeScreenContainer
 import com.sanket.donatetoday.modules.home.enums.SettingsEnums
 import com.sanket.donatetoday.modules.home.getters.DashboardGetters
+import com.sanket.donatetoday.modules.organization.OrganizationDetailScreen
 import com.sanket.donatetoday.viewmodel.OnBoardingViewModel
 import com.sanket.donatetoday.modules.splash.SplashScreen
 import com.sanket.donatetoday.navigators.BottomSheet
@@ -51,6 +58,7 @@ import com.sanket.donatetoday.navigators.data.ScreenNavigator
 import com.sanket.donatetoday.navigators.navigator
 import com.sanket.donatetoday.navigators.rememberCustomAnimatedNavController
 import com.sanket.donatetoday.navigators.rememberCustomBottomSheetNavigator
+import com.sanket.donatetoday.ui.states.HomeUIState
 import com.sanket.donatetoday.ui.states.LoginUIState
 import com.sanket.donatetoday.ui.theme.DonateTodayTheme
 import com.sanket.donatetoday.viewmodel.SharedViewModel
@@ -123,12 +131,17 @@ class MainActivity : ComponentActivity() {
                                             )
                                             customDialogState.hide()
                                         })
+
                                         DialogTypes.MonthlyGoal -> {
                                             val user by sharedViewModel.user.collectAsState()
                                             DonateTodayMonthlyGoalDialog(
                                                 totalGoal = user.totalGoal,
                                                 onGoalChanged = {
-                                                    sharedViewModel.updateUser(userDTO = user.copy(totalGoal = it))
+                                                    sharedViewModel.updateUser(
+                                                        userDTO = user.copy(
+                                                            totalGoal = it
+                                                        )
+                                                    )
                                                 }
                                             )
                                         }
@@ -143,6 +156,7 @@ class MainActivity : ComponentActivity() {
                                     MainNavHost(
                                         mainNavController = mainNavController,
                                         snackBarState = customSnackBarState,
+                                        loaderState = loaderState,
                                         dialogState = customDialogState,
                                         currentScreen = currentScreen?.screen,
                                         onSignUp = {
@@ -163,6 +177,7 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun MainNavHost(
         mainNavController: NavHostController,
+        loaderState: LoaderState,
         snackBarState: SnackBarState,
         dialogState: CustomDialogState,
         currentScreen: Screen?,
@@ -212,18 +227,52 @@ class MainActivity : ComponentActivity() {
 
             customAnimatedComposable(route = Screen.HomeScreen.route) {
                 val userDTO by sharedViewModel.user.collectAsState()
+                val recommendedOrganizations by sharedViewModel.listOfRecommended.collectAsState()
                 HomeScreenContainer(
                     dashboardGetters = DashboardGetters(
                         userDTO = userDTO,
+                        listOfDonationItemUserModel = recommendedOrganizations,
                         onEditMonthlyGoal = {
                             dialogState.show(dialog = DialogTypes.MonthlyGoal)
                         }, onSettingsClick = { settingsEnums ->
-                            when(settingsEnums){
+                            when (settingsEnums) {
                                 SettingsEnums.Logout -> mainNavController.logout()
                                 else -> Unit
                             }
+                        }, onDonationItemUserModelClick = {
+                            sharedViewModel.goToScreen(
+                                ScreenNavigator(
+                                    screen = Screen.OrganizationDetail, values = listOf(
+                                        it.id
+                                    )
+                                )
+                            )
                         })
                 )
+            }
+            customAnimatedComposable(route = Screen.OrganizationDetail.route + "/{id}") { navBackStackEntry ->
+                navBackStackEntry.arguments?.getString("id")?.let { id ->
+                    LaunchedEffect(key1 = id) {
+                        sharedViewModel.getOrganizationBasedOnId(id = id)
+                    }
+                    val homeUIState by sharedViewModel.homeUIState.collectAsState()
+                    var organization: UserDTO? by remember {
+                        mutableStateOf(null)
+                    }
+                    LaunchedEffect(key1 = homeUIState) {
+                        when (val state = homeUIState) {
+                            is HomeUIState.Loading -> loaderState.show()
+                            is HomeUIState.Success -> {
+                                organization = state.data
+                                loaderState.hide()
+                            }
+                            else -> snackBarState.show(overridingText = state?.message, overridingDelay = SnackBarLengthMedium).also {  loaderState.hide() }
+                        }
+                    }
+                    AnimatedVisibility(visible = organization != null) {
+                        OrganizationDetailScreen(organization = organization!!)
+                    }
+                }
             }
             bottomSheet(route = BottomSheet.MapSheet.route) {
                 DonateTodayMap(modifier = Modifier.fillMaxSize())
@@ -291,7 +340,7 @@ class MainActivity : ComponentActivity() {
         popBackStack()
     }
 
-    private fun NavController.logout(){
+    private fun NavController.logout() {
         FirebaseAuth.getInstance().signOut()
         navigator(route = Screen.OnBoardingScreen.route, clearBackStack = true)
     }

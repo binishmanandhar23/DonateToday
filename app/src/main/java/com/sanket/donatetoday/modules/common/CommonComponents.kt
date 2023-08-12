@@ -64,6 +64,7 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.boundsInWindow
@@ -784,11 +785,11 @@ fun DonateTodayMonthlyGoalDialog(totalGoal: Int, onGoalChanged: (Int) -> Unit) {
 }
 
 @Composable
-fun DonateTodayProfilePicture(name: String?) = Box {
+fun DonateTodayProfilePicture(name: String?, size: Dp = 50.dp, shape: Shape = CircleShape, backgroundColor: Color = MaterialTheme.colors.primary) = Box {
     Box(
         modifier = Modifier
-            .size(50.dp)
-            .background(color = MaterialTheme.colors.primary, shape = CircleShape)
+            .size(size)
+            .background(color = backgroundColor, shape = shape)
     )
     Text(
         modifier = Modifier.align(Alignment.Center),

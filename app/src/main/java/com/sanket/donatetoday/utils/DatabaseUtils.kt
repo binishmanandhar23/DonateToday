@@ -14,28 +14,49 @@ object DatabaseUtils {
         this.child(FirebasePaths.Emails.node).setValue(listOfEmailDTO)
 
 
-    fun DatabaseReference.addUser(userDTO: UserDTO, onSuccess: (() -> Unit)? = null, onError: (() -> Unit)? = null) = this.child(FirebasePaths.Users.node).let {
+    fun DatabaseReference.addUser(
+        userDTO: UserDTO,
+        onSuccess: (() -> Unit)? = null,
+        onError: (() -> Unit)? = null
+    ) = this.child(FirebasePaths.Users.node).let {
         when (userDTO.userType) {
             UserType.Donor.type -> it.child(FirebasePaths.Donors.node)
             UserType.Organization.type -> it.child(FirebasePaths.Organizations.node)
             else -> it
         }
     }.child(userDTO.id).setValue(userDTO).addOnSuccessListener {
-      onSuccess?.invoke()
-    }.addOnFailureListener { onError?.invoke()
+        onSuccess?.invoke()
+    }.addOnFailureListener {
+        onError?.invoke()
     }
 
     fun DatabaseReference.addDonationItems(userDTO: UserDTO) =
         this.child(FirebasePaths.DonationItems.node).let { ref ->
             userDTO.donationItemTypes.forEach { donationItem ->
-                ref.child(donationItem).let {
-                    when (userDTO.userType) {
-                        UserType.Donor.type -> it.child(FirebasePaths.Donors.node)
-                        UserType.Organization.type -> it.child(FirebasePaths.Organizations.node)
-                        else -> it
+                ref.child(donationItem).child(userDTO.userType!!).get()
+                    .addOnSuccessListener { dataSnapshot ->
+                        (dataSnapshot.getValue<List<DonationItemUserModel>>()).let { listOfDonationItemUserModel ->
+                            val list = if (listOfDonationItemUserModel.isNullOrEmpty()) {
+                                listOf(
+                                    DonationItemUserModel(
+                                        id = userDTO.id,
+                                        name = userDTO.name
+                                    )
+                                )
+                            } else {
+                                listOfDonationItemUserModel.toMutableList().let {
+                                    it.add(
+                                        DonationItemUserModel(
+                                            id = userDTO.id,
+                                            name = userDTO.name
+                                        )
+                                    )
+                                    it
+                                }
+                            }
+                            dataSnapshot.ref.setValue(list)
+                        }
                     }
-                }.child(userDTO.id)
-                    .setValue(DonationItemUserModel(id = userDTO.id, name = userDTO.name))
             }
         }
 

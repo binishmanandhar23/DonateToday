@@ -60,24 +60,24 @@ class OnBoardingRepository @Inject constructor(private val database: DatabaseRef
         database.child(FirebasePaths.Emails.node).get().addOnSuccessListener { dataSnapshot ->
             (dataSnapshot.getValue<List<EmailDTO>>()).let { listOfEmailDTO ->
                 if(listOfEmailDTO == null){
-                    setSignUpData(userDTO = userDTO, onState = onState)
+                    setSignUpData(userDTO = userDTO, onState = onState, listOfEmails = listOf(EmailDTO(email = userDTO.emailAddress, id = userDTO.id, userType = userDTO.userType)))
                 } else if(listOfEmailDTO.map { it.email }.contains(userDTO.emailAddress)) {
                     onState(LoginUIState.Error("Email already exists"))
                 } else{
                     val newList = listOfEmailDTO.toMutableList()
                     newList.add(EmailDTO(email = userDTO.emailAddress, id = userDTO.id, userType = userDTO.userType))
-                    database.addListOfEmails(listOfEmailDTO = newList)
+                    setSignUpData(userDTO = userDTO, onState = onState, listOfEmails = newList)
                 }
             }
         }.addOnFailureListener {
-            setSignUpData(userDTO = userDTO, onState = onState)
+            setSignUpData(userDTO = userDTO, onState = onState, listOfEmails = listOf(EmailDTO(email = userDTO.emailAddress, id = userDTO.id, userType = userDTO.userType)))
         }
     }
 
-    private fun setSignUpData(userDTO: UserDTO, onState: (LoginUIState) -> Unit){
+    private fun setSignUpData(userDTO: UserDTO,listOfEmails: List<EmailDTO>, onState: (LoginUIState) -> Unit){
         auth.createUserWithEmailAndPassword(userDTO.emailAddress, userDTO.password).addOnCompleteListener { task ->
             if (task.isSuccessful) {
-                database.addListOfEmails(listOfEmailDTO = listOf(EmailDTO(email = userDTO.emailAddress, id = userDTO.id, userType = userDTO.userType)))
+                database.addListOfEmails(listOfEmailDTO = listOfEmails)
                 database.addDonationItems(userDTO = userDTO)
                 database.addUser(userDTO = userDTO)
                 saveUserToRealm(userEntity = userDTO.toUserEntity())
