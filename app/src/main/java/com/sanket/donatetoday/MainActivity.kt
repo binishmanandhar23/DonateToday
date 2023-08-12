@@ -48,6 +48,7 @@ import com.sanket.donatetoday.modules.home.DashboardScreenContainer
 import com.sanket.donatetoday.modules.home.HomeScreenContainer
 import com.sanket.donatetoday.modules.home.enums.SettingsEnums
 import com.sanket.donatetoday.modules.home.getters.DashboardGetters
+import com.sanket.donatetoday.modules.organization.DonationBottomSheet
 import com.sanket.donatetoday.modules.organization.OrganizationDetailScreen
 import com.sanket.donatetoday.viewmodel.OnBoardingViewModel
 import com.sanket.donatetoday.modules.splash.SplashScreen
@@ -151,6 +152,7 @@ class MainActivity : ComponentActivity() {
                                 }) {
                                 ModalBottomSheetLayout(
                                     bottomSheetNavigator = bottomSheetNavigator,
+                                    sheetBackgroundColor = MaterialTheme.colors.background,
                                     scrimColor = MaterialTheme.colors.background.copy(alpha = 0.8f)
                                 ) {
                                     MainNavHost(
@@ -266,16 +268,31 @@ class MainActivity : ComponentActivity() {
                                 organization = state.data
                                 loaderState.hide()
                             }
-                            else -> snackBarState.show(overridingText = state?.message, overridingDelay = SnackBarLengthMedium).also {  loaderState.hide() }
+
+                            else -> snackBarState.show(
+                                overridingText = state?.message,
+                                overridingDelay = SnackBarLengthMedium
+                            ).also { loaderState.hide() }
                         }
                     }
                     AnimatedVisibility(visible = organization != null) {
-                        OrganizationDetailScreen(organization = organization!!)
+                        OrganizationDetailScreen(organization = organization!!, onBack = {
+                            mainNavController.customPopBackStack()
+                        }, onDonateItem = {
+                            mainNavController.navigator(route = BottomSheet.DonateSheet.route)
+                        })
                     }
                 }
             }
             bottomSheet(route = BottomSheet.MapSheet.route) {
                 DonateTodayMap(modifier = Modifier.fillMaxSize())
+            }
+            bottomSheet(route = BottomSheet.DonateSheet.route){
+                val userDTO by sharedViewModel.user.collectAsState()
+                DonationBottomSheet(userDTO = userDTO, onDonate = {
+                    mainNavController.popBackStack()
+                    sharedViewModel.addDonation(amount = it)
+                })
             }
         }
     }
@@ -342,6 +359,7 @@ class MainActivity : ComponentActivity() {
 
     private fun NavController.logout() {
         FirebaseAuth.getInstance().signOut()
+        onBoardingViewModel.clearData()
         navigator(route = Screen.OnBoardingScreen.route, clearBackStack = true)
     }
 }

@@ -104,4 +104,5 @@ class OnBoardingViewModel @Inject constructor(private val onBoardingRepository: 
         }
     }
 
+    fun clearData() = _userDTO.update { UserDTO() }
 }

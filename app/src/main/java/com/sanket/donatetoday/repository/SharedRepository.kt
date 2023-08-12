@@ -7,14 +7,18 @@ import com.google.firebase.database.ktx.getValue
 import com.sanket.donatetoday.database.firebase.enums.FirebasePaths
 import com.sanket.donatetoday.enums.UserType
 import com.sanket.donatetoday.models.dto.DonationItemUserModel
+import com.sanket.donatetoday.models.dto.StatementDTO
 import com.sanket.donatetoday.models.dto.UserDTO
 import com.sanket.donatetoday.models.entity.UserEntity
 import com.sanket.donatetoday.modules.common.enums.DonationItemTypes
+import com.sanket.donatetoday.utils.DatabaseUtils.getUser
+import com.sanket.donatetoday.utils.DatabaseUtils.updateReachedAmount
 import io.realm.kotlin.Realm
 import io.realm.kotlin.UpdatePolicy
 import io.realm.kotlin.ext.query
 import kotlinx.coroutines.suspendCancellableCoroutine
 import javax.inject.Inject
+import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 class SharedRepository @Inject constructor(
@@ -77,4 +81,96 @@ class SharedRepository @Inject constructor(
                 cont.resumeWithException(it)
             }
     }
+
+    suspend fun getUserFromFirebase(email: String?) = suspendCancellableCoroutine { cont ->
+        if (email == null)
+            cont.resumeWithException(Exception("User not found."))
+        else
+            database.getUser(email = email, onSuccess = { userDTO ->
+                cont.resume(userDTO) {
+                    Exception(it)
+                }
+            }, onError = {
+                cont.resumeWithException(Exception(it))
+            })
+    }
+
+    suspend fun addDonation(userDTO: UserDTO, organization: UserDTO, amount: Int) =
+        suspendCancellableCoroutine { cont ->
+            database.child(FirebasePaths.Statements.node).child(FirebasePaths.Donated.node)
+                .child(userDTO.id).get().addOnSuccessListener { dataSnapshot ->
+                    dataSnapshot.getValue<List<StatementDTO>>().let { list ->
+                        val newList = if (list.isNullOrEmpty())
+                            listOf(
+                                StatementDTO(
+                                    userId = userDTO.id,
+                                    organizationId = organization.id,
+                                    userName = userDTO.name,
+                                    organizationName = userDTO.name,
+                                    amount = amount
+                                )
+                            )
+                        else
+                            list.toMutableList().let {
+                                it.add(
+                                    StatementDTO(
+                                        userId = userDTO.id,
+                                        organizationId = organization.id,
+                                        userName = userDTO.name,
+                                        organizationName = userDTO.name,
+                                        amount = amount
+                                    )
+                                )
+                                it
+                            }
+                        dataSnapshot.ref.setValue(newList)
+
+                        database.child(FirebasePaths.Statements.node)
+                            .child(FirebasePaths.Received.node)
+                            .child(organization.id).get().addOnSuccessListener { dataSnapshot ->
+                                dataSnapshot.getValue<List<StatementDTO>>().let { list ->
+                                    val newList = if (list.isNullOrEmpty())
+                                        listOf(
+                                            StatementDTO(
+                                                userId = userDTO.id,
+                                                organizationId = organization.id,
+                                                userName = userDTO.name,
+                                                organizationName = userDTO.name,
+                                                amount = amount
+                                            )
+                                        )
+                                    else
+                                        newList.toMutableList().let {
+                                            it.add(
+                                                StatementDTO(
+                                                    userId = userDTO.id,
+                                                    organizationId = organization.id,
+                                                    userName = userDTO.name,
+                                                    organizationName = userDTO.name,
+                                                    amount = amount
+                                                )
+                                            )
+                                            it
+                                        }
+                                    dataSnapshot.ref.setValue(newList)
+                                    database.updateReachedAmount(
+                                        userDTO = userDTO,
+                                        organizationDTO = organization,
+                                        amount = amount,
+                                        onSuccess = {
+                                            cont.resume(true) {
+                                                Exception(it)
+                                            }
+                                        }, onError = {
+                                            cont.resumeWithException(it)
+                                        })
+                                }
+                            }.addOnFailureListener {
+                                cont.resumeWithException(it)
+                            }
+                    }
+                }.addOnFailureListener {
+                    cont.resumeWithException(it)
+                }
+        }
 }

@@ -43,7 +43,7 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
             when (results) {
                 is UpdatedResults, is InitialResults ->
                     results.list.firstOrNull()?.let {
-                        _user.update {_ ->
+                        _user.update { _ ->
                             it.toUserDTO()
                         }.also {
                             getRecommendedOrganizations()
@@ -72,8 +72,30 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
         try {
             val organizationDTO = sharedRepository.getOrganizationBasedOnId(id = id)
             _homeUIState.update { HomeUIState.Success(data = organizationDTO) }
-        } catch (ex: Exception){
+        } catch (ex: Exception) {
             _homeUIState.update { HomeUIState.Error(errorMessage = ex.message) }
+        }
+    }
+
+    fun addDonation(amount: Int) = viewModelScope.launch {
+        when (val state = homeUIState.value) {
+            is HomeUIState.Success -> {
+                state.data?.let { organizationDTO ->
+                    try {
+                        sharedRepository.addDonation(
+                            userDTO = user.value,
+                            organization = organizationDTO,
+                            amount = amount
+                        )
+                        val userDTO = sharedRepository.getUserFromFirebase(email = user.value.emailAddress)
+                        updateUser(userDTO)
+                        getOrganizationBasedOnId(organizationDTO.id)
+                    } catch (ex: Exception) {
+                        ex.message
+                    }
+                }
+            }
+            else -> Unit
         }
     }
 }

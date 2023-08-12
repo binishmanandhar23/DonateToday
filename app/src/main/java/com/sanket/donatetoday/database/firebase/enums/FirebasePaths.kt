@@ -6,5 +6,7 @@ enum class FirebasePaths(val node: String) {
     DonationItems("donation_items"),
     Donors("donors"),
     Organizations("organizations"),
-    Statements("statements")
+    Statements("statements"),
+    Donated("donated"),
+    Received("received")
 }

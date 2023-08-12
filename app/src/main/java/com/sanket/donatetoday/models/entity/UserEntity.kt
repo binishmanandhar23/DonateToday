@@ -27,6 +27,7 @@ class UserEntity : RealmObject, User {
         emailAddress: String,
         password: String,
         countryPhoneCode: String? = null,
+        phoneNo: String? = null,
         cardInfo: CreditCardDataEntity? = null,
         donationItemTypes: RealmList<String> = realmListOf(),
         userType: String? = null,
@@ -39,6 +40,7 @@ class UserEntity : RealmObject, User {
         this.emailAddress = emailAddress
         this.password = password
         this.countryPhoneCode = countryPhoneCode
+        this.phoneNo = phoneNo
         this.cardInfo = cardInfo
         this.donationItemTypes = donationItemTypes
         this.userType = userType

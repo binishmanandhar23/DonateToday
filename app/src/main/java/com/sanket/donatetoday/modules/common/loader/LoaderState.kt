@@ -49,7 +49,7 @@ private fun MainContents(
         modifier = modifier.fillMaxWidth(),
         targetState = visible,
         transitionSpec = {
-            fadeIn() with fadeOut()
+            fadeIn() togetherWith  fadeOut()
         },
         label = "",
     ) { show ->

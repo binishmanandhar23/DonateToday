@@ -82,7 +82,7 @@ dependencies {
     //-------------------------//
 
     //For BottomSheet options
-    implementation "com.google.accompanist:accompanist-navigation-material:0.24.13-rc"
+    implementation "com.google.accompanist:accompanist-navigation-material:0.33.0-alpha"
     //-------------------------//
 
     /*Hilt*/

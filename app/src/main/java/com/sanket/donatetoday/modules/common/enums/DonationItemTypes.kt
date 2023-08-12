@@ -5,4 +5,5 @@ enum class DonationItemTypes(val type: String) {
     Food("food"),
     Clothes("clothes"),
     Utensils("utensils");
+
 }

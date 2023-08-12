@@ -1,6 +1,7 @@
 package com.sanket.donatetoday.utils
 
 import org.threeten.bp.LocalDate
+import org.threeten.bp.LocalDateTime
 import org.threeten.bp.format.DateTimeFormatter
 
 object DateUtils {
@@ -12,4 +13,7 @@ object DateUtils {
 
     fun convertMainDateFormatToLocalDate(date: String) = if(date.isEmpty()) null else LocalDate.parse(date, DateTimeFormatter.ofPattern(
         MainDateFormat))
+
+    fun getCurrentDateTime(): String = LocalDateTime.now().format(DateTimeFormatter.ofPattern(
+        MainDateTimeFormat))
 }

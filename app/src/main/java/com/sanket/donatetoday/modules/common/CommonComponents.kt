@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -39,7 +40,9 @@ import androidx.compose.material.Divider
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
+import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.ProgressIndicatorDefaults
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.material.TextFieldColors
@@ -47,12 +50,14 @@ import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -65,6 +70,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.boundsInWindow
@@ -335,6 +341,7 @@ fun DonateTodaySingleLineTextField(
     onValueChange: (String) -> Unit,
     label: String,
     labelIcon: ImageVector? = null,
+    enabled: Boolean = true,
     @DrawableRes labelIconResId: Int? = null,
     leadingIcon: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
@@ -353,6 +360,7 @@ fun DonateTodaySingleLineTextField(
             modifier = modifier,
             value = value,
             onValueChange = onValueChange,
+            enabled = enabled,
             label = {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -485,12 +493,14 @@ fun DonateTodayToolbar(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 10.dp),
+            .padding(horizontal = 5.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(modifier = Modifier.weight(0.2f), onClick = onBack) {
-            Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back button")
+        Box(modifier = Modifier.weight(0.2f)) {
+            IconButton(modifier = Modifier.align(Alignment.CenterStart), onClick = onBack) {
+                Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back button")
+            }
         }
         if (toolbarText != null)
             AutoSizeText(
@@ -785,7 +795,13 @@ fun DonateTodayMonthlyGoalDialog(totalGoal: Int, onGoalChanged: (Int) -> Unit) {
 }
 
 @Composable
-fun DonateTodayProfilePicture(name: String?, size: Dp = 50.dp, shape: Shape = CircleShape, backgroundColor: Color = MaterialTheme.colors.primary) = Box {
+fun DonateTodayProfilePicture(
+    name: String?,
+    size: Dp = 50.dp,
+    verified: Boolean = false,
+    shape: Shape = CircleShape,
+    backgroundColor: Color = MaterialTheme.colors.primary
+) = Box {
     Box(
         modifier = Modifier
             .size(size)
@@ -799,7 +815,64 @@ fun DonateTodayProfilePicture(name: String?, size: Dp = 50.dp, shape: Shape = Ci
             color = MaterialTheme.colors.onPrimary
         )
     )
+    if (verified)
+        Icon(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .offset(x = 5.dp, y = 5.dp),
+            imageVector = Icons.Default.CheckCircle,
+            contentDescription = "Verified",
+            tint = Color.Green
+        )
 }
 
-
+@Composable
+fun DonationGoalIndicator(reached: Int, totalGoal: Int) {
+    var actualProgress by remember(totalGoal) {
+        mutableFloatStateOf(0f)
+    }
+    val current by remember(actualProgress) {
+        derivedStateOf {
+            (totalGoal * actualProgress).let {
+                if (it.isNaN())
+                    reached
+                else
+                    it
+            }
+        }
+    }
+    LaunchedEffect(key1 = reached, key2 = totalGoal) {
+        animate(
+            initialValue = 0f,
+            targetValue = reached.toFloat() / totalGoal.toFloat(),
+            animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
+            block = { value, _ ->
+                if (!value.isNaN())
+                    actualProgress = value
+            })
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        LinearProgressIndicator(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(15.dp),
+            progress = actualProgress,
+            strokeCap = StrokeCap.Round
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "Current: $$current",
+                style = MaterialTheme.typography.body2
+            )
+            Text(
+                text = "Total: $${totalGoal}",
+                style = MaterialTheme.typography.body2.copy(fontWeight = FontWeight.Bold)
+            )
+        }
+    }
+}
 

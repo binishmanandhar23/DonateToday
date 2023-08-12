@@ -60,6 +60,7 @@ import com.sanket.donatetoday.modules.common.AppLogoHorizontal
 import com.sanket.donatetoday.modules.common.CardContainer
 import com.sanket.donatetoday.modules.common.DonateTodayBottomTabs
 import com.sanket.donatetoday.modules.common.DonateTodayProfilePicture
+import com.sanket.donatetoday.modules.common.DonationGoalIndicator
 import com.sanket.donatetoday.modules.common.UniversalHorizontalPaddingInDp
 import com.sanket.donatetoday.modules.common.UniversalInnerHorizontalPaddingInDp
 import com.sanket.donatetoday.modules.common.UniversalInnerVerticalPaddingInDp
@@ -74,14 +75,19 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreenContainer(dashboardGetters: DashboardGetters) {
-    val pagerState = rememberPagerState()
-    val coroutineScope = rememberCoroutineScope()
     val pages = remember {
         listOf(Icons.Default.Home, Icons.Default.List, Icons.Default.Settings)
     }
+    val pagerState = rememberPagerState(
+        initialPage = 0,
+        initialPageOffsetFraction = 0f
+    ) {
+        pages.size
+    }
+    val coroutineScope = rememberCoroutineScope()
+
     Box(modifier = Modifier.fillMaxSize()) {
         HorizontalPager(
-            pageCount = pages.size,
             userScrollEnabled = false,
             state = pagerState
         ) { page ->
@@ -191,19 +197,6 @@ fun DashboardInformation(
     userDTO: UserDTO,
     onEditMonthlyGoal: () -> Unit
 ) {
-    var actualProgress by remember {
-        mutableStateOf(0f)
-    }
-    LaunchedEffect(key1 = userDTO.reached) {
-        animate(
-            initialValue = 0f,
-            targetValue = userDTO.reached.toFloat() / userDTO.totalGoal.toFloat(),
-            animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
-            block = { value, _ ->
-                if (!value.isNaN())
-                    actualProgress = value
-            })
-    }
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(20.dp),
@@ -240,29 +233,7 @@ fun DashboardInformation(
             }
         }
         Text(text = "Monthly goal", style = MaterialTheme.typography.h5)
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            LinearProgressIndicator(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(15.dp),
-                progress = actualProgress,
-                strokeCap = StrokeCap.Round
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "Current: $${userDTO.totalGoal * actualProgress}",
-                    style = MaterialTheme.typography.body2
-                )
-                Text(
-                    text = "Total: $${userDTO.totalGoal}",
-                    style = MaterialTheme.typography.body2.copy(fontWeight = FontWeight.Bold)
-                )
-            }
-        }
+        DonationGoalIndicator(reached = userDTO.reached, totalGoal = userDTO.totalGoal)
     }
 }
 

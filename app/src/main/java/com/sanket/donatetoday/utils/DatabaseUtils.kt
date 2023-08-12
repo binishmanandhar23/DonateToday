@@ -8,6 +8,8 @@ import com.sanket.donatetoday.enums.UserType
 import com.sanket.donatetoday.models.dto.DonationItemUserModel
 import com.sanket.donatetoday.models.dto.EmailDTO
 import com.sanket.donatetoday.models.dto.UserDTO
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resumeWithException
 
 object DatabaseUtils {
     fun DatabaseReference.addListOfEmails(listOfEmailDTO: List<EmailDTO>) =
@@ -85,5 +87,27 @@ object DatabaseUtils {
         }.addOnFailureListener {
             onError(it.message)
         }
+    }
+
+    fun DatabaseReference.updateReachedAmount(
+        userDTO: UserDTO,
+        organizationDTO: UserDTO,
+        amount: Int,
+        onSuccess: () -> Unit,
+        onError: ((Exception) -> Unit),
+    ) {
+        child(FirebasePaths.Users.node).child(FirebasePaths.Donors.node).child(userDTO.id)
+            .setValue(userDTO.copy(reached = userDTO.reached + amount)).addOnSuccessListener {
+                child(FirebasePaths.Users.node).child(FirebasePaths.Organizations.node)
+                    .child(organizationDTO.id)
+                    .setValue(organizationDTO.copy(reached = organizationDTO.reached + amount))
+                    .addOnSuccessListener {
+                        onSuccess()
+                    }.addOnFailureListener {
+                        onError(it)
+                    }
+            }.addOnFailureListener {
+                onError(it)
+            }
     }
 }
