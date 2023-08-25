@@ -48,10 +48,15 @@ import androidx.compose.material.TextField
 import androidx.compose.material.TextFieldColors
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Accessibility
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DeviceUnknown
+import androidx.compose.material.icons.filled.Fastfood
+import androidx.compose.material.icons.filled.MonetizationOn
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -93,6 +98,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.sanket.donatetoday.R
+import com.sanket.donatetoday.modules.common.enums.DonationItemTypes
 import com.sanket.donatetoday.ui.theme.ColorBlack
 import com.sanket.donatetoday.ui.theme.ColorPrimary
 import com.sanket.donatetoday.ui.theme.ColorWhite
@@ -488,12 +494,14 @@ fun AutoSizeText(
 fun DonateTodayToolbar(
     modifier: Modifier = Modifier,
     toolbarText: String? = null,
+    paddingValues: PaddingValues = PaddingValues(horizontal = 5.dp),
     onBack: () -> Unit
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 5.dp),
+            .background(color = MaterialTheme.colors.surface)
+            .padding(paddingValues),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -530,25 +538,39 @@ fun DonateTodayPhoneNumberInput(
     modifier: Modifier = Modifier,
     phoneNumber: String,
     countryPhoneCode: String,
+    enabled: Boolean = true,
     onPhoneNumberChange: (String) -> Unit,
     onCountryPhoneCode: (String) -> Unit
 ) {
-    val selectedCountry =
+    var selectedCountry by remember(countryPhoneCode) {
+        mutableStateOf(
         getLibCountries.find { it.countryPhoneCode == countryPhoneCode }
             ?: getLibCountries.find { it.countryCode == "us" } ?: getLibCountries.first()
+        )
+    }
     val correct by remember(phoneNumber) {
         derivedStateOf {
             phoneNumber.length == 10
         }
     }
-    Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+    LaunchedEffect(key1 = selectedCountry){
+        onCountryPhoneCode(selectedCountry.countryPhoneCode)
+    }
+    Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
         TextFieldOuterBox {
-            TogiCodeDialog(
-                padding = 15.dp,
-                defaultSelectedCountry = selectedCountry,
-                pickedCountry = {
-                    onCountryPhoneCode(it.countryPhoneCode)
-                })
+            AnimatedContent(enabled, label = "") { editable ->
+                if (editable)
+                    TogiCodeDialog(
+                        padding = 15.dp,
+                        defaultSelectedCountry = selectedCountry,
+                        pickedCountry = {
+                            selectedCountry = it
+                        })
+                else
+                    Text(
+                        text = countryPhoneCode
+                    )
+            }
         }
         Spacer(modifier = Modifier.size(10.dp))
         DonateTodaySingleLineTextField(
@@ -558,6 +580,7 @@ fun DonateTodayPhoneNumberInput(
                     onPhoneNumberChange(it)
             },
             label = "Telephone No.",
+            enabled = enabled,
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Number,
                 imeAction = ImeAction.Done
@@ -796,6 +819,7 @@ fun DonateTodayMonthlyGoalDialog(totalGoal: Int, onGoalChanged: (Int) -> Unit) {
 
 @Composable
 fun DonateTodayProfilePicture(
+    modifier: Modifier = Modifier,
     name: String?,
     size: Dp = 50.dp,
     verified: Boolean = false,
@@ -803,7 +827,7 @@ fun DonateTodayProfilePicture(
     backgroundColor: Color = MaterialTheme.colors.primary
 ) = Box {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .size(size)
             .background(color = backgroundColor, shape = shape)
     )
@@ -873,6 +897,22 @@ fun DonationGoalIndicator(reached: Int, totalGoal: Int) {
                 style = MaterialTheme.typography.body2.copy(fontWeight = FontWeight.Bold)
             )
         }
+    }
+}
+
+@Composable
+fun DonateTodayCircularButton(onClick: () -> Unit, imageVector: ImageVector, contentDescription: String? = null){
+    CardContainer(
+        onClick = onClick,
+        cardColor = MaterialTheme.colors.primary,
+        shape = CircleShape,
+        elevation = 8.dp
+    ) {
+        Icon(
+            modifier = Modifier.padding(10.dp),
+            imageVector = imageVector, contentDescription = contentDescription,
+            tint = ColorWhite
+        )
     }
 }
 

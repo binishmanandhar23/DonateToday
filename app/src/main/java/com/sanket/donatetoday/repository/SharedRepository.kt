@@ -11,8 +11,10 @@ import com.sanket.donatetoday.models.dto.StatementDTO
 import com.sanket.donatetoday.models.dto.UserDTO
 import com.sanket.donatetoday.models.entity.UserEntity
 import com.sanket.donatetoday.modules.common.enums.DonationItemTypes
+import com.sanket.donatetoday.utils.DatabaseUtils.getStatements
 import com.sanket.donatetoday.utils.DatabaseUtils.getUser
 import com.sanket.donatetoday.utils.DatabaseUtils.updateReachedAmount
+import com.sanket.donatetoday.utils.DatabaseUtils.updateUser
 import io.realm.kotlin.Realm
 import io.realm.kotlin.UpdatePolicy
 import io.realm.kotlin.ext.query
@@ -95,6 +97,26 @@ class SharedRepository @Inject constructor(
             })
     }
 
+    suspend fun getStatementsFromFirebase(userDTO: UserDTO) = suspendCancellableCoroutine { cont ->
+            database.getStatements(userDTO = userDTO, onSuccess = { listOfStatements ->
+                cont.resume(listOfStatements) {
+                    Exception(it)
+                }
+            }, onError = {
+                cont.resumeWithException(Exception(it))
+            })
+    }
+
+    suspend fun updateUserInFirebase(userDTO: UserDTO) = suspendCancellableCoroutine { cont ->
+        database.updateUser(userDTO = userDTO, onSuccess = { userDTO ->
+            cont.resume(userDTO){
+                Exception(it)
+            }
+        }, onError = {
+            cont.resumeWithException(Exception(it))
+        })
+    }
+
     suspend fun addDonation(userDTO: UserDTO, organization: UserDTO, amount: Int) =
         suspendCancellableCoroutine { cont ->
             database.child(FirebasePaths.Statements.node).child(FirebasePaths.Donated.node)
@@ -106,7 +128,7 @@ class SharedRepository @Inject constructor(
                                     userId = userDTO.id,
                                     organizationId = organization.id,
                                     userName = userDTO.name,
-                                    organizationName = userDTO.name,
+                                    organizationName = organization.name,
                                     amount = amount
                                 )
                             )
@@ -117,7 +139,7 @@ class SharedRepository @Inject constructor(
                                         userId = userDTO.id,
                                         organizationId = organization.id,
                                         userName = userDTO.name,
-                                        organizationName = userDTO.name,
+                                        organizationName = organization.name,
                                         amount = amount
                                     )
                                 )

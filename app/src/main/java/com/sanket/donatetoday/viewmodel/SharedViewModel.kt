@@ -3,6 +3,7 @@ package com.sanket.donatetoday.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sanket.donatetoday.models.dto.DonationItemUserModel
+import com.sanket.donatetoday.models.dto.StatementDTO
 import com.sanket.donatetoday.models.dto.UserDTO
 import com.sanket.donatetoday.models.dto.toUserDTO
 import com.sanket.donatetoday.models.dto.toUserEntity
@@ -13,6 +14,9 @@ import com.sanket.donatetoday.ui.states.HomeUIState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.realm.kotlin.notifications.InitialResults
 import io.realm.kotlin.notifications.UpdatedResults
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
@@ -34,6 +38,9 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
     private var _user = MutableStateFlow(UserDTO())
     val user = _user.asStateFlow()
 
+    private var _listOfStatements = MutableStateFlow(emptyList<StatementDTO>())
+    val listOfStatements = _listOfStatements.asStateFlow()
+
     private var _listOfRecommended = MutableStateFlow(emptyList<DonationItemUserModel>())
     val listOfRecommended = _listOfRecommended.asStateFlow()
 
@@ -47,15 +54,24 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
                             it.toUserDTO()
                         }.also {
                             getRecommendedOrganizations()
+                            getStatements()
                         }
                     }
             }
         }
     }
 
+    private var updateJob: Job? = null
     fun updateUser(userDTO: UserDTO) = viewModelScope.launch {
         //_user.update { userDTO }
         sharedRepository.saveUserToRealm(userEntity = userDTO.toUserEntity())
+    }.also {
+        if(updateJob?.isActive == true)
+            updateJob?.cancel()
+        updateJob = viewModelScope.launch(Dispatchers.Default) {
+            delay(500)
+            sharedRepository.updateUserInFirebase(userDTO = userDTO)
+        }
     }
 
     fun goToScreen(screenNavigator: ScreenNavigator?) = _currentScreen.update { screenNavigator }
@@ -96,6 +112,15 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
                 }
             }
             else -> Unit
+        }
+    }
+
+    private fun getStatements() = viewModelScope.launch {
+        try {
+            val statements = sharedRepository.getStatementsFromFirebase(userDTO = user.value)
+            _listOfStatements.update { statements }
+        } catch (ex: Exception){
+            _homeUIState.update { HomeUIState.Error(errorMessage = ex.message) }
         }
     }
 }

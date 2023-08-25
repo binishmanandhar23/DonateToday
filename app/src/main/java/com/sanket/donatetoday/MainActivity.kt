@@ -50,6 +50,8 @@ import com.sanket.donatetoday.modules.home.enums.SettingsEnums
 import com.sanket.donatetoday.modules.home.getters.DashboardGetters
 import com.sanket.donatetoday.modules.organization.DonationBottomSheet
 import com.sanket.donatetoday.modules.organization.OrganizationDetailScreen
+import com.sanket.donatetoday.modules.profile.ProfileScreen
+import com.sanket.donatetoday.modules.profile.getters.ProfileScreenGetters
 import com.sanket.donatetoday.viewmodel.OnBoardingViewModel
 import com.sanket.donatetoday.modules.splash.SplashScreen
 import com.sanket.donatetoday.navigators.BottomSheet
@@ -229,15 +231,21 @@ class MainActivity : ComponentActivity() {
 
             customAnimatedComposable(route = Screen.HomeScreen.route) {
                 val userDTO by sharedViewModel.user.collectAsState()
+                val statements by sharedViewModel.listOfStatements.collectAsState()
                 val recommendedOrganizations by sharedViewModel.listOfRecommended.collectAsState()
                 HomeScreenContainer(
                     dashboardGetters = DashboardGetters(
                         userDTO = userDTO,
+                        listOfStatements = statements,
                         listOfDonationItemUserModel = recommendedOrganizations,
                         onEditMonthlyGoal = {
                             dialogState.show(dialog = DialogTypes.MonthlyGoal)
                         }, onSettingsClick = { settingsEnums ->
                             when (settingsEnums) {
+                                SettingsEnums.EditProfile -> sharedViewModel.goToScreen(
+                                    ScreenNavigator(screen = Screen.ProfileScreen)
+                                )
+
                                 SettingsEnums.Logout -> mainNavController.logout()
                                 else -> Unit
                             }
@@ -258,7 +266,7 @@ class MainActivity : ComponentActivity() {
                         sharedViewModel.getOrganizationBasedOnId(id = id)
                     }
                     val homeUIState by sharedViewModel.homeUIState.collectAsState()
-                    var organization: UserDTO? by remember {
+                    var organization: UserDTO? by remember(homeUIState) {
                         mutableStateOf(null)
                     }
                     LaunchedEffect(key1 = homeUIState) {
@@ -275,23 +283,37 @@ class MainActivity : ComponentActivity() {
                             ).also { loaderState.hide() }
                         }
                     }
-                    AnimatedVisibility(visible = organization != null) {
-                        OrganizationDetailScreen(organization = organization!!, onBack = {
+                        OrganizationDetailScreen(organization = organization, onBack = {
                             mainNavController.customPopBackStack()
                         }, onDonateItem = {
                             mainNavController.navigator(route = BottomSheet.DonateSheet.route)
                         })
-                    }
                 }
+            }
+            customAnimatedComposable(route = Screen.ProfileScreen.route) {
+                val userDTO by sharedViewModel.user.collectAsState()
+                ProfileScreen(profileScreenGetters = ProfileScreenGetters(
+                    userDTO = userDTO,
+                    onBackButton = {
+                        mainNavController.customPopBackStack()
+                    },
+                    onAddNewPlace = {},
+                    onUpdateProfile = {
+                        sharedViewModel.updateUser(it)
+                    }
+                ))
             }
             bottomSheet(route = BottomSheet.MapSheet.route) {
                 DonateTodayMap(modifier = Modifier.fillMaxSize())
             }
-            bottomSheet(route = BottomSheet.DonateSheet.route){
+            bottomSheet(route = BottomSheet.DonateSheet.route) {
                 val userDTO by sharedViewModel.user.collectAsState()
                 DonationBottomSheet(userDTO = userDTO, onDonate = {
                     mainNavController.popBackStack()
                     sharedViewModel.addDonation(amount = it)
+                }, onGoToProfile = {
+                    mainNavController.popBackStack()
+                    sharedViewModel.goToScreen(screenNavigator = ScreenNavigator(screen = Screen.ProfileScreen))
                 })
             }
         }

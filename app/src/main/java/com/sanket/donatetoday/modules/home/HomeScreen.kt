@@ -51,12 +51,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.sanket.donatetoday.enums.UserType
 import com.sanket.donatetoday.models.dto.DonationItemUserModel
 import com.sanket.donatetoday.models.dto.UserDTO
 import com.sanket.donatetoday.modules.common.AppLogoHorizontal
+import com.sanket.donatetoday.modules.common.AutoSizeText
 import com.sanket.donatetoday.modules.common.CardContainer
 import com.sanket.donatetoday.modules.common.DonateTodayBottomTabs
 import com.sanket.donatetoday.modules.common.DonateTodayProfilePicture
@@ -68,6 +71,7 @@ import com.sanket.donatetoday.modules.common.UniversalVerticalPaddingInDp
 import com.sanket.donatetoday.modules.home.data.SettingsItem
 import com.sanket.donatetoday.modules.home.enums.SettingsEnums
 import com.sanket.donatetoday.modules.home.getters.DashboardGetters
+import com.sanket.donatetoday.modules.statements.StatementsScreen
 import com.sanket.donatetoday.utils.MaximumMonthlyGoal
 import kotlinx.coroutines.launch
 
@@ -93,7 +97,7 @@ fun HomeScreenContainer(dashboardGetters: DashboardGetters) {
         ) { page ->
             when (page) {
                 0 -> DashboardScreenContainer(dashboardGetters = dashboardGetters)
-                1 -> ListScreenContainer()
+                1 -> StatementsScreen(userDTO = dashboardGetters.userDTO, statements = dashboardGetters.listOfStatements)
                 2 -> SettingsMainContainer(dashboardGetters = dashboardGetters)
                 else -> Unit
             }
@@ -112,12 +116,6 @@ fun HomeScreenContainer(dashboardGetters: DashboardGetters) {
     }
 }
 
-@Composable
-fun ListScreenContainer() {
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
-        item { DashboardToolbar() }
-    }
-}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -159,7 +157,7 @@ fun UserDashboard(listOfDonationItemUserModel: List<DonationItemUserModel>, onCl
 }
 
 @Composable
-fun DashboardToolbar(modifier: Modifier = Modifier) {
+fun DashboardToolbar(modifier: Modifier = Modifier, toolbarText: String? = null) {
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -179,6 +177,17 @@ fun DashboardToolbar(modifier: Modifier = Modifier) {
                     contentDescription = "Search button"
                 )
             }
+            if (toolbarText != null)
+                AutoSizeText(
+                    modifier = Modifier
+                        .padding(start = 50.dp, end = 10.dp).align(Alignment.CenterStart),
+                    text = toolbarText,
+                    style = MaterialTheme.typography.h3.copy(
+                        color = MaterialTheme.colors.onSurface,
+                        letterSpacing = 0.14.sp,
+                        textAlign = TextAlign.Start
+                    )
+                )
         }
         AppLogoHorizontal(
             modifier = Modifier

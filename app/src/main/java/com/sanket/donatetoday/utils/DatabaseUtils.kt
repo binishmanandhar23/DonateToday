@@ -7,6 +7,7 @@ import com.sanket.donatetoday.database.firebase.enums.FirebasePaths
 import com.sanket.donatetoday.enums.UserType
 import com.sanket.donatetoday.models.dto.DonationItemUserModel
 import com.sanket.donatetoday.models.dto.EmailDTO
+import com.sanket.donatetoday.models.dto.StatementDTO
 import com.sanket.donatetoday.models.dto.UserDTO
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resumeWithException
@@ -83,6 +84,40 @@ object DatabaseUtils {
                             }
                     }
                 }
+            }
+        }.addOnFailureListener {
+            onError(it.message)
+        }
+    }
+
+    fun DatabaseReference.updateUser(
+        userDTO: UserDTO,
+        onSuccess: (UserDTO) -> Unit,
+        onError: (String?) -> Unit
+    ) {
+        this.child(FirebasePaths.Users.node).child(
+            when (userDTO.userType) {
+                UserType.Organization.type -> FirebasePaths.Organizations.node
+                else -> FirebasePaths.Donors.node
+            }
+        ).child(userDTO.id).setValue(userDTO).addOnSuccessListener {
+            onSuccess(userDTO)
+        }.addOnFailureListener {
+            onError(it.message)
+        }
+    }
+
+    fun DatabaseReference.getStatements(
+        userDTO: UserDTO,
+        onSuccess: (List<StatementDTO>) -> Unit,
+        onError: (String?) -> Unit
+    ) {
+        this.child(FirebasePaths.Statements.node)
+            .child(if (userDTO.userType == UserType.Donor.type) FirebasePaths.Donated.node else FirebasePaths.Received.node)
+            .child(userDTO.id)
+            .get().addOnSuccessListener { dataSnapshot ->
+            dataSnapshot.getValue<List<StatementDTO>>()?.let { listOfStatementDTO ->
+                onSuccess(listOfStatementDTO)
             }
         }.addOnFailureListener {
             onError(it.message)

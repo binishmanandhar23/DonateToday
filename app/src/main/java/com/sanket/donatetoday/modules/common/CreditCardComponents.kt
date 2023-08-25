@@ -108,6 +108,7 @@ private fun DonateTodayCreditCardHolderName(
 private fun DonateTodayCreditCardExpiry(
     modifier: Modifier = Modifier,
     expiryDate: String,
+    enabled: Boolean = true,
     onDateChange: (expiresOn: String) -> Unit
 ) {
     val localDate = remember(expiryDate) {
@@ -135,6 +136,7 @@ private fun DonateTodayCreditCardExpiry(
                     .width(90.dp)
                     .padding(end = 5.dp),
                 value = year?.toString() ?: "",
+                enabled = enabled,
                 onValueChange = {
                     if (it.toIntOrNull() == null)
                         year = null
@@ -160,6 +162,7 @@ private fun DonateTodayCreditCardExpiry(
                     .width(80.dp)
                     .padding(start = 5.dp),
                 value = month?.toString() ?: "",
+                enabled = enabled,
                 onValueChange = { monthString ->
                     if (monthString.toIntOrNull() == null)
                         month = null
@@ -187,12 +190,14 @@ private fun DonateTodayCreditCardExpiry(
 fun DonateTodayCardInfoFields(
     modifier: Modifier = Modifier,
     creditCardDataDTO: CreditCardDataDTO,
+    enabled: Boolean = true,
     onCardDataUpdate: (CreditCardDataDTO) -> Unit
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         DonateTodayCardNumberInput(
             modifier = modifier,
             cardNumber = creditCardDataDTO.cardNo,
+            enabled = enabled,
             onCardNumberChanged = {
                 onCardDataUpdate(creditCardDataDTO.copy(cardNo = it))
             }
@@ -200,12 +205,14 @@ fun DonateTodayCardInfoFields(
         DonateTodayCreditCardHolderName(
             modifier = modifier,
             cardHolderName = creditCardDataDTO.cardHolderName,
+            enabled = enabled,
             onCardHolderNameChanged = {
                 onCardDataUpdate(creditCardDataDTO.copy(cardHolderName = it))
             })
         DonateTodayCreditCardExpiry(
             modifier = modifier,
             expiryDate = creditCardDataDTO.expiresOn,
+            enabled = enabled,
             onDateChange = {
                 onCardDataUpdate(creditCardDataDTO.copy(expiresOn = it))
             })
