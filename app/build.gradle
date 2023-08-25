@@ -123,6 +123,15 @@ dependencies {
     implementation "androidx.compose.material:material-icons-extended"
     /*************/
 
+    // Includes the core logic for charts and other elements.
+    implementation "com.patrykandpatrick.vico:core:1.9.2"
+
+    // For Jetpack Compose.
+    implementation "com.patrykandpatrick.vico:compose:1.9.2"
+
+    // For `compose`. Creates a `ChartStyle` based on an M2 Material Theme.
+    implementation "com.patrykandpatrick.vico:compose-m2:1.9.2"
+
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'

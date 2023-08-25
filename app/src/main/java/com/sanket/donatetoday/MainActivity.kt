@@ -231,13 +231,20 @@ class MainActivity : ComponentActivity() {
 
             customAnimatedComposable(route = Screen.HomeScreen.route) {
                 val userDTO by sharedViewModel.user.collectAsState()
-                val statements by sharedViewModel.listOfStatements.collectAsState()
+                val statements by sharedViewModel.filteredListOfStatements.collectAsState()
+                val organizationCashChartData by sharedViewModel.organizationCashChartData.collectAsState()
                 val recommendedOrganizations by sharedViewModel.listOfRecommended.collectAsState()
+                val year by sharedViewModel.year.collectAsState()
                 HomeScreenContainer(
                     dashboardGetters = DashboardGetters(
                         userDTO = userDTO,
                         listOfStatements = statements,
                         listOfDonationItemUserModel = recommendedOrganizations,
+                        organizationCashChartData = organizationCashChartData,
+                        year = year,
+                        onYearChanged = {
+                            sharedViewModel.changeYear(it)
+                        },
                         onEditMonthlyGoal = {
                             dialogState.show(dialog = DialogTypes.MonthlyGoal)
                         }, onSettingsClick = { settingsEnums ->
@@ -257,6 +264,8 @@ class MainActivity : ComponentActivity() {
                                     )
                                 )
                             )
+                        }, onSearchStatements = {
+                            sharedViewModel.filterStatements(search = it)
                         })
                 )
             }

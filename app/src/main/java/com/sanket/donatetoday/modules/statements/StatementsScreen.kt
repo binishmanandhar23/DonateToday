@@ -33,10 +33,10 @@ import com.sanket.donatetoday.utils.DateUtils
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun StatementsScreen(userDTO: UserDTO, statements: List<StatementDTO>) {
+fun StatementsScreen(userDTO: UserDTO, statements: List<StatementDTO>, onSearchStatements: (String) -> Unit) {
     LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         stickyHeader {
-            DashboardToolbar(toolbarText = "Statements")
+            DashboardToolbar(toolbarText = "Statements", onSearch = onSearchStatements)
         }
         items(statements) { statement ->
             StatementListDesign(userDTO = userDTO, statementDTO = statement)

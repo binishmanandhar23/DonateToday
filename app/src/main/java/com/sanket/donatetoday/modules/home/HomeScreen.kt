@@ -1,8 +1,20 @@
 package com.sanket.donatetoday.modules.home
 
+import android.annotation.SuppressLint
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animate
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.with
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -34,6 +46,7 @@ import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
@@ -55,6 +68,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
+import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
+import com.patrykandpatrick.vico.compose.chart.Chart
+import com.patrykandpatrick.vico.compose.chart.line.lineChart
+import com.patrykandpatrick.vico.compose.m2.style.m2ChartStyle
+import com.patrykandpatrick.vico.compose.style.ChartStyle
+import com.patrykandpatrick.vico.compose.style.ProvideChartStyle
+import com.patrykandpatrick.vico.core.axis.AxisPosition
+import com.patrykandpatrick.vico.core.axis.formatter.AxisValueFormatter
+import com.patrykandpatrick.vico.core.entry.entryModelOf
 import com.sanket.donatetoday.enums.UserType
 import com.sanket.donatetoday.models.dto.DonationItemUserModel
 import com.sanket.donatetoday.models.dto.UserDTO
@@ -63,6 +86,8 @@ import com.sanket.donatetoday.modules.common.AutoSizeText
 import com.sanket.donatetoday.modules.common.CardContainer
 import com.sanket.donatetoday.modules.common.DonateTodayBottomTabs
 import com.sanket.donatetoday.modules.common.DonateTodayProfilePicture
+import com.sanket.donatetoday.modules.common.DonateTodaySingleLineTextField
+import com.sanket.donatetoday.modules.common.DonateTodayYearNavigator
 import com.sanket.donatetoday.modules.common.DonationGoalIndicator
 import com.sanket.donatetoday.modules.common.UniversalHorizontalPaddingInDp
 import com.sanket.donatetoday.modules.common.UniversalInnerHorizontalPaddingInDp
@@ -71,9 +96,12 @@ import com.sanket.donatetoday.modules.common.UniversalVerticalPaddingInDp
 import com.sanket.donatetoday.modules.home.data.SettingsItem
 import com.sanket.donatetoday.modules.home.enums.SettingsEnums
 import com.sanket.donatetoday.modules.home.getters.DashboardGetters
+import com.sanket.donatetoday.modules.organization.data.OrganizationCashChartData
 import com.sanket.donatetoday.modules.statements.StatementsScreen
 import com.sanket.donatetoday.utils.MaximumMonthlyGoal
 import kotlinx.coroutines.launch
+import org.threeten.bp.LocalDate
+import org.threeten.bp.format.DateTimeFormatter
 
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -97,7 +125,12 @@ fun HomeScreenContainer(dashboardGetters: DashboardGetters) {
         ) { page ->
             when (page) {
                 0 -> DashboardScreenContainer(dashboardGetters = dashboardGetters)
-                1 -> StatementsScreen(userDTO = dashboardGetters.userDTO, statements = dashboardGetters.listOfStatements)
+                1 -> StatementsScreen(
+                    userDTO = dashboardGetters.userDTO,
+                    statements = dashboardGetters.listOfStatements,
+                    onSearchStatements = dashboardGetters.onSearchStatements
+                )
+
                 2 -> SettingsMainContainer(dashboardGetters = dashboardGetters)
                 else -> Unit
             }
@@ -126,7 +159,9 @@ fun DashboardScreenContainer(dashboardGetters: DashboardGetters) {
             .padding(top = 10.dp)
     ) {
         stickyHeader {
-            DashboardToolbar()
+            DashboardToolbar(onSearch = {
+
+            })
         }
         item {
             Column(
@@ -145,19 +180,104 @@ fun DashboardScreenContainer(dashboardGetters: DashboardGetters) {
                     onEditMonthlyGoal = dashboardGetters.onEditMonthlyGoal
                 )
                 if (dashboardGetters.userDTO.userType == UserType.Donor.type)
-                    UserDashboard(listOfDonationItemUserModel = dashboardGetters.listOfDonationItemUserModel, onClick = dashboardGetters.onDonationItemUserModelClick)
+                    UserDashboard(
+                        listOfDonationItemUserModel = dashboardGetters.listOfDonationItemUserModel,
+                        onClick = dashboardGetters.onDonationItemUserModelClick
+                    )
+                else
+                    OrganizationDashboard(
+                        organizationCashChartData = dashboardGetters.organizationCashChartData,
+                        year = dashboardGetters.year,
+                        onYearChanged = dashboardGetters.onYearChanged
+                    )
             }
         }
     }
 }
 
 @Composable
-fun UserDashboard(listOfDonationItemUserModel: List<DonationItemUserModel>, onClick: (DonationItemUserModel) -> Unit) {
-    DashboardLists(modifier = Modifier.fillMaxWidth(), title = "Recommended", items = listOfDonationItemUserModel, onClick = onClick)
+fun UserDashboard(
+    listOfDonationItemUserModel: List<DonationItemUserModel>,
+    onClick: (DonationItemUserModel) -> Unit
+) {
+    DashboardLists(
+        modifier = Modifier.fillMaxWidth(),
+        title = "Recommended",
+        items = listOfDonationItemUserModel,
+        onClick = onClick
+    )
+}
+
+
+@SuppressLint("UnusedContentLambdaTargetStateParameter")
+@Composable
+fun OrganizationDashboard(
+    organizationCashChartData: List<OrganizationCashChartData>,
+    year: Int,
+    onYearChanged: (year: Int) -> Unit
+) {
+    val chartEntryModel = entryModelOf(*organizationCashChartData.map { it.amount }.toTypedArray())
+    val horizontalAxisValueFormatter =
+        AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ ->
+            organizationCashChartData[value.toInt()].localDate.format(DateTimeFormatter.ofPattern("MMM yyyy"))
+        }
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Text(
+            text = "Cash Donation Chart",
+            color = MaterialTheme.colors.secondary,
+            fontWeight = FontWeight.Bold
+        )
+        AnimatedContent(targetState = year, transitionSpec = {
+            // Compare the incoming number with the previous number.
+            if (targetState > initialState) {
+                // If the target number is larger, it slides up and fades in
+                // while the initial (smaller) number slides up and fades out.
+                slideInHorizontally { width -> width } + fadeIn() togetherWith
+                        slideOutHorizontally { width -> -width } + fadeOut()
+            } else {
+                // If the target number is smaller, it slides down and fades in
+                // while the initial number slides down and fades out.
+                slideInHorizontally { width -> -width } + fadeIn() togetherWith
+                        slideOutHorizontally { width -> width } + fadeOut()
+            }.using(
+                // Disable clipping since the faded slide-in/out should
+                // be displayed out of bounds.
+                SizeTransform(clip = false)
+            )
+        }, label = "Year Navigator") {
+            ProvideChartStyle(
+                chartStyle = m2ChartStyle(axisLineColor = MaterialTheme.colors.secondary)
+            ) {
+                Chart(
+                    chart = lineChart(),
+                    model = chartEntryModel,
+                    startAxis = rememberStartAxis(),
+                    bottomAxis = rememberBottomAxis(valueFormatter = horizontalAxisValueFormatter),
+                )
+            }
+        }
+        DonateTodayYearNavigator(currentYear = year, onYearChanged = onYearChanged)
+    }
 }
 
 @Composable
-fun DashboardToolbar(modifier: Modifier = Modifier, toolbarText: String? = null) {
+fun DashboardToolbar(
+    modifier: Modifier = Modifier,
+    toolbarText: String? = null,
+    onSearch: (String) -> Unit
+) {
+    var search by remember {
+        mutableStateOf(false)
+    }
+    var searchText by remember(search) {
+        mutableStateOf("")
+    }
+    LaunchedEffect(key1 = searchText) {
+        onSearch(searchText)
+    }
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -165,29 +285,51 @@ fun DashboardToolbar(modifier: Modifier = Modifier, toolbarText: String? = null)
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
+        AnimatedContent(
             modifier = Modifier
                 .weight(0.7f)
-                .fillMaxWidth()
+                .fillMaxWidth(), targetState = search, label = "Search"
         ) {
-            IconButton(modifier = Modifier.align(Alignment.CenterStart), onClick = { /*TODO*/ }) {
-                Icon(
-                    modifier = Modifier.size(40.dp),
-                    imageVector = Icons.Default.Search,
-                    contentDescription = "Search button"
-                )
+            Box(modifier = Modifier.fillMaxWidth()) {
+                if (!it) {
+                    IconButton(
+                        modifier = Modifier.align(Alignment.CenterStart),
+                        onClick = { search = true }) {
+                        Icon(
+                            modifier = Modifier.size(40.dp),
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Search button"
+                        )
+                    }
+                    if (toolbarText != null)
+                        AutoSizeText(
+                            modifier = Modifier
+                                .padding(start = 50.dp, end = 10.dp)
+                                .align(Alignment.CenterStart),
+                            text = toolbarText,
+                            style = MaterialTheme.typography.h3.copy(
+                                color = MaterialTheme.colors.onSurface,
+                                letterSpacing = 0.14.sp,
+                                textAlign = TextAlign.Start
+                            )
+                        )
+                } else {
+                    DonateTodaySingleLineTextField(
+                        value = searchText,
+                        onValueChange = {
+                            searchText = it
+                        },
+                        label = "Search",
+                        trailingIcon = {
+                            IconButton(onClick = { search = false }) {
+                                Icon(
+                                    imageVector = Icons.Default.Clear,
+                                    contentDescription = "Clear button"
+                                )
+                            }
+                        })
+                }
             }
-            if (toolbarText != null)
-                AutoSizeText(
-                    modifier = Modifier
-                        .padding(start = 50.dp, end = 10.dp).align(Alignment.CenterStart),
-                    text = toolbarText,
-                    style = MaterialTheme.typography.h3.copy(
-                        color = MaterialTheme.colors.onSurface,
-                        letterSpacing = 0.14.sp,
-                        textAlign = TextAlign.Start
-                    )
-                )
         }
         AppLogoHorizontal(
             modifier = Modifier
@@ -224,7 +366,8 @@ fun DashboardInformation(
                     )
                 Text(
                     text = userDTO.name,
-                    style = MaterialTheme.typography.h4
+                    style = MaterialTheme.typography.h4,
+                    fontWeight = if (userDTO.userType == UserType.Donor.type) FontWeight.Normal else FontWeight.Bold
                 )
             }
             IconButton(onClick = onEditMonthlyGoal) {
@@ -257,7 +400,10 @@ fun DashboardLists(
         Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.h5.copy(fontWeight = FontWeight.Bold, color = MaterialTheme.colors.primary)
+                style = MaterialTheme.typography.h5.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colors.primary
+                )
             )
             LazyRow {
                 items(items) {
@@ -271,8 +417,15 @@ fun DashboardLists(
 }
 
 @Composable
-private fun DashboardListItem(modifier: Modifier = Modifier, item: DonationItemUserModel, onClick: () -> Unit) {
-    Column(modifier = modifier.clickable(onClick = onClick), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+private fun DashboardListItem(
+    modifier: Modifier = Modifier,
+    item: DonationItemUserModel,
+    onClick: () -> Unit
+) {
+    Column(
+        modifier = modifier.clickable(onClick = onClick),
+        verticalArrangement = Arrangement.spacedBy(5.dp)
+    ) {
         DonateTodayProfilePicture(
             name = item.name,
             size = 100.dp,

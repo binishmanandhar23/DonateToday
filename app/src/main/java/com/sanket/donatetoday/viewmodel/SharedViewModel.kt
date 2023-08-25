@@ -2,15 +2,18 @@ package com.sanket.donatetoday.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sanket.donatetoday.enums.UserType
 import com.sanket.donatetoday.models.dto.DonationItemUserModel
 import com.sanket.donatetoday.models.dto.StatementDTO
 import com.sanket.donatetoday.models.dto.UserDTO
 import com.sanket.donatetoday.models.dto.toUserDTO
 import com.sanket.donatetoday.models.dto.toUserEntity
+import com.sanket.donatetoday.modules.organization.data.OrganizationCashChartData
 import com.sanket.donatetoday.navigators.Screen
 import com.sanket.donatetoday.navigators.data.ScreenNavigator
 import com.sanket.donatetoday.repository.SharedRepository
 import com.sanket.donatetoday.ui.states.HomeUIState
+import com.sanket.donatetoday.utils.DateUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.realm.kotlin.notifications.InitialResults
 import io.realm.kotlin.notifications.UpdatedResults
@@ -22,6 +25,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.threeten.bp.LocalDate
 import java.lang.Exception
 import javax.inject.Inject
 
@@ -41,9 +45,29 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
     private var _listOfStatements = MutableStateFlow(emptyList<StatementDTO>())
     val listOfStatements = _listOfStatements.asStateFlow()
 
+    private var _filteredListOfStatements = MutableStateFlow(emptyList<StatementDTO>())
+    val filteredListOfStatements = _filteredListOfStatements.asStateFlow()
+
     private var _listOfRecommended = MutableStateFlow(emptyList<DonationItemUserModel>())
     val listOfRecommended = _listOfRecommended.asStateFlow()
 
+    private var _organizationCashChartData =
+        MutableStateFlow(emptyList<OrganizationCashChartData>())
+    val organizationCashChartData = _organizationCashChartData.asStateFlow()
+
+    private var _year = MutableStateFlow(LocalDate.now().year)
+    val year = _year.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            year.collect{
+                getDonationReceivedUpdates()
+            }
+        }
+    }
+
+
+    fun changeYear(year: Int) = _year.update { year }
 
     fun getUser(email: String?) = viewModelScope.launch {
         sharedRepository.getUserFromRealm(email = email).collect { results ->
@@ -55,6 +79,7 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
                         }.also {
                             getRecommendedOrganizations()
                             getStatements()
+                            getDonationReceivedUpdates()
                         }
                     }
             }
@@ -66,7 +91,7 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
         //_user.update { userDTO }
         sharedRepository.saveUserToRealm(userEntity = userDTO.toUserEntity())
     }.also {
-        if(updateJob?.isActive == true)
+        if (updateJob?.isActive == true)
             updateJob?.cancel()
         updateJob = viewModelScope.launch(Dispatchers.Default) {
             delay(500)
@@ -103,7 +128,8 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
                             organization = organizationDTO,
                             amount = amount
                         )
-                        val userDTO = sharedRepository.getUserFromFirebase(email = user.value.emailAddress)
+                        val userDTO =
+                            sharedRepository.getUserFromFirebase(email = user.value.emailAddress)
                         updateUser(userDTO)
                         getOrganizationBasedOnId(organizationDTO.id)
                     } catch (ex: Exception) {
@@ -111,6 +137,7 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
                     }
                 }
             }
+
             else -> Unit
         }
     }
@@ -119,8 +146,43 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
         try {
             val statements = sharedRepository.getStatementsFromFirebase(userDTO = user.value)
             _listOfStatements.update { statements }
-        } catch (ex: Exception){
+        } catch (ex: Exception) {
             _homeUIState.update { HomeUIState.Error(errorMessage = ex.message) }
         }
+    }
+
+    fun filterStatements(search: String) = viewModelScope.launch(Dispatchers.IO) {
+        _filteredListOfStatements.update { _ ->
+            listOfStatements.value.filter {
+                if (search.isEmpty())
+                    true
+                else if (user.value.userType == UserType.Donor.type)
+                    it.organizationName.contains(search, ignoreCase = true)
+                else
+                    it.userName.contains(search, ignoreCase = true)
+            }
+        }
+    }
+
+    private fun getDonationReceivedUpdates() = viewModelScope.launch(Dispatchers.IO) {
+        sharedRepository.getDonationReceiveUpdates(
+            organization = user.value,
+            onSuccess = { statements ->
+                val arrayList = ArrayList<OrganizationCashChartData>()
+                for (i in 1..12) {
+                    val totalAmount = statements.filter { statement ->
+                        DateUtils.convertMainDateTimeFormatToLocalDate(
+                            date = statement.date
+                        )!!.let {
+                            it.year == this@SharedViewModel.year.value && it.monthValue == i
+                        }
+                    }.sumOf { it.amount }
+                    arrayList.add(OrganizationCashChartData(localDate = LocalDate.of(year.value, i, 1), amount = totalAmount))
+                }
+                _organizationCashChartData.update { arrayList }
+            },
+            onError = {
+                _homeUIState.update { _ -> HomeUIState.Error(errorMessage = it) }
+            })
     }
 }

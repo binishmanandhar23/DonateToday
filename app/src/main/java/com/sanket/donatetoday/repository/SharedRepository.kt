@@ -12,6 +12,7 @@ import com.sanket.donatetoday.models.dto.UserDTO
 import com.sanket.donatetoday.models.entity.UserEntity
 import com.sanket.donatetoday.modules.common.enums.DonationItemTypes
 import com.sanket.donatetoday.utils.DatabaseUtils.getStatements
+import com.sanket.donatetoday.utils.DatabaseUtils.getStatementsAsynchronously
 import com.sanket.donatetoday.utils.DatabaseUtils.getUser
 import com.sanket.donatetoday.utils.DatabaseUtils.updateReachedAmount
 import com.sanket.donatetoday.utils.DatabaseUtils.updateUser
@@ -98,18 +99,18 @@ class SharedRepository @Inject constructor(
     }
 
     suspend fun getStatementsFromFirebase(userDTO: UserDTO) = suspendCancellableCoroutine { cont ->
-            database.getStatements(userDTO = userDTO, onSuccess = { listOfStatements ->
-                cont.resume(listOfStatements) {
-                    Exception(it)
-                }
-            }, onError = {
-                cont.resumeWithException(Exception(it))
-            })
+        database.getStatements(userDTO = userDTO, onSuccess = { listOfStatements ->
+            cont.resume(listOfStatements) {
+                Exception(it)
+            }
+        }, onError = {
+            cont.resumeWithException(Exception(it))
+        })
     }
 
     suspend fun updateUserInFirebase(userDTO: UserDTO) = suspendCancellableCoroutine { cont ->
         database.updateUser(userDTO = userDTO, onSuccess = { userDTO ->
-            cont.resume(userDTO){
+            cont.resume(userDTO) {
                 Exception(it)
             }
         }, onError = {
@@ -195,4 +196,15 @@ class SharedRepository @Inject constructor(
                     cont.resumeWithException(it)
                 }
         }
+
+    fun getDonationReceiveUpdates(
+        organization: UserDTO,
+        onSuccess: (List<StatementDTO>) -> Unit,
+        onError: (String) -> Unit
+    ) =
+        database.getStatementsAsynchronously(userDTO = organization, onDataChange = { snapshot ->
+            onSuccess(snapshot.getValue<List<StatementDTO>>() ?: emptyList())
+        }, onCancelled = {
+            onError(it.message)
+        })
 }

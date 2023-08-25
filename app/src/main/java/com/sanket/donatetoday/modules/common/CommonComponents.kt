@@ -4,6 +4,8 @@ import android.view.MotionEvent
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animate
@@ -11,6 +13,12 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.with
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -50,9 +58,12 @@ import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Accessibility
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material.icons.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.DeviceUnknown
 import androidx.compose.material.icons.filled.Fastfood
 import androidx.compose.material.icons.filled.MonetizationOn
@@ -916,3 +927,59 @@ fun DonateTodayCircularButton(onClick: () -> Unit, imageVector: ImageVector, con
     }
 }
 
+
+@Composable
+fun DonateTodayYearNavigator(
+    modifier: Modifier = Modifier,
+    currentYear: Int,
+    onYearChanged: (year: Int) -> Unit
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(onClick = { onYearChanged(currentYear - 1) }) {
+            Icon(
+                imageVector = Icons.Default.ArrowBackIosNew,
+                contentDescription = "Decrease year",
+                tint = MaterialTheme.colors.onBackground
+            )
+        }
+        Icon(
+            modifier = Modifier.offset(y = -(3).dp),
+            imageVector = Icons.Default.DateRange,
+            contentDescription = "Calendar Icon"
+        )
+        AnimatedContent(targetState = currentYear, transitionSpec = {
+            // Compare the incoming number with the previous number.
+            if (targetState > initialState) {
+                // If the target number is larger, it slides up and fades in
+                // while the initial (smaller) number slides up and fades out.
+                slideInVertically { height -> height } + fadeIn() togetherWith
+                        slideOutVertically { height -> -height } + fadeOut()
+            } else {
+                // If the target number is smaller, it slides down and fades in
+                // while the initial number slides down and fades out.
+                slideInVertically { height -> -height } + fadeIn() togetherWith
+                        slideOutVertically { height -> height } + fadeOut()
+            }.using(
+                // Disable clipping since the faded slide-in/out should
+                // be displayed out of bounds.
+                SizeTransform(clip = false)
+            )
+        }, label = "Year Navigator") {
+            Text(
+                text = it.toString(),
+                style = MaterialTheme.typography.h5.copy(fontWeight = FontWeight.Medium)
+            )
+        }
+        IconButton(onClick = { onYearChanged(currentYear + 1) }) {
+            Icon(
+                imageVector = Icons.Default.ArrowForwardIos,
+                contentDescription = "Increase year",
+                tint = MaterialTheme.colors.onBackground
+            )
+        }
+    }
+}

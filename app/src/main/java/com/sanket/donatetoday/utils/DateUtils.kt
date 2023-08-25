@@ -20,6 +20,13 @@ object DateUtils {
             )
         )
 
+    fun convertMainDateTimeFormatToLocalDate(date: String) =
+        if (date.isEmpty()) null else LocalDate.parse(
+            date, DateTimeFormatter.ofPattern(
+                MainDateTimeFormat
+            )
+        )
+
     fun getCurrentDateTime(): String = LocalDateTime.now().format(
         DateTimeFormatter.ofPattern(
             MainDateTimeFormat

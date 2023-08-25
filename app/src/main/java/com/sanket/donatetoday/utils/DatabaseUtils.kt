@@ -1,7 +1,10 @@
 package com.sanket.donatetoday.utils
 
 
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.getValue
 import com.sanket.donatetoday.database.firebase.enums.FirebasePaths
 import com.sanket.donatetoday.enums.UserType
@@ -122,6 +125,24 @@ object DatabaseUtils {
         }.addOnFailureListener {
             onError(it.message)
         }
+    }
+
+    fun DatabaseReference.getStatementsAsynchronously(
+        userDTO: UserDTO,
+        onDataChange: (snapshot: DataSnapshot) -> Unit,
+        onCancelled: (error: DatabaseError) -> Unit
+    ) {
+        this.child(FirebasePaths.Statements.node)
+            .child(if (userDTO.userType == UserType.Donor.type) FirebasePaths.Donated.node else FirebasePaths.Received.node)
+            .child(userDTO.id).addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    onDataChange(snapshot)
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    onCancelled(error)
+                }
+            })
     }
 
     fun DatabaseReference.updateReachedAmount(
