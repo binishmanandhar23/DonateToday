@@ -4,8 +4,10 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Icon
@@ -40,6 +42,9 @@ fun StatementsScreen(userDTO: UserDTO, statements: List<StatementDTO>, onSearchS
         }
         items(statements) { statement ->
             StatementListDesign(userDTO = userDTO, statementDTO = statement)
+        }
+        item {
+            Spacer(modifier = Modifier.size(150.dp))
         }
     }
 }

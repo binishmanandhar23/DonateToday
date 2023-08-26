@@ -233,6 +233,7 @@ class MainActivity : ComponentActivity() {
                 val userDTO by sharedViewModel.user.collectAsState()
                 val statements by sharedViewModel.filteredListOfStatements.collectAsState()
                 val organizationCashChartData by sharedViewModel.organizationCashChartData.collectAsState()
+                val organizationDonorChartData by sharedViewModel.organizationDonorChartData.collectAsState()
                 val recommendedOrganizations by sharedViewModel.listOfRecommended.collectAsState()
                 val year by sharedViewModel.year.collectAsState()
                 HomeScreenContainer(
@@ -241,6 +242,7 @@ class MainActivity : ComponentActivity() {
                         listOfStatements = statements,
                         listOfDonationItemUserModel = recommendedOrganizations,
                         organizationCashChartData = organizationCashChartData,
+                        organizationDonorChartData = organizationDonorChartData,
                         year = year,
                         onYearChanged = {
                             sharedViewModel.changeYear(it)
@@ -391,6 +393,7 @@ class MainActivity : ComponentActivity() {
     private fun NavController.logout() {
         FirebaseAuth.getInstance().signOut()
         onBoardingViewModel.clearData()
+        sharedViewModel.clearData()
         navigator(route = Screen.OnBoardingScreen.route, clearBackStack = true)
     }
 }

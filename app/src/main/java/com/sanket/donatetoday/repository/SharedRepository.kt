@@ -158,18 +158,18 @@ class SharedRepository @Inject constructor(
                                                 userId = userDTO.id,
                                                 organizationId = organization.id,
                                                 userName = userDTO.name,
-                                                organizationName = userDTO.name,
+                                                organizationName = organization.name,
                                                 amount = amount
                                             )
                                         )
                                     else
-                                        newList.toMutableList().let {
+                                        list.toMutableList().let {
                                             it.add(
                                                 StatementDTO(
                                                     userId = userDTO.id,
                                                     organizationId = organization.id,
                                                     userName = userDTO.name,
-                                                    organizationName = userDTO.name,
+                                                    organizationName = organization.name,
                                                     amount = amount
                                                 )
                                             )

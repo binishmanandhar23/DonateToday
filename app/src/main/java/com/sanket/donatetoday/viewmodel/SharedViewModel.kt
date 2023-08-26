@@ -9,7 +9,7 @@ import com.sanket.donatetoday.models.dto.UserDTO
 import com.sanket.donatetoday.models.dto.toUserDTO
 import com.sanket.donatetoday.models.dto.toUserEntity
 import com.sanket.donatetoday.modules.organization.data.OrganizationCashChartData
-import com.sanket.donatetoday.navigators.Screen
+import com.sanket.donatetoday.modules.organization.data.OrganizationDonorChartData
 import com.sanket.donatetoday.navigators.data.ScreenNavigator
 import com.sanket.donatetoday.repository.SharedRepository
 import com.sanket.donatetoday.ui.states.HomeUIState
@@ -22,7 +22,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.threeten.bp.LocalDate
@@ -55,15 +54,24 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
         MutableStateFlow(emptyList<OrganizationCashChartData>())
     val organizationCashChartData = _organizationCashChartData.asStateFlow()
 
+    private var _organizationDonorChartData =
+        MutableStateFlow(emptyList<OrganizationDonorChartData>())
+    val organizationDonorChartData = _organizationDonorChartData.asStateFlow()
+
     private var _year = MutableStateFlow(LocalDate.now().year)
     val year = _year.asStateFlow()
 
     init {
         viewModelScope.launch {
-            year.collect{
+            year.collect {
                 getDonationReceivedUpdates()
             }
         }
+    }
+
+    fun clearData(){
+        _currentScreen.update { null }
+        _homeUIState.update { null }
     }
 
 
@@ -168,7 +176,7 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
         sharedRepository.getDonationReceiveUpdates(
             organization = user.value,
             onSuccess = { statements ->
-                val arrayList = ArrayList<OrganizationCashChartData>()
+                val arrayListOfCashChartData = ArrayList<OrganizationCashChartData>()
                 for (i in 1..12) {
                     val totalAmount = statements.filter { statement ->
                         DateUtils.convertMainDateTimeFormatToLocalDate(
@@ -177,9 +185,38 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
                             it.year == this@SharedViewModel.year.value && it.monthValue == i
                         }
                     }.sumOf { it.amount }
-                    arrayList.add(OrganizationCashChartData(localDate = LocalDate.of(year.value, i, 1), amount = totalAmount))
+                    arrayListOfCashChartData.add(
+                        OrganizationCashChartData(
+                            localDate = LocalDate.of(
+                                year.value,
+                                i,
+                                1
+                            ), amount = totalAmount
+                        )
+                    )
                 }
-                _organizationCashChartData.update { arrayList }
+                _organizationCashChartData.update { arrayListOfCashChartData }
+                val arrayListOfDonorChartData = ArrayList<OrganizationDonorChartData>()
+                statements.groupBy { it.userId }.forEach { (_, statements) ->
+                    if (statements.all { statement ->
+                            DateUtils.convertMainDateTimeFormatToLocalDate(
+                                date = statement.date
+                            )!!.let {
+                                it.year == this@SharedViewModel.year.value
+                            }
+                        })
+                        arrayListOfDonorChartData.add(
+                            OrganizationDonorChartData(
+                                donor = statements.first().userName,
+                                amount = statements.sumOf { it.amount })
+                        )
+                }
+                _organizationDonorChartData.update {
+                    if(arrayListOfDonorChartData.size > 4)
+                        arrayListOfDonorChartData.subList(0, 4).sortedByDescending { it.amount }
+                    else
+                        arrayListOfDonorChartData.sortedByDescending { it.amount }
+                }
             },
             onError = {
                 _homeUIState.update { _ -> HomeUIState.Error(errorMessage = it) }

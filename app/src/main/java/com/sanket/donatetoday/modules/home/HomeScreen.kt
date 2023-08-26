@@ -3,29 +3,23 @@ package com.sanket.donatetoday.modules.home
 import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.animate
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.animation.with
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -39,12 +33,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
-import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.MaterialTheme
-import androidx.compose.material.ProgressIndicatorDefaults
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Edit
@@ -62,7 +53,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -71,9 +61,9 @@ import androidx.compose.ui.unit.sp
 import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
 import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
 import com.patrykandpatrick.vico.compose.chart.Chart
+import com.patrykandpatrick.vico.compose.chart.column.columnChart
 import com.patrykandpatrick.vico.compose.chart.line.lineChart
 import com.patrykandpatrick.vico.compose.m2.style.m2ChartStyle
-import com.patrykandpatrick.vico.compose.style.ChartStyle
 import com.patrykandpatrick.vico.compose.style.ProvideChartStyle
 import com.patrykandpatrick.vico.core.axis.AxisPosition
 import com.patrykandpatrick.vico.core.axis.formatter.AxisValueFormatter
@@ -85,6 +75,7 @@ import com.sanket.donatetoday.modules.common.AppLogoHorizontal
 import com.sanket.donatetoday.modules.common.AutoSizeText
 import com.sanket.donatetoday.modules.common.CardContainer
 import com.sanket.donatetoday.modules.common.DonateTodayBottomTabs
+import com.sanket.donatetoday.modules.common.DonateTodayDivider
 import com.sanket.donatetoday.modules.common.DonateTodayProfilePicture
 import com.sanket.donatetoday.modules.common.DonateTodaySingleLineTextField
 import com.sanket.donatetoday.modules.common.DonateTodayYearNavigator
@@ -97,10 +88,9 @@ import com.sanket.donatetoday.modules.home.data.SettingsItem
 import com.sanket.donatetoday.modules.home.enums.SettingsEnums
 import com.sanket.donatetoday.modules.home.getters.DashboardGetters
 import com.sanket.donatetoday.modules.organization.data.OrganizationCashChartData
+import com.sanket.donatetoday.modules.organization.data.OrganizationDonorChartData
 import com.sanket.donatetoday.modules.statements.StatementsScreen
-import com.sanket.donatetoday.utils.MaximumMonthlyGoal
 import kotlinx.coroutines.launch
-import org.threeten.bp.LocalDate
 import org.threeten.bp.format.DateTimeFormatter
 
 
@@ -187,11 +177,13 @@ fun DashboardScreenContainer(dashboardGetters: DashboardGetters) {
                 else
                     OrganizationDashboard(
                         organizationCashChartData = dashboardGetters.organizationCashChartData,
+                        organizationDonorChartData = dashboardGetters.organizationDonorChartData,
                         year = dashboardGetters.year,
                         onYearChanged = dashboardGetters.onYearChanged
                     )
             }
         }
+        item { Spacer(modifier = Modifier.size(100.dp)) }
     }
 }
 
@@ -213,13 +205,19 @@ fun UserDashboard(
 @Composable
 fun OrganizationDashboard(
     organizationCashChartData: List<OrganizationCashChartData>,
+    organizationDonorChartData: List<OrganizationDonorChartData>,
     year: Int,
     onYearChanged: (year: Int) -> Unit
 ) {
-    val chartEntryModel = entryModelOf(*organizationCashChartData.map { it.amount }.toTypedArray())
-    val horizontalAxisValueFormatter =
+    val cashChartEntryModel = entryModelOf(*organizationCashChartData.map { it.amount }.toTypedArray())
+    val donorChartEntryModel = entryModelOf(*organizationDonorChartData.map { it.amount }.toTypedArray())
+    val horizontalAxisValueFormatterForCash =
         AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ ->
             organizationCashChartData[value.toInt()].localDate.format(DateTimeFormatter.ofPattern("MMM yyyy"))
+        }
+    val horizontalAxisValueFormatterForDonor =
+        AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ ->
+            organizationDonorChartData.getOrNull(value.toInt())?.donor?.split(" ")?.getOrNull(0) ?: "-"
         }
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -253,13 +251,48 @@ fun OrganizationDashboard(
             ) {
                 Chart(
                     chart = lineChart(),
-                    model = chartEntryModel,
+                    model = cashChartEntryModel,
                     startAxis = rememberStartAxis(),
-                    bottomAxis = rememberBottomAxis(valueFormatter = horizontalAxisValueFormatter),
+                    bottomAxis = rememberBottomAxis(valueFormatter = horizontalAxisValueFormatterForCash),
                 )
             }
         }
         DonateTodayYearNavigator(currentYear = year, onYearChanged = onYearChanged)
+        Text(
+            text = "Top Donor Chart",
+            color = MaterialTheme.colors.secondary,
+            fontWeight = FontWeight.Bold
+        )
+        AnimatedContent(targetState = year, transitionSpec = {
+            // Compare the incoming number with the previous number.
+            if (targetState > initialState) {
+                // If the target number is larger, it slides up and fades in
+                // while the initial (smaller) number slides up and fades out.
+                slideInHorizontally { width -> width } + fadeIn() togetherWith
+                        slideOutHorizontally { width -> -width } + fadeOut()
+            } else {
+                // If the target number is smaller, it slides down and fades in
+                // while the initial number slides down and fades out.
+                slideInHorizontally { width -> -width } + fadeIn() togetherWith
+                        slideOutHorizontally { width -> width } + fadeOut()
+            }.using(
+                // Disable clipping since the faded slide-in/out should
+                // be displayed out of bounds.
+                SizeTransform(clip = false)
+            )
+        }, label = "Year Navigator") {
+            ProvideChartStyle(
+                chartStyle = m2ChartStyle(axisLineColor = MaterialTheme.colors.secondary)
+            ) {
+                Chart(
+                    chart = columnChart(),
+                    model = donorChartEntryModel,
+                    startAxis = rememberStartAxis(),
+                    bottomAxis = rememberBottomAxis(valueFormatter = horizontalAxisValueFormatterForDonor),
+                )
+            }
+        }
+
     }
 }
 
@@ -280,7 +313,7 @@ fun DashboardToolbar(
     }
     Row(
         modifier = modifier
-            .fillMaxWidth()
+            .fillMaxWidth().background(color = MaterialTheme.colors.surface)
             .padding(horizontal = 10.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
