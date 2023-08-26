@@ -126,6 +126,16 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
         }
     }
 
+    fun getUserBasedOnId(id: String) = viewModelScope.launch {
+        _homeUIState.update { HomeUIState.Loading() }
+        try {
+            val userDTO = sharedRepository.getUserBasedOnId(id = id)
+            _homeUIState.update { HomeUIState.Success(data = userDTO) }
+        } catch (ex: Exception) {
+            _homeUIState.update { HomeUIState.Error(errorMessage = ex.message) }
+        }
+    }
+
     fun addDonation(amount: Int) = viewModelScope.launch {
         when (val state = homeUIState.value) {
             is HomeUIState.Success -> {

@@ -35,6 +35,7 @@ import com.sanket.donatetoday.modules.common.DonateTodayDivider
 import com.sanket.donatetoday.modules.common.DonateTodayProfilePicture
 import com.sanket.donatetoday.modules.common.DonateTodayToolbar
 import com.sanket.donatetoday.modules.common.DonationGoalIndicator
+import com.sanket.donatetoday.modules.common.HorizontalHeaderValue
 import com.sanket.donatetoday.modules.common.UniversalHorizontalPaddingInDp
 import com.sanket.donatetoday.modules.common.UniversalInnerHorizontalPaddingInDp
 import com.sanket.donatetoday.modules.common.UniversalInnerVerticalPaddingInDp
@@ -103,7 +104,7 @@ fun OrganizationDetailScreen(
                         AnimatedVisibility(visible = !organization.phoneNo.isNullOrEmpty()) {
                             HorizontalHeaderValue(
                                 header = "Telephone Number",
-                                value = "+${organization.countryPhoneCode}-${organization.phoneNo}"
+                                value = "${organization.countryPhoneCode}-${organization.phoneNo}"
                             )
                         }
                         DonateTodayDivider()
@@ -154,24 +155,7 @@ fun OrganizationDetailScreen(
     }
 }
 
-@Composable
-private fun HorizontalHeaderValue(modifier: Modifier = Modifier, header: String, value: String?) {
-    if (!value.isNullOrEmpty())
-        Row(
-            modifier = modifier,
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(5.dp)
-        ) {
-            Text(
-                text = header,
-                style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold)
-            )
-            Text(
-                text = value,
-                style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Normal)
-            )
-        }
-}
+
 
 @Composable
 fun DonationItemButton(donationItem: String, onClick: () -> Unit) {

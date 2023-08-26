@@ -42,6 +42,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
@@ -75,7 +76,6 @@ import com.sanket.donatetoday.modules.common.AppLogoHorizontal
 import com.sanket.donatetoday.modules.common.AutoSizeText
 import com.sanket.donatetoday.modules.common.CardContainer
 import com.sanket.donatetoday.modules.common.DonateTodayBottomTabs
-import com.sanket.donatetoday.modules.common.DonateTodayDivider
 import com.sanket.donatetoday.modules.common.DonateTodayProfilePicture
 import com.sanket.donatetoday.modules.common.DonateTodaySingleLineTextField
 import com.sanket.donatetoday.modules.common.DonateTodayYearNavigator
@@ -87,6 +87,7 @@ import com.sanket.donatetoday.modules.common.UniversalVerticalPaddingInDp
 import com.sanket.donatetoday.modules.home.data.SettingsItem
 import com.sanket.donatetoday.modules.home.enums.SettingsEnums
 import com.sanket.donatetoday.modules.home.getters.DashboardGetters
+import com.sanket.donatetoday.modules.message.MessageScreen
 import com.sanket.donatetoday.modules.organization.data.OrganizationCashChartData
 import com.sanket.donatetoday.modules.organization.data.OrganizationDonorChartData
 import com.sanket.donatetoday.modules.statements.StatementsScreen
@@ -98,7 +99,12 @@ import org.threeten.bp.format.DateTimeFormatter
 @Composable
 fun HomeScreenContainer(dashboardGetters: DashboardGetters) {
     val pages = remember {
-        listOf(Icons.Default.Home, Icons.Default.List, Icons.Default.Settings)
+        listOf(
+            Icons.Default.Home,
+            Icons.Default.List,
+            Icons.Default.Message,
+            Icons.Default.Settings
+        )
     }
     val pagerState = rememberPagerState(
         initialPage = 0,
@@ -118,10 +124,11 @@ fun HomeScreenContainer(dashboardGetters: DashboardGetters) {
                 1 -> StatementsScreen(
                     userDTO = dashboardGetters.userDTO,
                     statements = dashboardGetters.listOfStatements,
-                    onSearchStatements = dashboardGetters.onSearchStatements
+                    onSearchStatements = dashboardGetters.onSearchStatements,
+                    onClick = dashboardGetters.onStatementClick
                 )
-
-                2 -> SettingsMainContainer(dashboardGetters = dashboardGetters)
+                2 -> MessageScreen()
+                3 -> SettingsMainContainer(dashboardGetters = dashboardGetters)
                 else -> Unit
             }
         }
@@ -209,15 +216,18 @@ fun OrganizationDashboard(
     year: Int,
     onYearChanged: (year: Int) -> Unit
 ) {
-    val cashChartEntryModel = entryModelOf(*organizationCashChartData.map { it.amount }.toTypedArray())
-    val donorChartEntryModel = entryModelOf(*organizationDonorChartData.map { it.amount }.toTypedArray())
+    val cashChartEntryModel =
+        entryModelOf(*organizationCashChartData.map { it.amount }.toTypedArray())
+    val donorChartEntryModel =
+        entryModelOf(*organizationDonorChartData.map { it.amount }.toTypedArray())
     val horizontalAxisValueFormatterForCash =
         AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ ->
             organizationCashChartData[value.toInt()].localDate.format(DateTimeFormatter.ofPattern("MMM yyyy"))
         }
     val horizontalAxisValueFormatterForDonor =
         AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ ->
-            organizationDonorChartData.getOrNull(value.toInt())?.donor?.split(" ")?.getOrNull(0) ?: "-"
+            organizationDonorChartData.getOrNull(value.toInt())?.donor?.split(" ")?.getOrNull(0)
+                ?: "-"
         }
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -313,7 +323,8 @@ fun DashboardToolbar(
     }
     Row(
         modifier = modifier
-            .fillMaxWidth().background(color = MaterialTheme.colors.surface)
+            .fillMaxWidth()
+            .background(color = MaterialTheme.colors.surface)
             .padding(horizontal = 10.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically

@@ -85,6 +85,22 @@ class SharedRepository @Inject constructor(
             }
     }
 
+    suspend fun getUserBasedOnId(id: String) = suspendCancellableCoroutine { cont ->
+        database.child(FirebasePaths.Users.node).child(FirebasePaths.Donors.node).child(id)
+            .get().addOnSuccessListener { dataSnapshot ->
+                dataSnapshot.getValue<UserDTO>().let { userDTO ->
+                    if (userDTO == null)
+                        cont.resumeWithException(Exception("User not found."))
+                    else
+                        cont.resume(userDTO) {
+                            Exception(it)
+                        }
+                }
+            }.addOnFailureListener {
+                cont.resumeWithException(it)
+            }
+    }
+
     suspend fun getUserFromFirebase(email: String?) = suspendCancellableCoroutine { cont ->
         if (email == null)
             cont.resumeWithException(Exception("User not found."))

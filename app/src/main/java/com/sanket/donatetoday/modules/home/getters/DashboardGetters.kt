@@ -14,6 +14,7 @@ data class DashboardGetters(
     val organizationCashChartData: List<OrganizationCashChartData>,
     val organizationDonorChartData: List<OrganizationDonorChartData>,
     val onSearchStatements: (String) -> Unit,
+    val onStatementClick: (id: String) -> Unit,
     val onEditMonthlyGoal: () -> Unit,
     val onSettingsClick: (SettingsEnums) -> Unit,
     val onDonationItemUserModelClick: (DonationItemUserModel) -> Unit,

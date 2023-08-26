@@ -19,6 +19,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.with
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -36,6 +37,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -51,6 +54,9 @@ import androidx.compose.material.IconButton
 import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.ProgressIndicatorDefaults
+import androidx.compose.material.Tab
+import androidx.compose.material.TabRow
+import androidx.compose.material.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.material.TextFieldColors
@@ -66,6 +72,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.DeviceUnknown
 import androidx.compose.material.icons.filled.Fastfood
+import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Warning
@@ -76,6 +83,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -109,6 +117,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.sanket.donatetoday.R
+import com.sanket.donatetoday.modules.common.data.TabItem
 import com.sanket.donatetoday.modules.common.enums.DonationItemTypes
 import com.sanket.donatetoday.ui.theme.ColorBlack
 import com.sanket.donatetoday.ui.theme.ColorPrimary
@@ -120,6 +129,7 @@ import com.sanket.donatetoday.utils.getInitial
 import com.togitech.ccp.component.TogiCodeDialog
 import com.togitech.ccp.component.TogiCountryCodePicker
 import com.togitech.ccp.data.utils.getLibCountries
+import kotlinx.coroutines.launch
 import java.lang.Math.PI
 import java.lang.Math.atan2
 import java.lang.Math.max
@@ -982,4 +992,72 @@ fun DonateTodayYearNavigator(
             )
         }
     }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun DonateTodayTabPager(
+    tabs: List<TabItem>,
+    indicatorColor: Color = MaterialTheme.colors.secondary,
+    indicatorHeight: Dp = 4.dp,
+    containerColor: Color = MaterialTheme.colors.surface,
+    contentColor: Color = MaterialTheme.colors.onSurface,
+    contentTextSize: TextUnit = 14.sp
+) {
+    val pagerState = rememberPagerState(pageCount = { tabs.size })
+    val coroutineScope = rememberCoroutineScope()
+    TabRow(
+        selectedTabIndex = pagerState.currentPage,
+        backgroundColor = containerColor,
+        contentColor = contentColor,
+        indicator = { tabPositions ->
+            Box(
+                modifier = Modifier
+                    .tabIndicatorOffset(tabPositions[pagerState.currentPage])
+                    .height(indicatorHeight)
+                    .background(color = indicatorColor)
+            )
+        }
+    ) {
+        tabs.forEachIndexed { index, item ->
+            val textColor by animateColorAsState(targetValue = if (index == pagerState.currentPage) indicatorColor else contentColor, label ="")
+            Tab(
+                selected = index == pagerState.currentPage,
+                text = {
+                    Text(
+                        text = item.title,
+                        color = textColor,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = contentTextSize
+                    )
+                },
+                icon = {
+                    Icon(imageVector = item.icon, contentDescription = item.title, tint = textColor)
+                },
+                onClick = { coroutineScope.launch { pagerState.animateScrollToPage(index) } },
+            )
+        }
+    }
+    HorizontalPager(state = pagerState) {
+        tabs[pagerState.currentPage].screen()
+    }
+}
+
+@Composable
+fun HorizontalHeaderValue(modifier: Modifier = Modifier, header: String, value: String?) {
+    if (!value.isNullOrEmpty())
+        Row(
+            modifier = modifier,
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            Text(
+                text = header,
+                style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold)
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Normal)
+            )
+        }
 }

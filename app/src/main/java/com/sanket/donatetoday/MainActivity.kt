@@ -1,11 +1,9 @@
 package com.sanket.donatetoday
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.MaterialTheme
@@ -44,7 +42,7 @@ import com.sanket.donatetoday.modules.common.snackbar.SnackBarLengthLong
 import com.sanket.donatetoday.modules.common.snackbar.SnackBarLengthMedium
 import com.sanket.donatetoday.modules.common.snackbar.SnackBarState
 import com.sanket.donatetoday.modules.common.snackbar.rememberSnackBarState
-import com.sanket.donatetoday.modules.home.DashboardScreenContainer
+import com.sanket.donatetoday.modules.donor.DonorDetailScreen
 import com.sanket.donatetoday.modules.home.HomeScreenContainer
 import com.sanket.donatetoday.modules.home.enums.SettingsEnums
 import com.sanket.donatetoday.modules.home.getters.DashboardGetters
@@ -73,14 +71,10 @@ class MainActivity : ComponentActivity() {
     private val onBoardingViewModel by viewModels<OnBoardingViewModel>()
 
 
-    override fun onStart() {
-        super.onStart()
-        onBoardingViewModel.isUserLoggedIn()
-    }
-
     @OptIn(ExperimentalMaterialNavigationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        onBoardingViewModel.isUserLoggedIn()
         setContent {
             // A surface container using the 'background' color from the theme
             val bottomSheetNavigator = rememberCustomBottomSheetNavigator()
@@ -268,6 +262,8 @@ class MainActivity : ComponentActivity() {
                             )
                         }, onSearchStatements = {
                             sharedViewModel.filterStatements(search = it)
+                        }, onStatementClick = {
+                            mainNavController.navigator(route = BottomSheet.UserStatementDetail.route + "/${it}")
                         })
                 )
             }
@@ -326,6 +322,34 @@ class MainActivity : ComponentActivity() {
                     mainNavController.popBackStack()
                     sharedViewModel.goToScreen(screenNavigator = ScreenNavigator(screen = Screen.ProfileScreen))
                 })
+            }
+            bottomSheet(route = BottomSheet.UserStatementDetail.route + "/{id}"){ navBackStackEntry ->
+                navBackStackEntry.arguments?.getString("id")?.let { id ->
+                    LaunchedEffect(key1 = id) {
+                        sharedViewModel.getUserBasedOnId(id = id)
+                    }
+                    val homeUIState by sharedViewModel.homeUIState.collectAsState()
+                    var user: UserDTO? by remember(homeUIState) {
+                        mutableStateOf(null)
+                    }
+                    LaunchedEffect(key1 = homeUIState) {
+                        when (val state = homeUIState) {
+                            is HomeUIState.Loading -> loaderState.show()
+                            is HomeUIState.Success -> {
+                                user = state.data
+                                loaderState.hide()
+                            }
+
+                            else -> snackBarState.show(
+                                overridingText = state?.message,
+                                overridingDelay = SnackBarLengthMedium
+                            ).also { loaderState.hide() }
+                        }
+                    }
+                    DonorDetailScreen(user = user, onMessage = {
+
+                    })
+                }
             }
         }
     }

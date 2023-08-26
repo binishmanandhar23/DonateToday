@@ -35,13 +35,13 @@ import com.sanket.donatetoday.utils.DateUtils
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun StatementsScreen(userDTO: UserDTO, statements: List<StatementDTO>, onSearchStatements: (String) -> Unit) {
+fun StatementsScreen(userDTO: UserDTO, statements: List<StatementDTO>, onSearchStatements: (String) -> Unit, onClick: (id: String) -> Unit) {
     LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         stickyHeader {
             DashboardToolbar(toolbarText = "Statements", onSearch = onSearchStatements)
         }
         items(statements) { statement ->
-            StatementListDesign(userDTO = userDTO, statementDTO = statement)
+            StatementListDesign(userDTO = userDTO, statementDTO = statement, onClick = onClick)
         }
         item {
             Spacer(modifier = Modifier.size(150.dp))
@@ -50,12 +50,12 @@ fun StatementsScreen(userDTO: UserDTO, statements: List<StatementDTO>, onSearchS
 }
 
 @Composable
-fun StatementListDesign(userDTO: UserDTO, statementDTO: StatementDTO) {
+fun StatementListDesign(userDTO: UserDTO, statementDTO: StatementDTO, onClick: (id: String) -> Unit) {
     CardContainer(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = UniversalHorizontalPaddingInDp, vertical = 5.dp),
-        onClick = { /*TODO*/ },
+        onClick = { onClick(if (userDTO.userType == UserType.Donor.type) statementDTO.organizationId else statementDTO.userId) },
         cardColor = MaterialTheme.colors.background,
         shape = MaterialTheme.shapes.medium
     ) {
@@ -90,14 +90,16 @@ fun StatementListDesign(userDTO: UserDTO, statementDTO: StatementDTO) {
                         )
                     }
                 }
-                Text(
-                    modifier = Modifier.weight(0.3f),
-                    text = "$ ${statementDTO.amount}",
-                    style = MaterialTheme.typography.h3.copy(
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.End
+                Column(modifier = Modifier.weight(0.3f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Text(text = if (userDTO.userType == UserType.Donor.type) "Donated" else "Received", style = MaterialTheme.typography.subtitle2)
+                    Text(
+                        text = "$ ${statementDTO.amount}",
+                        style = MaterialTheme.typography.h3.copy(
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.End
+                        )
                     )
-                )
+                }
             }
         }
     }
