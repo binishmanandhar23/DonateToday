@@ -415,6 +415,63 @@ fun DonateTodaySingleLineTextField(
 }
 
 @Composable
+fun DonateTodayMultiLineTextField(
+    modifier: Modifier = Modifier,
+    value: String,
+    errorText: String? = null,
+    errorIcon: ImageVector? = null,
+    errorTextColor: Color = MaterialTheme.colors.error,
+    errorIconColor: Color = Color.Red,
+    onValueChange: (String) -> Unit,
+    label: String,
+    labelIcon: ImageVector? = null,
+    enabled: Boolean = true,
+    @DrawableRes labelIconResId: Int? = null,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
+    maxLines: Int = 3,
+    keyboardOptions: KeyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+    keyboardActions: KeyboardActions = KeyboardActions(),
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+) {
+    CoreTextFieldWithBorders(
+        modifier = modifier,
+        errorText = errorText,
+        errorIcon = errorIcon,
+        errorTextColor = errorTextColor,
+        errorIconColor = errorIconColor
+    ) {
+        CoreCustomTextField(
+            modifier = modifier,
+            value = value,
+            onValueChange = onValueChange,
+            enabled = enabled,
+            label = {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (labelIcon != null)
+                        Icon(imageVector = labelIcon, contentDescription = label)
+                    if (labelIconResId != null)
+                        Icon(
+                            painter = painterResource(id = labelIconResId),
+                            contentDescription = label
+                        )
+                    Text(text = label)
+                }
+            },
+            keyboardOptions = keyboardOptions,
+            keyboardActions = keyboardActions,
+            maxLines = maxLines,
+            visualTransformation = visualTransformation,
+            trailingIcon = trailingIcon,
+            leadingIcon = leadingIcon
+        )
+    }
+}
+
+@Composable
 fun DonateTodayButton(
     modifier: Modifier = Modifier,
     text: String,
