@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -36,7 +37,7 @@ import com.sanket.donatetoday.utils.DateUtils
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun StatementsScreen(userDTO: UserDTO, statements: List<StatementDTO>, onSearchStatements: (String) -> Unit, onClick: (id: String) -> Unit) {
-    LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    LazyColumn(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         stickyHeader {
             DashboardToolbar(toolbarText = "Statements", onSearch = onSearchStatements, searchEnabled = true)
         }
