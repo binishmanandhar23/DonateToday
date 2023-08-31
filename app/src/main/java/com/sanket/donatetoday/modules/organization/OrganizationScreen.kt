@@ -1,16 +1,25 @@
 package com.sanket.donatetoday.modules.organization
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.TextButton
@@ -20,19 +29,27 @@ import androidx.compose.material.icons.filled.DeviceUnknown
 import androidx.compose.material.icons.filled.Fastfood
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.rounded.AddCircle
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.capitalize
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.dp
 import com.sanket.donatetoday.models.dto.UserDTO
 import com.sanket.donatetoday.modules.common.CardContainer
 import com.sanket.donatetoday.modules.common.CreditCardDetailsWithCVV
+import com.sanket.donatetoday.modules.common.DonateTodayButton
 import com.sanket.donatetoday.modules.common.DonateTodayCircularButton
 import com.sanket.donatetoday.modules.common.DonateTodayDivider
 import com.sanket.donatetoday.modules.common.DonateTodayProfilePicture
+import com.sanket.donatetoday.modules.common.DonateTodaySingleLineTextField
 import com.sanket.donatetoday.modules.common.DonateTodayToolbar
 import com.sanket.donatetoday.modules.common.DonationGoalIndicator
 import com.sanket.donatetoday.modules.common.HorizontalHeaderValue
@@ -41,7 +58,7 @@ import com.sanket.donatetoday.modules.common.UniversalInnerHorizontalPaddingInDp
 import com.sanket.donatetoday.modules.common.UniversalInnerVerticalPaddingInDp
 import com.sanket.donatetoday.modules.common.UniversalVerticalPaddingInDp
 import com.sanket.donatetoday.modules.common.enums.DonationItemTypes
-import com.sanket.donatetoday.ui.theme.ColorWhite
+import com.sanket.donatetoday.modules.organization.data.ClothesDonationData
 
 @Composable
 fun OrganizationDetailScreen(
@@ -60,7 +77,7 @@ fun OrganizationDetailScreen(
             onBack = onBack
         )
         AnimatedVisibility(visible = organization != null) {
-            if(organization == null)
+            if (organization == null)
                 return@AnimatedVisibility
 
             Column(
@@ -156,29 +173,42 @@ fun OrganizationDetailScreen(
 }
 
 
-
 @Composable
 fun DonationItemButton(donationItem: String, onClick: () -> Unit) {
     DonateTodayCircularButton(
-        onClick = onClick, imageVector = when (donationItem) {
+        onClick = onClick,
+        imageVector = when (donationItem) {
             DonationItemTypes.Cash.type -> Icons.Default.MonetizationOn
             DonationItemTypes.Clothes.type -> Icons.Default.Accessibility
             DonationItemTypes.Food.type -> Icons.Default.Fastfood
             DonationItemTypes.Utensils.type -> Icons.Default.Palette
             else -> Icons.Default.DeviceUnknown
-        }, contentDescription = donationItem.capitalize(Locale.current),
+        },
+        contentDescription = donationItem.capitalize(Locale.current),
     )
 }
 
 @Composable
-fun DonationBottomSheet(userDTO: UserDTO, onDonate: (amount: Int) -> Unit, onGoToProfile: () -> Unit) {
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .padding(
-            horizontal = UniversalHorizontalPaddingInDp,
-            vertical = UniversalVerticalPaddingInDp
-        ), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text(text = "Card Details", style = MaterialTheme.typography.h3.copy(color = MaterialTheme.colors.secondary, fontWeight = FontWeight.Bold))
+fun CashDonationBottomSheet(
+    userDTO: UserDTO,
+    onDonate: (amount: Int) -> Unit,
+    onGoToProfile: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(
+                horizontal = UniversalHorizontalPaddingInDp,
+                vertical = UniversalVerticalPaddingInDp
+            ), verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Text(
+            text = "Card Details",
+            style = MaterialTheme.typography.h3.copy(
+                color = MaterialTheme.colors.secondary,
+                fontWeight = FontWeight.Bold
+            )
+        )
         if (userDTO.cardInfo != null) {
             CreditCardDetailsWithCVV(creditCardDataDTO = userDTO.cardInfo, onDonate = onDonate)
         } else {
@@ -188,6 +218,119 @@ fun DonationBottomSheet(userDTO: UserDTO, onDonate: (amount: Int) -> Unit, onGoT
                     text = "Go to settings",
                     style = MaterialTheme.typography.h5.copy(fontWeight = FontWeight.Bold)
                 )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun ClothesDonationBottomSheet(
+    userDTO: UserDTO,
+    onDonate: (clothesData: List<ClothesDonationData>) -> Unit,
+) {
+    val leftWeight = remember {
+        0.55f
+    }
+    val middleWeight = remember {
+        0.1f
+    }
+    val rightWeight = remember {
+        0.35f
+    }
+    val clothesDonationData = remember {
+        mutableStateListOf(ClothesDonationData())
+    }
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(
+                horizontal = UniversalHorizontalPaddingInDp,
+                vertical = UniversalVerticalPaddingInDp
+            ), verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        stickyHeader {
+            Text(
+                text = "Clothes to Donate",
+                style = MaterialTheme.typography.h3.copy(
+                    color = MaterialTheme.colors.secondary,
+                    fontWeight = FontWeight.Bold
+                )
+            )
+        }
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    modifier = Modifier.weight(leftWeight),
+                    text = "Item name",
+                    style = MaterialTheme.typography.h5.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colors.secondary
+                    )
+                )
+                Spacer(modifier = Modifier.weight(middleWeight))
+                Text(
+                    modifier = Modifier.weight(rightWeight),
+                    text = "Amount",
+                    style = MaterialTheme.typography.h5.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colors.secondary
+                    )
+                )
+            }
+        }
+        itemsIndexed(clothesDonationData, key = { index, item ->
+            index
+        }) { index, item ->
+            Row(
+                modifier = Modifier.fillMaxWidth().animateItemPlacement(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                DonateTodaySingleLineTextField(
+                    modifier = Modifier.weight(leftWeight),
+                    label = "Enter item name",
+                    value = item.itemName,
+                    onValueChange = {
+                        clothesDonationData[index] = item.copy(itemName = it)
+                    })
+                Spacer(modifier = Modifier.weight(middleWeight))
+                DonateTodaySingleLineTextField(
+                    modifier = Modifier.weight(rightWeight),
+                    label = "Amount",
+                    value = item.amount?.toString() ?: "",
+                    keyboardOptions = KeyboardOptions(
+                        imeAction = ImeAction.Done,
+                        keyboardType = KeyboardType.Number
+                    ),
+                    onValueChange = {
+                        clothesDonationData[index] = item.copy(amount = it.toIntOrNull())
+                    })
+            }
+        }
+        item {
+            Row(
+                modifier = Modifier.clickable(role = Role.Button) {
+                    clothesDonationData.add(ClothesDonationData())
+                },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(5.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.AddCircle,
+                    contentDescription = "Add data",
+                    tint = MaterialTheme.colors.secondary
+                )
+                Text(text = "Add more")
+            }
+        }
+        item {
+            Box(modifier = Modifier.fillMaxWidth()) {
+                DonateTodayButton(modifier = Modifier.align(Alignment.Center), text = "Donate") {
+                    onDonate(clothesDonationData)
+                }
             }
         }
     }

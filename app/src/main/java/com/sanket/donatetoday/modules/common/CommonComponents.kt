@@ -327,9 +327,9 @@ fun TextFieldOuterBox(
     errorIconColor: Color = Color.Red,
     content: @Composable BoxScope.() -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+    Column(modifier = modifier,verticalArrangement = Arrangement.spacedBy(5.dp)) {
         Box(
-            modifier = modifier.border(
+            modifier = Modifier.border(
                 width = 0.5.dp,
                 color = MaterialTheme.colors.secondaryVariant,
                 shape = MaterialTheme.shapes.small

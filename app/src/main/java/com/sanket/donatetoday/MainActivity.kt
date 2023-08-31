@@ -33,6 +33,7 @@ import com.sanket.donatetoday.enums.UserType
 import com.sanket.donatetoday.models.dto.UserDTO
 import com.sanket.donatetoday.modules.common.DonateTodayMonthlyGoalDialog
 import com.sanket.donatetoday.modules.common.dialog.CustomDialogState
+import com.sanket.donatetoday.modules.common.enums.DonationItemTypes
 import com.sanket.donatetoday.modules.common.loader.DonateTodayLoader
 import com.sanket.donatetoday.modules.common.loader.LoaderState
 import com.sanket.donatetoday.modules.common.loader.rememberLoaderState
@@ -46,7 +47,8 @@ import com.sanket.donatetoday.modules.donor.DonorDetailScreen
 import com.sanket.donatetoday.modules.home.HomeScreenContainer
 import com.sanket.donatetoday.modules.home.enums.SettingsEnums
 import com.sanket.donatetoday.modules.home.getters.DashboardGetters
-import com.sanket.donatetoday.modules.organization.DonationBottomSheet
+import com.sanket.donatetoday.modules.organization.CashDonationBottomSheet
+import com.sanket.donatetoday.modules.organization.ClothesDonationBottomSheet
 import com.sanket.donatetoday.modules.organization.OrganizationDetailScreen
 import com.sanket.donatetoday.modules.profile.ProfileScreen
 import com.sanket.donatetoday.modules.profile.getters.ProfileScreenGetters
@@ -294,8 +296,12 @@ class MainActivity : ComponentActivity() {
                     }
                         OrganizationDetailScreen(organization = organization, onBack = {
                             mainNavController.customPopBackStack()
-                        }, onDonateItem = {
-                            mainNavController.navigator(route = BottomSheet.DonateSheet.route)
+                        }, onDonateItem = { item ->
+                            when(item){
+                                DonationItemTypes.Cash.type -> mainNavController.navigator(route = BottomSheet.DonateCashSheet.route)
+                                DonationItemTypes.Clothes.type -> mainNavController.navigator(route = BottomSheet.DonateClothesSheet.route)
+                            }
+
                         })
                 }
             }
@@ -315,14 +321,20 @@ class MainActivity : ComponentActivity() {
             bottomSheet(route = BottomSheet.MapSheet.route) {
                 DonateTodayMap(modifier = Modifier.fillMaxSize())
             }
-            bottomSheet(route = BottomSheet.DonateSheet.route) {
+            bottomSheet(route = BottomSheet.DonateCashSheet.route) {
                 val userDTO by sharedViewModel.user.collectAsState()
-                DonationBottomSheet(userDTO = userDTO, onDonate = {
+                CashDonationBottomSheet(userDTO = userDTO, onDonate = {
                     mainNavController.popBackStack()
                     sharedViewModel.addDonation(amount = it)
                 }, onGoToProfile = {
                     mainNavController.popBackStack()
                     sharedViewModel.goToScreen(screenNavigator = ScreenNavigator(screen = Screen.ProfileScreen))
+                })
+            }
+            bottomSheet(route = BottomSheet.DonateClothesSheet.route) {
+                val userDTO by sharedViewModel.user.collectAsState()
+                ClothesDonationBottomSheet(userDTO = userDTO, onDonate = {
+                    mainNavController.popBackStack()
                 })
             }
             bottomSheet(route = BottomSheet.UserStatementDetail.route + "/{id}"){ navBackStackEntry ->
