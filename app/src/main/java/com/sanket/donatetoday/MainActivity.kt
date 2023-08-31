@@ -228,6 +228,7 @@ class MainActivity : ComponentActivity() {
                 val statements by sharedViewModel.filteredListOfStatements.collectAsState()
                 val organizationCashChartData by sharedViewModel.organizationCashChartData.collectAsState()
                 val organizationDonorChartData by sharedViewModel.organizationDonorChartData.collectAsState()
+                val donorCashChartData by sharedViewModel.donorCashChartData.collectAsState()
                 val recommendedOrganizations by sharedViewModel.listOfRecommended.collectAsState()
                 val year by sharedViewModel.year.collectAsState()
                 HomeScreenContainer(
@@ -237,6 +238,7 @@ class MainActivity : ComponentActivity() {
                         listOfDonationItemUserModel = recommendedOrganizations,
                         organizationCashChartData = organizationCashChartData,
                         organizationDonorChartData = organizationDonorChartData,
+                        donorCashChartData = donorCashChartData,
                         year = year,
                         onYearChanged = {
                             sharedViewModel.changeYear(it)

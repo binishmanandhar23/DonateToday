@@ -88,7 +88,7 @@ import com.sanket.donatetoday.modules.home.data.SettingsItem
 import com.sanket.donatetoday.modules.home.enums.SettingsEnums
 import com.sanket.donatetoday.modules.home.getters.DashboardGetters
 import com.sanket.donatetoday.modules.message.MessageScreen
-import com.sanket.donatetoday.modules.organization.data.OrganizationCashChartData
+import com.sanket.donatetoday.modules.organization.data.OrganizationDonorCashChartData
 import com.sanket.donatetoday.modules.organization.data.OrganizationDonorChartData
 import com.sanket.donatetoday.modules.statements.StatementsScreen
 import kotlinx.coroutines.launch
@@ -127,6 +127,7 @@ fun HomeScreenContainer(dashboardGetters: DashboardGetters) {
                     onSearchStatements = dashboardGetters.onSearchStatements,
                     onClick = dashboardGetters.onStatementClick
                 )
+
                 2 -> MessageScreen()
                 3 -> SettingsMainContainer(dashboardGetters = dashboardGetters)
                 else -> Unit
@@ -179,11 +180,14 @@ fun DashboardScreenContainer(dashboardGetters: DashboardGetters) {
                 if (dashboardGetters.userDTO.userType == UserType.Donor.type)
                     UserDashboard(
                         listOfDonationItemUserModel = dashboardGetters.listOfDonationItemUserModel,
-                        onClick = dashboardGetters.onDonationItemUserModelClick
+                        onClick = dashboardGetters.onDonationItemUserModelClick,
+                        year = dashboardGetters.year,
+                        onYearChanged = dashboardGetters.onYearChanged,
+                        donorCashChartData = dashboardGetters.donorCashChartData
                     )
                 else
                     OrganizationDashboard(
-                        organizationCashChartData = dashboardGetters.organizationCashChartData,
+                        organizationDonorCashChartData = dashboardGetters.organizationCashChartData,
                         organizationDonorChartData = dashboardGetters.organizationDonorChartData,
                         year = dashboardGetters.year,
                         onYearChanged = dashboardGetters.onYearChanged
@@ -194,35 +198,91 @@ fun DashboardScreenContainer(dashboardGetters: DashboardGetters) {
     }
 }
 
+@SuppressLint("UnusedContentLambdaTargetStateParameter")
 @Composable
 fun UserDashboard(
+    year: Int,
     listOfDonationItemUserModel: List<DonationItemUserModel>,
-    onClick: (DonationItemUserModel) -> Unit
+    donorCashChartData: List<OrganizationDonorCashChartData>,
+    onClick: (DonationItemUserModel) -> Unit,
+    onYearChanged: (year: Int) -> Unit
 ) {
-    DashboardLists(
-        modifier = Modifier.fillMaxWidth(),
-        title = "Recommended",
-        items = listOfDonationItemUserModel,
-        onClick = onClick
-    )
+    val cashChartEntryModel =
+        entryModelOf(*donorCashChartData.map { it.amount }.toTypedArray())
+    val horizontalAxisValueFormatterForCash =
+        AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ ->
+            donorCashChartData[value.toInt()].localDate.format(DateTimeFormatter.ofPattern("MMM"))
+        }
+    Column(verticalArrangement = Arrangement.spacedBy(15.dp)) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            DonateTodayYearNavigator(currentYear = year, onYearChanged = onYearChanged)
+            Text(
+                text = "Yearly Donation Chart",
+                color = MaterialTheme.colors.secondary,
+                fontWeight = FontWeight.Bold
+            )
+            AnimatedContent(targetState = year, transitionSpec = {
+                // Compare the incoming number with the previous number.
+                if (targetState > initialState) {
+                    // If the target number is larger, it slides up and fades in
+                    // while the initial (smaller) number slides up and fades out.
+                    slideInHorizontally { width -> width } + fadeIn() togetherWith
+                            slideOutHorizontally { width -> -width } + fadeOut()
+                } else {
+                    // If the target number is smaller, it slides down and fades in
+                    // while the initial number slides down and fades out.
+                    slideInHorizontally { width -> -width } + fadeIn() togetherWith
+                            slideOutHorizontally { width -> width } + fadeOut()
+                }.using(
+                    // Disable clipping since the faded slide-in/out should
+                    // be displayed out of bounds.
+                    SizeTransform(clip = false)
+                )
+            }, label = "Year Navigator") {
+                ProvideChartStyle(
+                    chartStyle = m2ChartStyle(axisLineColor = MaterialTheme.colors.secondary)
+                ) {
+                    Chart(
+                        chart = lineChart(),
+                        model = cashChartEntryModel,
+                        startAxis = rememberStartAxis(),
+                        bottomAxis = rememberBottomAxis(valueFormatter = horizontalAxisValueFormatterForCash),
+                    )
+                }
+            }
+        }
+        DashboardLists(
+            modifier = Modifier.fillMaxWidth(),
+            title = "Recommended",
+            items = listOfDonationItemUserModel,
+            onClick = onClick
+        )
+    }
 }
 
 
 @SuppressLint("UnusedContentLambdaTargetStateParameter")
 @Composable
 fun OrganizationDashboard(
-    organizationCashChartData: List<OrganizationCashChartData>,
+    organizationDonorCashChartData: List<OrganizationDonorCashChartData>,
     organizationDonorChartData: List<OrganizationDonorChartData>,
     year: Int,
     onYearChanged: (year: Int) -> Unit
 ) {
     val cashChartEntryModel =
-        entryModelOf(*organizationCashChartData.map { it.amount }.toTypedArray())
+        entryModelOf(*organizationDonorCashChartData.map { it.amount }.toTypedArray())
     val donorChartEntryModel =
         entryModelOf(*organizationDonorChartData.map { it.amount }.toTypedArray())
     val horizontalAxisValueFormatterForCash =
         AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ ->
-            organizationCashChartData[value.toInt()].localDate.format(DateTimeFormatter.ofPattern("MMM yyyy"))
+            organizationDonorCashChartData[value.toInt()].localDate.format(
+                DateTimeFormatter.ofPattern(
+                    "MMM yyyy"
+                )
+            )
         }
     val horizontalAxisValueFormatterForDonor =
         AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ ->
@@ -310,6 +370,7 @@ fun OrganizationDashboard(
 fun DashboardToolbar(
     modifier: Modifier = Modifier,
     toolbarText: String? = null,
+    searchEnabled: Boolean = false,
     onSearch: (String) -> Unit
 ) {
     var search by remember {
@@ -329,52 +390,55 @@ fun DashboardToolbar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        AnimatedContent(
-            modifier = Modifier
-                .weight(0.7f)
-                .fillMaxWidth(), targetState = search, label = "Search"
-        ) {
-            Box(modifier = Modifier.fillMaxWidth()) {
-                if (!it) {
-                    IconButton(
-                        modifier = Modifier.align(Alignment.CenterStart),
-                        onClick = { search = true }) {
-                        Icon(
-                            modifier = Modifier.size(40.dp),
-                            imageVector = Icons.Default.Search,
-                            contentDescription = "Search button"
-                        )
-                    }
-                    if (toolbarText != null)
-                        AutoSizeText(
-                            modifier = Modifier
-                                .padding(start = 50.dp, end = 10.dp)
-                                .align(Alignment.CenterStart),
-                            text = toolbarText,
-                            style = MaterialTheme.typography.h3.copy(
-                                color = MaterialTheme.colors.onSurface,
-                                letterSpacing = 0.14.sp,
-                                textAlign = TextAlign.Start
+        if (searchEnabled)
+            AnimatedContent(
+                modifier = Modifier
+                    .weight(0.7f)
+                    .fillMaxWidth(), targetState = search, label = "Search"
+            ) {
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    if (!it) {
+                        IconButton(
+                            modifier = Modifier.align(Alignment.CenterStart),
+                            onClick = { search = true }) {
+                            Icon(
+                                modifier = Modifier.size(40.dp),
+                                imageVector = Icons.Default.Search,
+                                contentDescription = "Search button"
                             )
-                        )
-                } else {
-                    DonateTodaySingleLineTextField(
-                        value = searchText,
-                        onValueChange = {
-                            searchText = it
-                        },
-                        label = "Search",
-                        trailingIcon = {
-                            IconButton(onClick = { search = false }) {
-                                Icon(
-                                    imageVector = Icons.Default.Clear,
-                                    contentDescription = "Clear button"
+                        }
+                        if (toolbarText != null)
+                            AutoSizeText(
+                                modifier = Modifier
+                                    .padding(start = 50.dp, end = 10.dp)
+                                    .align(Alignment.CenterStart),
+                                text = toolbarText,
+                                style = MaterialTheme.typography.h3.copy(
+                                    color = MaterialTheme.colors.onSurface,
+                                    letterSpacing = 0.14.sp,
+                                    textAlign = TextAlign.Start
                                 )
-                            }
-                        })
+                            )
+                    } else {
+                        DonateTodaySingleLineTextField(
+                            value = searchText,
+                            onValueChange = {
+                                searchText = it
+                            },
+                            label = "Search",
+                            trailingIcon = {
+                                IconButton(onClick = { search = false }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Clear,
+                                        contentDescription = "Clear button"
+                                    )
+                                }
+                            })
+                    }
                 }
             }
-        }
+        else
+            Spacer(modifier = Modifier.weight(0.7f))
         AppLogoHorizontal(
             modifier = Modifier
                 .weight(0.3f)

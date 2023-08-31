@@ -38,7 +38,7 @@ import com.sanket.donatetoday.utils.DateUtils
 fun StatementsScreen(userDTO: UserDTO, statements: List<StatementDTO>, onSearchStatements: (String) -> Unit, onClick: (id: String) -> Unit) {
     LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         stickyHeader {
-            DashboardToolbar(toolbarText = "Statements", onSearch = onSearchStatements)
+            DashboardToolbar(toolbarText = "Statements", onSearch = onSearchStatements, searchEnabled = true)
         }
         items(statements) { statement ->
             StatementListDesign(userDTO = userDTO, statementDTO = statement, onClick = onClick)

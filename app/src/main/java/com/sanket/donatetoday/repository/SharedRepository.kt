@@ -223,4 +223,15 @@ class SharedRepository @Inject constructor(
         }, onCancelled = {
             onError(it.message)
         })
+
+    fun getDonationDonatedUpdates(
+        user: UserDTO,
+        onSuccess: (List<StatementDTO>) -> Unit,
+        onError: (String) -> Unit
+    ) =
+        database.getStatementsAsynchronously(userDTO = user, onDataChange = { snapshot ->
+            onSuccess(snapshot.getValue<List<StatementDTO>>() ?: emptyList())
+        }, onCancelled = {
+            onError(it.message)
+        })
 }

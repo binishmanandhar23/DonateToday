@@ -4,14 +4,15 @@ import com.sanket.donatetoday.models.dto.DonationItemUserModel
 import com.sanket.donatetoday.models.dto.StatementDTO
 import com.sanket.donatetoday.models.dto.UserDTO
 import com.sanket.donatetoday.modules.home.enums.SettingsEnums
-import com.sanket.donatetoday.modules.organization.data.OrganizationCashChartData
+import com.sanket.donatetoday.modules.organization.data.OrganizationDonorCashChartData
 import com.sanket.donatetoday.modules.organization.data.OrganizationDonorChartData
 
 data class DashboardGetters(
     val userDTO: UserDTO,
     val listOfStatements: List<StatementDTO>,
     val listOfDonationItemUserModel: List<DonationItemUserModel>,
-    val organizationCashChartData: List<OrganizationCashChartData>,
+    val organizationCashChartData: List<OrganizationDonorCashChartData>,
+    val donorCashChartData: List<OrganizationDonorCashChartData>,
     val organizationDonorChartData: List<OrganizationDonorChartData>,
     val onSearchStatements: (String) -> Unit,
     val onStatementClick: (id: String) -> Unit,

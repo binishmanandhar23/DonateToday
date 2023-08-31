@@ -8,7 +8,7 @@ import com.sanket.donatetoday.models.dto.StatementDTO
 import com.sanket.donatetoday.models.dto.UserDTO
 import com.sanket.donatetoday.models.dto.toUserDTO
 import com.sanket.donatetoday.models.dto.toUserEntity
-import com.sanket.donatetoday.modules.organization.data.OrganizationCashChartData
+import com.sanket.donatetoday.modules.organization.data.OrganizationDonorCashChartData
 import com.sanket.donatetoday.modules.organization.data.OrganizationDonorChartData
 import com.sanket.donatetoday.navigators.data.ScreenNavigator
 import com.sanket.donatetoday.repository.SharedRepository
@@ -51,8 +51,12 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
     val listOfRecommended = _listOfRecommended.asStateFlow()
 
     private var _organizationCashChartData =
-        MutableStateFlow(emptyList<OrganizationCashChartData>())
+        MutableStateFlow(emptyList<OrganizationDonorCashChartData>())
     val organizationCashChartData = _organizationCashChartData.asStateFlow()
+
+    private var _donorCashChartData =
+        MutableStateFlow(emptyList<OrganizationDonorCashChartData>())
+    val donorCashChartData = _donorCashChartData.asStateFlow()
 
     private var _organizationDonorChartData =
         MutableStateFlow(emptyList<OrganizationDonorChartData>())
@@ -65,6 +69,7 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
         viewModelScope.launch {
             year.collect {
                 getDonationReceivedUpdates()
+                getDonationDonatedUpdates()
             }
         }
     }
@@ -88,6 +93,7 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
                             getRecommendedOrganizations()
                             getStatements()
                             getDonationReceivedUpdates()
+                            getDonationDonatedUpdates()
                         }
                     }
             }
@@ -186,7 +192,7 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
         sharedRepository.getDonationReceiveUpdates(
             organization = user.value,
             onSuccess = { statements ->
-                val arrayListOfCashChartData = ArrayList<OrganizationCashChartData>()
+                val arrayListOfCashChartData = ArrayList<OrganizationDonorCashChartData>()
                 for (i in 1..12) {
                     val totalAmount = statements.filter { statement ->
                         DateUtils.convertMainDateTimeFormatToLocalDate(
@@ -196,7 +202,7 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
                         }
                     }.sumOf { it.amount }
                     arrayListOfCashChartData.add(
-                        OrganizationCashChartData(
+                        OrganizationDonorCashChartData(
                             localDate = LocalDate.of(
                                 year.value,
                                 i,
@@ -227,6 +233,36 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
                     else
                         arrayListOfDonorChartData.sortedByDescending { it.amount }
                 }
+            },
+            onError = {
+                _homeUIState.update { _ -> HomeUIState.Error(errorMessage = it) }
+            })
+    }
+
+    private fun getDonationDonatedUpdates() = viewModelScope.launch(Dispatchers.IO) {
+        sharedRepository.getDonationDonatedUpdates(
+            user = user.value,
+            onSuccess = { statements ->
+                val arrayListOfCashChartData = ArrayList<OrganizationDonorCashChartData>()
+                for (i in 1..12) {
+                    val totalAmount = statements.filter { statement ->
+                        DateUtils.convertMainDateTimeFormatToLocalDate(
+                            date = statement.date
+                        )!!.let {
+                            it.year == this@SharedViewModel.year.value && it.monthValue == i
+                        }
+                    }.sumOf { it.amount }
+                    arrayListOfCashChartData.add(
+                        OrganizationDonorCashChartData(
+                            localDate = LocalDate.of(
+                                year.value,
+                                i,
+                                1
+                            ), amount = totalAmount
+                        )
+                    )
+                }
+                _donorCashChartData.update { arrayListOfCashChartData }
             },
             onError = {
                 _homeUIState.update { _ -> HomeUIState.Error(errorMessage = it) }
