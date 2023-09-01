@@ -24,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.sanket.donatetoday.enums.UserType
+import com.sanket.donatetoday.models.dto.AllDonationTypeDTO
 import com.sanket.donatetoday.models.dto.StatementDTO
 import com.sanket.donatetoday.models.dto.UserDTO
 import com.sanket.donatetoday.modules.common.CardContainer
@@ -36,12 +37,12 @@ import com.sanket.donatetoday.utils.DateUtils
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun StatementsScreen(userDTO: UserDTO, statements: List<StatementDTO>, onSearchStatements: (String) -> Unit, onClick: (id: String) -> Unit) {
+fun StatementsScreen(userDTO: UserDTO, statements: AllDonationTypeDTO, onSearchStatements: (String) -> Unit, onClick: (id: String) -> Unit) {
     LazyColumn(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         stickyHeader {
             DashboardToolbar(toolbarText = "Statements", onSearch = onSearchStatements, searchEnabled = true)
         }
-        items(statements) { statement ->
+        items(statements.all) { statement ->
             StatementListDesign(userDTO = userDTO, statementDTO = statement, onClick = onClick)
         }
         item {

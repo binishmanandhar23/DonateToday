@@ -1,7 +1,7 @@
 package com.sanket.donatetoday.modules.home.getters
 
+import com.sanket.donatetoday.models.dto.AllDonationTypeDTO
 import com.sanket.donatetoday.models.dto.DonationItemUserModel
-import com.sanket.donatetoday.models.dto.StatementDTO
 import com.sanket.donatetoday.models.dto.UserDTO
 import com.sanket.donatetoday.modules.home.enums.SettingsEnums
 import com.sanket.donatetoday.modules.organization.data.OrganizationDonorCashChartData
@@ -9,7 +9,7 @@ import com.sanket.donatetoday.modules.organization.data.OrganizationDonorChartDa
 
 data class DashboardGetters(
     val userDTO: UserDTO,
-    val listOfStatements: List<StatementDTO>,
+    val listOfAllStatements: AllDonationTypeDTO,
     val listOfDonationItemUserModel: List<DonationItemUserModel>,
     val organizationCashChartData: List<OrganizationDonorCashChartData>,
     val donorCashChartData: List<OrganizationDonorCashChartData>,

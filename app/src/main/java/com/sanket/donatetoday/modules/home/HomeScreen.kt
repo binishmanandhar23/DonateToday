@@ -123,7 +123,7 @@ fun HomeScreenContainer(dashboardGetters: DashboardGetters) {
                 0 -> DashboardScreenContainer(dashboardGetters = dashboardGetters)
                 1 -> StatementsScreen(
                     userDTO = dashboardGetters.userDTO,
-                    statements = dashboardGetters.listOfStatements,
+                    statements = dashboardGetters.listOfAllStatements,
                     onSearchStatements = dashboardGetters.onSearchStatements,
                     onClick = dashboardGetters.onStatementClick
                 )

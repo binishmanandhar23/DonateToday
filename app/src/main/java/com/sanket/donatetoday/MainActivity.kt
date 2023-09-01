@@ -227,7 +227,7 @@ class MainActivity : ComponentActivity() {
 
             customAnimatedComposable(route = Screen.HomeScreen.route) {
                 val userDTO by sharedViewModel.user.collectAsState()
-                val statements by sharedViewModel.filteredListOfStatements.collectAsState()
+                val statements by sharedViewModel.filteredListOfAllStatements.collectAsState()
                 val organizationCashChartData by sharedViewModel.organizationCashChartData.collectAsState()
                 val organizationDonorChartData by sharedViewModel.organizationDonorChartData.collectAsState()
                 val donorCashChartData by sharedViewModel.donorCashChartData.collectAsState()
@@ -236,7 +236,7 @@ class MainActivity : ComponentActivity() {
                 HomeScreenContainer(
                     dashboardGetters = DashboardGetters(
                         userDTO = userDTO,
-                        listOfStatements = statements,
+                        listOfAllStatements = statements,
                         listOfDonationItemUserModel = recommendedOrganizations,
                         organizationCashChartData = organizationCashChartData,
                         organizationDonorChartData = organizationDonorChartData,

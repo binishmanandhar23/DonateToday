@@ -243,7 +243,7 @@ fun ClothesDonationBottomSheet(
     }
     LazyColumn(
         modifier = Modifier
-            .fillMaxSize()
+            .fillMaxSize().animateContentSize()
             .padding(
                 horizontal = UniversalHorizontalPaddingInDp,
                 vertical = UniversalVerticalPaddingInDp
@@ -274,7 +274,7 @@ fun ClothesDonationBottomSheet(
                 Spacer(modifier = Modifier.weight(middleWeight))
                 Text(
                     modifier = Modifier.weight(rightWeight),
-                    text = "Amount",
+                    text = "Quantity",
                     style = MaterialTheme.typography.h5.copy(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colors.secondary
@@ -282,11 +282,16 @@ fun ClothesDonationBottomSheet(
                 )
             }
         }
+        item {
+            DonateTodayDivider()
+        }
         itemsIndexed(clothesDonationData, key = { index, item ->
             index
         }) { index, item ->
             Row(
-                modifier = Modifier.fillMaxWidth().animateItemPlacement(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .animateItemPlacement(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 DonateTodaySingleLineTextField(
@@ -299,7 +304,7 @@ fun ClothesDonationBottomSheet(
                 Spacer(modifier = Modifier.weight(middleWeight))
                 DonateTodaySingleLineTextField(
                     modifier = Modifier.weight(rightWeight),
-                    label = "Amount",
+                    label = "Quantity",
                     value = item.amount?.toString() ?: "",
                     keyboardOptions = KeyboardOptions(
                         imeAction = ImeAction.Done,

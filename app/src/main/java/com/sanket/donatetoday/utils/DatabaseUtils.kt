@@ -8,6 +8,7 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.getValue
 import com.sanket.donatetoday.database.firebase.enums.FirebasePaths
 import com.sanket.donatetoday.enums.UserType
+import com.sanket.donatetoday.models.dto.AllDonationTypeDTO
 import com.sanket.donatetoday.models.dto.DonationItemUserModel
 import com.sanket.donatetoday.models.dto.EmailDTO
 import com.sanket.donatetoday.models.dto.StatementDTO
@@ -112,15 +113,15 @@ object DatabaseUtils {
 
     fun DatabaseReference.getStatements(
         userDTO: UserDTO,
-        onSuccess: (List<StatementDTO>) -> Unit,
+        onSuccess: (AllDonationTypeDTO) -> Unit,
         onError: (String?) -> Unit
     ) {
         this.child(FirebasePaths.Statements.node)
             .child(if (userDTO.userType == UserType.Donor.type) FirebasePaths.Donated.node else FirebasePaths.Received.node)
             .child(userDTO.id)
             .get().addOnSuccessListener { dataSnapshot ->
-            dataSnapshot.getValue<List<StatementDTO>>()?.let { listOfStatementDTO ->
-                onSuccess(listOfStatementDTO)
+            dataSnapshot.getValue<AllDonationTypeDTO>()?.let { allDonationTypeDTO ->
+                onSuccess(allDonationTypeDTO)
             }
         }.addOnFailureListener {
             onError(it.message)

@@ -2,13 +2,14 @@ package com.sanket.donatetoday.repository
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ktx.getValue
 import com.sanket.donatetoday.database.firebase.enums.FirebasePaths
 import com.sanket.donatetoday.enums.UserType
+import com.sanket.donatetoday.models.dto.AllDonationTypeDTO
 import com.sanket.donatetoday.models.dto.DonationItemUserModel
 import com.sanket.donatetoday.models.dto.StatementDTO
 import com.sanket.donatetoday.models.dto.UserDTO
+import com.sanket.donatetoday.models.dto.fillAll
 import com.sanket.donatetoday.models.entity.UserEntity
 import com.sanket.donatetoday.modules.common.enums.DonationItemTypes
 import com.sanket.donatetoday.utils.DatabaseUtils.getStatements
@@ -21,7 +22,6 @@ import io.realm.kotlin.UpdatePolicy
 import io.realm.kotlin.ext.query
 import kotlinx.coroutines.suspendCancellableCoroutine
 import javax.inject.Inject
-import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 class SharedRepository @Inject constructor(
@@ -115,8 +115,8 @@ class SharedRepository @Inject constructor(
     }
 
     suspend fun getStatementsFromFirebase(userDTO: UserDTO) = suspendCancellableCoroutine { cont ->
-        database.getStatements(userDTO = userDTO, onSuccess = { listOfStatements ->
-            cont.resume(listOfStatements) {
+        database.getStatements(userDTO = userDTO, onSuccess = { allDonationTypeDTO ->
+            cont.resume(allDonationTypeDTO.fillAll()) {
                 Exception(it)
             }
         }, onError = {
@@ -134,10 +134,10 @@ class SharedRepository @Inject constructor(
         })
     }
 
-    suspend fun addDonation(userDTO: UserDTO, organization: UserDTO, amount: Int) =
+    suspend fun addCashDonation(userDTO: UserDTO, organization: UserDTO, amount: Int) =
         suspendCancellableCoroutine { cont ->
             database.child(FirebasePaths.Statements.node).child(FirebasePaths.Donated.node)
-                .child(userDTO.id).get().addOnSuccessListener { dataSnapshot ->
+                .child(userDTO.id).child(DonationItemTypes.Cash.type).get().addOnSuccessListener { dataSnapshot ->
                     dataSnapshot.getValue<List<StatementDTO>>().let { list ->
                         val newList = if (list.isNullOrEmpty())
                             listOf(
@@ -166,7 +166,7 @@ class SharedRepository @Inject constructor(
 
                         database.child(FirebasePaths.Statements.node)
                             .child(FirebasePaths.Received.node)
-                            .child(organization.id).get().addOnSuccessListener { dataSnapshot ->
+                            .child(organization.id).child(DonationItemTypes.Cash.type).get().addOnSuccessListener { dataSnapshot ->
                                 dataSnapshot.getValue<List<StatementDTO>>().let { list ->
                                     val newList = if (list.isNullOrEmpty())
                                         listOf(
@@ -215,22 +215,22 @@ class SharedRepository @Inject constructor(
 
     fun getDonationReceiveUpdates(
         organization: UserDTO,
-        onSuccess: (List<StatementDTO>) -> Unit,
+        onSuccess: (AllDonationTypeDTO) -> Unit,
         onError: (String) -> Unit
     ) =
         database.getStatementsAsynchronously(userDTO = organization, onDataChange = { snapshot ->
-            onSuccess(snapshot.getValue<List<StatementDTO>>() ?: emptyList())
+            onSuccess((snapshot.getValue<AllDonationTypeDTO>() ?: AllDonationTypeDTO()).fillAll())
         }, onCancelled = {
             onError(it.message)
         })
 
     fun getDonationDonatedUpdates(
         user: UserDTO,
-        onSuccess: (List<StatementDTO>) -> Unit,
+        onSuccess: (AllDonationTypeDTO) -> Unit,
         onError: (String) -> Unit
     ) =
         database.getStatementsAsynchronously(userDTO = user, onDataChange = { snapshot ->
-            onSuccess(snapshot.getValue<List<StatementDTO>>() ?: emptyList())
+            onSuccess((snapshot.getValue<AllDonationTypeDTO>() ?: AllDonationTypeDTO()).fillAll())
         }, onCancelled = {
             onError(it.message)
         })
