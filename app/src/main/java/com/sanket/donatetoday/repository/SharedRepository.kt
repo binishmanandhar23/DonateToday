@@ -12,6 +12,7 @@ import com.sanket.donatetoday.models.dto.UserDTO
 import com.sanket.donatetoday.models.dto.fillAll
 import com.sanket.donatetoday.models.entity.UserEntity
 import com.sanket.donatetoday.modules.common.enums.DonationItemTypes
+import com.sanket.donatetoday.modules.organization.data.ClothesDonationData
 import com.sanket.donatetoday.utils.DatabaseUtils.getStatements
 import com.sanket.donatetoday.utils.DatabaseUtils.getStatementsAsynchronously
 import com.sanket.donatetoday.utils.DatabaseUtils.getUser
@@ -137,7 +138,8 @@ class SharedRepository @Inject constructor(
     suspend fun addCashDonation(userDTO: UserDTO, organization: UserDTO, amount: Int) =
         suspendCancellableCoroutine { cont ->
             database.child(FirebasePaths.Statements.node).child(FirebasePaths.Donated.node)
-                .child(userDTO.id).child(DonationItemTypes.Cash.type).get().addOnSuccessListener { dataSnapshot ->
+                .child(userDTO.id).child(DonationItemTypes.Cash.type).get()
+                .addOnSuccessListener { dataSnapshot ->
                     dataSnapshot.getValue<List<StatementDTO>>().let { list ->
                         val newList = if (list.isNullOrEmpty())
                             listOf(
@@ -146,7 +148,8 @@ class SharedRepository @Inject constructor(
                                     organizationId = organization.id,
                                     userName = userDTO.name,
                                     organizationName = organization.name,
-                                    amount = amount
+                                    amount = amount,
+                                    donationType = DonationItemTypes.Cash.type
                                 )
                             )
                         else
@@ -157,7 +160,8 @@ class SharedRepository @Inject constructor(
                                         organizationId = organization.id,
                                         userName = userDTO.name,
                                         organizationName = organization.name,
-                                        amount = amount
+                                        amount = amount,
+                                        donationType = DonationItemTypes.Cash.type
                                     )
                                 )
                                 it
@@ -166,7 +170,8 @@ class SharedRepository @Inject constructor(
 
                         database.child(FirebasePaths.Statements.node)
                             .child(FirebasePaths.Received.node)
-                            .child(organization.id).child(DonationItemTypes.Cash.type).get().addOnSuccessListener { dataSnapshot ->
+                            .child(organization.id).child(DonationItemTypes.Cash.type).get()
+                            .addOnSuccessListener { dataSnapshot ->
                                 dataSnapshot.getValue<List<StatementDTO>>().let { list ->
                                     val newList = if (list.isNullOrEmpty())
                                         listOf(
@@ -175,7 +180,8 @@ class SharedRepository @Inject constructor(
                                                 organizationId = organization.id,
                                                 userName = userDTO.name,
                                                 organizationName = organization.name,
-                                                amount = amount
+                                                amount = amount,
+                                                donationType = DonationItemTypes.Cash.type
                                             )
                                         )
                                     else
@@ -186,7 +192,8 @@ class SharedRepository @Inject constructor(
                                                     organizationId = organization.id,
                                                     userName = userDTO.name,
                                                     organizationName = organization.name,
-                                                    amount = amount
+                                                    amount = amount,
+                                                    donationType = DonationItemTypes.Cash.type
                                                 )
                                             )
                                             it
@@ -213,18 +220,86 @@ class SharedRepository @Inject constructor(
                 }
         }
 
-    fun getDonationReceiveUpdates(
+    suspend fun addClothesDonation(
+        userDTO: UserDTO,
         organization: UserDTO,
-        onSuccess: (AllDonationTypeDTO) -> Unit,
-        onError: (String) -> Unit
+        clothesDonationData: List<ClothesDonationData>
     ) =
-        database.getStatementsAsynchronously(userDTO = organization, onDataChange = { snapshot ->
-            onSuccess((snapshot.getValue<AllDonationTypeDTO>() ?: AllDonationTypeDTO()).fillAll())
-        }, onCancelled = {
-            onError(it.message)
-        })
+        suspendCancellableCoroutine { cont ->
+            database.child(FirebasePaths.Statements.node).child(FirebasePaths.Donated.node)
+                .child(userDTO.id).child(DonationItemTypes.Clothes.type).get()
+                .addOnSuccessListener { dataSnapshot ->
+                    dataSnapshot.getValue<List<StatementDTO>>().let { list ->
+                        val newList = if (list.isNullOrEmpty())
+                            listOf(
+                                StatementDTO(
+                                    userId = userDTO.id,
+                                    organizationId = organization.id,
+                                    userName = userDTO.name,
+                                    organizationName = organization.name,
+                                    clothesDonationData = clothesDonationData,
+                                    donationType = DonationItemTypes.Clothes.type
+                                )
+                            )
+                        else
+                            list.toMutableList().let {
+                                it.add(
+                                    StatementDTO(
+                                        userId = userDTO.id,
+                                        organizationId = organization.id,
+                                        userName = userDTO.name,
+                                        organizationName = organization.name,
+                                        clothesDonationData = clothesDonationData,
+                                        donationType = DonationItemTypes.Clothes.type
+                                    )
+                                )
+                                it
+                            }
+                        dataSnapshot.ref.setValue(newList)
 
-    fun getDonationDonatedUpdates(
+                        database.child(FirebasePaths.Statements.node)
+                            .child(FirebasePaths.Received.node)
+                            .child(organization.id).child(DonationItemTypes.Cash.type).get()
+                            .addOnSuccessListener { dataSnapshot ->
+                                dataSnapshot.getValue<List<StatementDTO>>().let { list ->
+                                    val newList = if (list.isNullOrEmpty())
+                                        listOf(
+                                            StatementDTO(
+                                                userId = userDTO.id,
+                                                organizationId = organization.id,
+                                                userName = userDTO.name,
+                                                organizationName = organization.name,
+                                                donationType = DonationItemTypes.Clothes.type,
+                                                clothesDonationData = clothesDonationData
+                                            )
+                                        )
+                                    else
+                                        list.toMutableList().let {
+                                            it.add(
+                                                StatementDTO(
+                                                    userId = userDTO.id,
+                                                    organizationId = organization.id,
+                                                    userName = userDTO.name,
+                                                    organizationName = organization.name,
+                                                    donationType = DonationItemTypes.Clothes.type,
+                                                    clothesDonationData = clothesDonationData
+                                                )
+                                            )
+                                            it
+                                        }
+                                    dataSnapshot.ref.setValue(newList)
+                                }
+                            }.addOnFailureListener {
+                                cont.resumeWithException(it)
+                            }
+                    }
+                }.addOnFailureListener {
+                    cont.resumeWithException(it)
+                }
+        }
+
+
+    fun getStatementsAsynchronously(
         user: UserDTO,
         onSuccess: (AllDonationTypeDTO) -> Unit,
         onError: (String) -> Unit

@@ -979,9 +979,9 @@ fun DonationGoalIndicator(reached: Int, totalGoal: Int) {
 }
 
 @Composable
-fun DonateTodayCircularButton(onClick: () -> Unit, imageVector: ImageVector, contentDescription: String? = null){
+fun DonateTodayCircularButton(onClick: (() -> Unit)? = null, imageVector: ImageVector, contentDescription: String? = null){
     CardContainer(
-        onClick = onClick,
+        onClick = {onClick?.invoke()},
         cardColor = MaterialTheme.colors.primary,
         shape = CircleShape,
         elevation = 8.dp

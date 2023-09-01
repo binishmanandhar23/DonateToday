@@ -8,6 +8,8 @@ import com.sanket.donatetoday.models.dto.DonationItemUserModel
 import com.sanket.donatetoday.models.dto.UserDTO
 import com.sanket.donatetoday.models.dto.toUserDTO
 import com.sanket.donatetoday.models.dto.toUserEntity
+import com.sanket.donatetoday.modules.common.enums.DonationItemTypes
+import com.sanket.donatetoday.modules.organization.data.ClothesDonationData
 import com.sanket.donatetoday.modules.organization.data.OrganizationDonorCashChartData
 import com.sanket.donatetoday.modules.organization.data.OrganizationDonorChartData
 import com.sanket.donatetoday.navigators.data.ScreenNavigator
@@ -65,6 +67,9 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
     private var _year = MutableStateFlow(LocalDate.now().year)
     val year = _year.asStateFlow()
 
+    private var _selectedStatementType = MutableStateFlow<DonationItemTypes?>(null)
+    val selectedStatementType = _selectedStatementType.asStateFlow()
+
     init {
         viewModelScope.launch {
             year.collect {
@@ -81,6 +86,8 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
 
 
     fun changeYear(year: Int) = _year.update { year }
+
+    fun updateSelectedStatementType(statementType: DonationItemTypes?) = _selectedStatementType.update { statementType }
 
     fun getUser(email: String?) = viewModelScope.launch {
         sharedRepository.getUserFromRealm(email = email).collect { results ->
@@ -142,7 +149,7 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
         }
     }
 
-    fun addDonation(amount: Int) = viewModelScope.launch {
+    fun addCashDonation(amount: Int) = viewModelScope.launch {
         when (val state = homeUIState.value) {
             is HomeUIState.Success -> {
                 state.data?.let { organizationDTO ->
@@ -166,10 +173,37 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
         }
     }
 
-    private fun getStatements() = viewModelScope.launch {
+    fun addClothesDonation(clothesDonationData: List<ClothesDonationData>) = viewModelScope.launch {
+        when (val state = homeUIState.value) {
+            is HomeUIState.Success -> {
+                state.data?.let { organizationDTO ->
+                    try {
+                        sharedRepository.addClothesDonation(
+                            userDTO = user.value,
+                            organization = organizationDTO,
+                            clothesDonationData = clothesDonationData
+                        )
+                        val userDTO =
+                            sharedRepository.getUserFromFirebase(email = user.value.emailAddress)
+                        updateUser(userDTO)
+                        getOrganizationBasedOnId(organizationDTO.id)
+                    } catch (ex: Exception) {
+                        ex.message
+                    }
+                }
+            }
+
+            else -> Unit
+        }
+    }
+
+    private fun getStatements() = viewModelScope.launch(Dispatchers.IO) {
         try {
-            val statements = sharedRepository.getStatementsFromFirebase(userDTO = user.value)
-            _listOfAllStatements.update { statements }
+            sharedRepository.getStatementsAsynchronously(user = user.value, onSuccess = {
+                _listOfAllStatements.update { _ -> it }
+            }, onError = {
+                throw Exception(it)
+            })
         } catch (ex: Exception) {
             _homeUIState.update { HomeUIState.Error(errorMessage = ex.message) }
         }
@@ -206,14 +240,21 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
                         it.organizationName.contains(search, ignoreCase = true)
                     else
                         it.userName.contains(search, ignoreCase = true)
+                }, all = dto.all.filter {
+                    if (search.isEmpty())
+                        true
+                    else if (user.value.userType == UserType.Donor.type)
+                        it.organizationName.contains(search, ignoreCase = true)
+                    else
+                        it.userName.contains(search, ignoreCase = true)
                 })
             }
         }
     }
 
     private fun getDonationReceivedUpdates() = viewModelScope.launch(Dispatchers.IO) {
-        sharedRepository.getDonationReceiveUpdates(
-            organization = user.value,
+        sharedRepository.getStatementsAsynchronously(
+            user = user.value,
             onSuccess = { statements ->
                 val arrayListOfCashChartData = ArrayList<OrganizationDonorCashChartData>()
                 for (i in 1..12) {
@@ -221,9 +262,9 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
                         DateUtils.convertMainDateTimeFormatToLocalDate(
                             date = statement.date
                         )!!.let {
-                            it.year == this@SharedViewModel.year.value && it.monthValue == i
+                            it.year == this@SharedViewModel.year.value && it.monthValue == i && statement.donationType == DonationItemTypes.Cash.type
                         }
-                    }.sumOf { it.amount }
+                    }.sumOf { it.amount?: 0 }
                     arrayListOfCashChartData.add(
                         OrganizationDonorCashChartData(
                             localDate = LocalDate.of(
@@ -247,7 +288,7 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
                         arrayListOfDonorChartData.add(
                             OrganizationDonorChartData(
                                 donor = statements.first().userName,
-                                amount = statements.sumOf { it.amount })
+                                amount = statements.sumOf { it.amount?: 0 })
                         )
                 }
                 _organizationDonorChartData.update {
@@ -263,7 +304,7 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
     }
 
     private fun getDonationDonatedUpdates() = viewModelScope.launch(Dispatchers.IO) {
-        sharedRepository.getDonationDonatedUpdates(
+        sharedRepository.getStatementsAsynchronously(
             user = user.value,
             onSuccess = { statements ->
                 val arrayListOfCashChartData = ArrayList<OrganizationDonorCashChartData>()
@@ -272,9 +313,9 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
                         DateUtils.convertMainDateTimeFormatToLocalDate(
                             date = statement.date
                         )!!.let {
-                            it.year == this@SharedViewModel.year.value && it.monthValue == i
+                            it.year == this@SharedViewModel.year.value && it.monthValue == i && statement.donationType == DonationItemTypes.Cash.type
                         }
-                    }.sumOf { it.amount }
+                    }.sumOf { it.amount?: 0 }
                     arrayListOfCashChartData.add(
                         OrganizationDonorCashChartData(
                             localDate = LocalDate.of(

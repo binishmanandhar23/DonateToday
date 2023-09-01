@@ -125,7 +125,9 @@ fun HomeScreenContainer(dashboardGetters: DashboardGetters) {
                     userDTO = dashboardGetters.userDTO,
                     statements = dashboardGetters.listOfAllStatements,
                     onSearchStatements = dashboardGetters.onSearchStatements,
-                    onClick = dashboardGetters.onStatementClick
+                    onClick = dashboardGetters.onStatementClick,
+                    selectedStatementTypes = dashboardGetters.selectedStatementTypes,
+                    onStatementTypeSelected = dashboardGetters.onStatementTypeSelected
                 )
 
                 2 -> MessageScreen()

@@ -233,6 +233,7 @@ class MainActivity : ComponentActivity() {
                 val donorCashChartData by sharedViewModel.donorCashChartData.collectAsState()
                 val recommendedOrganizations by sharedViewModel.listOfRecommended.collectAsState()
                 val year by sharedViewModel.year.collectAsState()
+                val selectedStatementType by sharedViewModel.selectedStatementType.collectAsState()
                 HomeScreenContainer(
                     dashboardGetters = DashboardGetters(
                         userDTO = userDTO,
@@ -242,6 +243,8 @@ class MainActivity : ComponentActivity() {
                         organizationDonorChartData = organizationDonorChartData,
                         donorCashChartData = donorCashChartData,
                         year = year,
+                        selectedStatementTypes = selectedStatementType,
+                        onStatementTypeSelected = sharedViewModel::updateSelectedStatementType,
                         onYearChanged = {
                             sharedViewModel.changeYear(it)
                         },
@@ -325,7 +328,7 @@ class MainActivity : ComponentActivity() {
                 val userDTO by sharedViewModel.user.collectAsState()
                 CashDonationBottomSheet(userDTO = userDTO, onDonate = {
                     mainNavController.popBackStack()
-                    sharedViewModel.addDonation(amount = it)
+                    sharedViewModel.addCashDonation(amount = it)
                 }, onGoToProfile = {
                     mainNavController.popBackStack()
                     sharedViewModel.goToScreen(screenNavigator = ScreenNavigator(screen = Screen.ProfileScreen))
@@ -335,6 +338,7 @@ class MainActivity : ComponentActivity() {
                 val userDTO by sharedViewModel.user.collectAsState()
                 ClothesDonationBottomSheet(userDTO = userDTO, onDonate = {
                     mainNavController.popBackStack()
+                    sharedViewModel.addClothesDonation(clothesDonationData = it)
                 })
             }
             bottomSheet(route = BottomSheet.UserStatementDetail.route + "/{id}"){ navBackStackEntry ->

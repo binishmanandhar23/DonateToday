@@ -3,6 +3,7 @@ package com.sanket.donatetoday.modules.home.getters
 import com.sanket.donatetoday.models.dto.AllDonationTypeDTO
 import com.sanket.donatetoday.models.dto.DonationItemUserModel
 import com.sanket.donatetoday.models.dto.UserDTO
+import com.sanket.donatetoday.modules.common.enums.DonationItemTypes
 import com.sanket.donatetoday.modules.home.enums.SettingsEnums
 import com.sanket.donatetoday.modules.organization.data.OrganizationDonorCashChartData
 import com.sanket.donatetoday.modules.organization.data.OrganizationDonorChartData
@@ -20,5 +21,7 @@ data class DashboardGetters(
     val onSettingsClick: (SettingsEnums) -> Unit,
     val onDonationItemUserModelClick: (DonationItemUserModel) -> Unit,
     val year: Int,
-    val onYearChanged: (year: Int) -> Unit
+    val onYearChanged: (year: Int) -> Unit,
+    val selectedStatementTypes: DonationItemTypes?,
+    val onStatementTypeSelected: (DonationItemTypes?) -> Unit,
 )
