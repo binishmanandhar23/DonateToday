@@ -259,7 +259,7 @@ class SharedRepository @Inject constructor(
 
                         database.child(FirebasePaths.Statements.node)
                             .child(FirebasePaths.Received.node)
-                            .child(organization.id).child(DonationItemTypes.Cash.type).get()
+                            .child(organization.id).child(DonationItemTypes.Clothes.type).get()
                             .addOnSuccessListener { dataSnapshot ->
                                 dataSnapshot.getValue<List<StatementDTO>>().let { list ->
                                     val newList = if (list.isNullOrEmpty())
