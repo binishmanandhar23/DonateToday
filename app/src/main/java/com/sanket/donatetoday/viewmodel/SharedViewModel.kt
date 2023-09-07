@@ -250,7 +250,7 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
             sharedRepository.getStatementsAsynchronously(user = user.value, onSuccess = {
                 _listOfAllStatements.update { _ -> it }
             }, onError = {
-                throw Exception(it)
+                _homeUIState.update { _ -> HomeUIState.Error(errorMessage = it) }
             })
         } catch (ex: Exception) {
             _homeUIState.update { HomeUIState.Error(errorMessage = ex.message) }
