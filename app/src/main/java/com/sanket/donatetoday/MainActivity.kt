@@ -49,7 +49,9 @@ import com.sanket.donatetoday.modules.home.enums.SettingsEnums
 import com.sanket.donatetoday.modules.home.getters.DashboardGetters
 import com.sanket.donatetoday.modules.organization.CashDonationBottomSheet
 import com.sanket.donatetoday.modules.organization.ClothesDonationBottomSheet
+import com.sanket.donatetoday.modules.organization.FoodDonationBottomSheet
 import com.sanket.donatetoday.modules.organization.OrganizationDetailScreen
+import com.sanket.donatetoday.modules.organization.UtensilsDonationBottomSheet
 import com.sanket.donatetoday.modules.profile.ProfileScreen
 import com.sanket.donatetoday.modules.profile.getters.ProfileScreenGetters
 import com.sanket.donatetoday.viewmodel.OnBoardingViewModel
@@ -303,6 +305,8 @@ class MainActivity : ComponentActivity() {
                             when(item){
                                 DonationItemTypes.Cash.type -> mainNavController.navigator(route = BottomSheet.DonateCashSheet.route)
                                 DonationItemTypes.Clothes.type -> mainNavController.navigator(route = BottomSheet.DonateClothesSheet.route)
+                                DonationItemTypes.Utensils.type -> mainNavController.navigator(route = BottomSheet.DonateUtensilsSheet.route)
+                                DonationItemTypes.Food.type -> mainNavController.navigator(route = BottomSheet.DonateFoodSheet.route)
                             }
 
                         })
@@ -338,7 +342,21 @@ class MainActivity : ComponentActivity() {
                 val userDTO by sharedViewModel.user.collectAsState()
                 ClothesDonationBottomSheet(userDTO = userDTO, onDonate = {
                     mainNavController.popBackStack()
-                    sharedViewModel.addClothesDonation(clothesDonationData = it)
+                    sharedViewModel.addClothesDonation(genericDonationData = it)
+                })
+            }
+            bottomSheet(route = BottomSheet.DonateUtensilsSheet.route) {
+                val userDTO by sharedViewModel.user.collectAsState()
+                UtensilsDonationBottomSheet(userDTO = userDTO, onDonate = {
+                    mainNavController.popBackStack()
+                    sharedViewModel.addUtensilsDonation(genericDonationData = it)
+                })
+            }
+            bottomSheet(route = BottomSheet.DonateFoodSheet.route) {
+                val userDTO by sharedViewModel.user.collectAsState()
+                FoodDonationBottomSheet(userDTO = userDTO, onDonate = {
+                    mainNavController.popBackStack()
+                    sharedViewModel.addFoodDonation(genericDonationData = it)
                 })
             }
             bottomSheet(route = BottomSheet.UserStatementDetail.route + "/{id}"){ navBackStackEntry ->

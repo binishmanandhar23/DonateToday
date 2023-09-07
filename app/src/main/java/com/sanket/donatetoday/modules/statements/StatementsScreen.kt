@@ -1,7 +1,6 @@
 package com.sanket.donatetoday.modules.statements
 
 import android.annotation.SuppressLint
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -22,6 +21,9 @@ import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Accessibility
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Fastfood
+import androidx.compose.material.icons.filled.FormatPaint
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -247,15 +249,25 @@ fun StatementListDesign(
                                 contentDescription = statementDTO.donationType
                             )
 
+                            DonationItemTypes.Utensils.type -> DonateTodayCircularButton(
+                                imageVector = Icons.Default.Palette,
+                                contentDescription = statementDTO.donationType
+                            )
+
+                            DonationItemTypes.Food.type -> DonateTodayCircularButton(
+                                imageVector = Icons.Default.Fastfood,
+                                contentDescription = statementDTO.donationType
+                            )
+
                             else -> Unit
                         }
                     }
                 }
             }
             when (statementDTO.donationType) {
-                DonationItemTypes.Clothes.type -> {
-                    val itemSubList = remember(statementDTO.clothesDonationData) {
-                        (statementDTO.clothesDonationData ?: emptyList()).chunked(3)
+                DonationItemTypes.Clothes.type, DonationItemTypes.Utensils.type, DonationItemTypes.Food.type -> {
+                    val itemSubList = remember(statementDTO.genericDonationData) {
+                        (statementDTO.genericDonationData ?: emptyList()).chunked(3)
                     }
                     Column(
                         modifier = Modifier.fillMaxWidth(),

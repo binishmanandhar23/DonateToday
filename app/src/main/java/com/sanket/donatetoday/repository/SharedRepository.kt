@@ -12,7 +12,7 @@ import com.sanket.donatetoday.models.dto.UserDTO
 import com.sanket.donatetoday.models.dto.fillAll
 import com.sanket.donatetoday.models.entity.UserEntity
 import com.sanket.donatetoday.modules.common.enums.DonationItemTypes
-import com.sanket.donatetoday.modules.organization.data.ClothesDonationData
+import com.sanket.donatetoday.modules.organization.data.GenericDonationData
 import com.sanket.donatetoday.utils.DatabaseUtils.getStatements
 import com.sanket.donatetoday.utils.DatabaseUtils.getStatementsAsynchronously
 import com.sanket.donatetoday.utils.DatabaseUtils.getUser
@@ -223,7 +223,7 @@ class SharedRepository @Inject constructor(
     suspend fun addClothesDonation(
         userDTO: UserDTO,
         organization: UserDTO,
-        clothesDonationData: List<ClothesDonationData>
+        genericDonationData: List<GenericDonationData>
     ) =
         suspendCancellableCoroutine { cont ->
             database.child(FirebasePaths.Statements.node).child(FirebasePaths.Donated.node)
@@ -237,7 +237,7 @@ class SharedRepository @Inject constructor(
                                     organizationId = organization.id,
                                     userName = userDTO.name,
                                     organizationName = organization.name,
-                                    clothesDonationData = clothesDonationData,
+                                    genericDonationData = genericDonationData,
                                     donationType = DonationItemTypes.Clothes.type
                                 )
                             )
@@ -249,7 +249,7 @@ class SharedRepository @Inject constructor(
                                         organizationId = organization.id,
                                         userName = userDTO.name,
                                         organizationName = organization.name,
-                                        clothesDonationData = clothesDonationData,
+                                        genericDonationData = genericDonationData,
                                         donationType = DonationItemTypes.Clothes.type
                                     )
                                 )
@@ -270,7 +270,7 @@ class SharedRepository @Inject constructor(
                                                 userName = userDTO.name,
                                                 organizationName = organization.name,
                                                 donationType = DonationItemTypes.Clothes.type,
-                                                clothesDonationData = clothesDonationData
+                                                genericDonationData = genericDonationData
                                             )
                                         )
                                     else
@@ -282,7 +282,163 @@ class SharedRepository @Inject constructor(
                                                     userName = userDTO.name,
                                                     organizationName = organization.name,
                                                     donationType = DonationItemTypes.Clothes.type,
-                                                    clothesDonationData = clothesDonationData
+                                                    genericDonationData = genericDonationData
+                                                )
+                                            )
+                                            it
+                                        }
+                                    dataSnapshot.ref.setValue(newList)
+                                }
+                            }.addOnFailureListener {
+                                cont.resumeWithException(it)
+                            }
+                    }
+                }.addOnFailureListener {
+                    cont.resumeWithException(it)
+                }
+        }
+
+    suspend fun addUtensilsDonation(
+        userDTO: UserDTO,
+        organization: UserDTO,
+        genericDonationData: List<GenericDonationData>
+    ) =
+        suspendCancellableCoroutine { cont ->
+            database.child(FirebasePaths.Statements.node).child(FirebasePaths.Donated.node)
+                .child(userDTO.id).child(DonationItemTypes.Utensils.type).get()
+                .addOnSuccessListener { dataSnapshot ->
+                    dataSnapshot.getValue<List<StatementDTO>>().let { list ->
+                        val newList = if (list.isNullOrEmpty())
+                            listOf(
+                                StatementDTO(
+                                    userId = userDTO.id,
+                                    organizationId = organization.id,
+                                    userName = userDTO.name,
+                                    organizationName = organization.name,
+                                    genericDonationData = genericDonationData,
+                                    donationType = DonationItemTypes.Utensils.type
+                                )
+                            )
+                        else
+                            list.toMutableList().let {
+                                it.add(
+                                    StatementDTO(
+                                        userId = userDTO.id,
+                                        organizationId = organization.id,
+                                        userName = userDTO.name,
+                                        organizationName = organization.name,
+                                        genericDonationData = genericDonationData,
+                                        donationType = DonationItemTypes.Utensils.type
+                                    )
+                                )
+                                it
+                            }
+                        dataSnapshot.ref.setValue(newList)
+
+                        database.child(FirebasePaths.Statements.node)
+                            .child(FirebasePaths.Received.node)
+                            .child(organization.id).child(DonationItemTypes.Utensils.type).get()
+                            .addOnSuccessListener { dataSnapshot ->
+                                dataSnapshot.getValue<List<StatementDTO>>().let { list ->
+                                    val newList = if (list.isNullOrEmpty())
+                                        listOf(
+                                            StatementDTO(
+                                                userId = userDTO.id,
+                                                organizationId = organization.id,
+                                                userName = userDTO.name,
+                                                organizationName = organization.name,
+                                                donationType = DonationItemTypes.Utensils.type,
+                                                genericDonationData = genericDonationData
+                                            )
+                                        )
+                                    else
+                                        list.toMutableList().let {
+                                            it.add(
+                                                StatementDTO(
+                                                    userId = userDTO.id,
+                                                    organizationId = organization.id,
+                                                    userName = userDTO.name,
+                                                    organizationName = organization.name,
+                                                    donationType = DonationItemTypes.Utensils.type,
+                                                    genericDonationData = genericDonationData
+                                                )
+                                            )
+                                            it
+                                        }
+                                    dataSnapshot.ref.setValue(newList)
+                                }
+                            }.addOnFailureListener {
+                                cont.resumeWithException(it)
+                            }
+                    }
+                }.addOnFailureListener {
+                    cont.resumeWithException(it)
+                }
+        }
+
+    suspend fun addFoodDonation(
+        userDTO: UserDTO,
+        organization: UserDTO,
+        genericDonationData: List<GenericDonationData>
+    ) =
+        suspendCancellableCoroutine { cont ->
+            database.child(FirebasePaths.Statements.node).child(FirebasePaths.Donated.node)
+                .child(userDTO.id).child(DonationItemTypes.Food.type).get()
+                .addOnSuccessListener { dataSnapshot ->
+                    dataSnapshot.getValue<List<StatementDTO>>().let { list ->
+                        val newList = if (list.isNullOrEmpty())
+                            listOf(
+                                StatementDTO(
+                                    userId = userDTO.id,
+                                    organizationId = organization.id,
+                                    userName = userDTO.name,
+                                    organizationName = organization.name,
+                                    genericDonationData = genericDonationData,
+                                    donationType = DonationItemTypes.Food.type
+                                )
+                            )
+                        else
+                            list.toMutableList().let {
+                                it.add(
+                                    StatementDTO(
+                                        userId = userDTO.id,
+                                        organizationId = organization.id,
+                                        userName = userDTO.name,
+                                        organizationName = organization.name,
+                                        genericDonationData = genericDonationData,
+                                        donationType = DonationItemTypes.Food.type
+                                    )
+                                )
+                                it
+                            }
+                        dataSnapshot.ref.setValue(newList)
+
+                        database.child(FirebasePaths.Statements.node)
+                            .child(FirebasePaths.Received.node)
+                            .child(organization.id).child(DonationItemTypes.Food.type).get()
+                            .addOnSuccessListener { dataSnapshot ->
+                                dataSnapshot.getValue<List<StatementDTO>>().let { list ->
+                                    val newList = if (list.isNullOrEmpty())
+                                        listOf(
+                                            StatementDTO(
+                                                userId = userDTO.id,
+                                                organizationId = organization.id,
+                                                userName = userDTO.name,
+                                                organizationName = organization.name,
+                                                donationType = DonationItemTypes.Food.type,
+                                                genericDonationData = genericDonationData
+                                            )
+                                        )
+                                    else
+                                        list.toMutableList().let {
+                                            it.add(
+                                                StatementDTO(
+                                                    userId = userDTO.id,
+                                                    organizationId = organization.id,
+                                                    userName = userDTO.name,
+                                                    organizationName = organization.name,
+                                                    donationType = DonationItemTypes.Food.type,
+                                                    genericDonationData = genericDonationData
                                                 )
                                             )
                                             it

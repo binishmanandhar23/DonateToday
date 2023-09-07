@@ -9,7 +9,7 @@ import com.sanket.donatetoday.models.dto.UserDTO
 import com.sanket.donatetoday.models.dto.toUserDTO
 import com.sanket.donatetoday.models.dto.toUserEntity
 import com.sanket.donatetoday.modules.common.enums.DonationItemTypes
-import com.sanket.donatetoday.modules.organization.data.ClothesDonationData
+import com.sanket.donatetoday.modules.organization.data.GenericDonationData
 import com.sanket.donatetoday.modules.organization.data.OrganizationDonorCashChartData
 import com.sanket.donatetoday.modules.organization.data.OrganizationDonorChartData
 import com.sanket.donatetoday.navigators.data.ScreenNavigator
@@ -173,7 +173,7 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
         }
     }
 
-    fun addClothesDonation(clothesDonationData: List<ClothesDonationData>) = viewModelScope.launch {
+    fun addClothesDonation(genericDonationData: List<GenericDonationData>) = viewModelScope.launch {
         when (val state = homeUIState.value) {
             is HomeUIState.Success -> {
                 state.data?.let { organizationDTO ->
@@ -181,7 +181,55 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
                         sharedRepository.addClothesDonation(
                             userDTO = user.value,
                             organization = organizationDTO,
-                            clothesDonationData = clothesDonationData
+                            genericDonationData = genericDonationData
+                        )
+                        val userDTO =
+                            sharedRepository.getUserFromFirebase(email = user.value.emailAddress)
+                        updateUser(userDTO)
+                        getOrganizationBasedOnId(organizationDTO.id)
+                    } catch (ex: Exception) {
+                        ex.message
+                    }
+                }
+            }
+
+            else -> Unit
+        }
+    }
+
+    fun addUtensilsDonation(genericDonationData: List<GenericDonationData>) = viewModelScope.launch {
+        when (val state = homeUIState.value) {
+            is HomeUIState.Success -> {
+                state.data?.let { organizationDTO ->
+                    try {
+                        sharedRepository.addUtensilsDonation(
+                            userDTO = user.value,
+                            organization = organizationDTO,
+                            genericDonationData = genericDonationData
+                        )
+                        val userDTO =
+                            sharedRepository.getUserFromFirebase(email = user.value.emailAddress)
+                        updateUser(userDTO)
+                        getOrganizationBasedOnId(organizationDTO.id)
+                    } catch (ex: Exception) {
+                        ex.message
+                    }
+                }
+            }
+
+            else -> Unit
+        }
+    }
+
+    fun addFoodDonation(genericDonationData: List<GenericDonationData>) = viewModelScope.launch {
+        when (val state = homeUIState.value) {
+            is HomeUIState.Success -> {
+                state.data?.let { organizationDTO ->
+                    try {
+                        sharedRepository.addFoodDonation(
+                            userDTO = user.value,
+                            organization = organizationDTO,
+                            genericDonationData = genericDonationData
                         )
                         val userDTO =
                             sharedRepository.getUserFromFirebase(email = user.value.emailAddress)

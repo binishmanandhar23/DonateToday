@@ -280,11 +280,11 @@ fun OrganizationDashboard(
         entryModelOf(*organizationDonorChartData.map { it.amount }.toTypedArray())
     val horizontalAxisValueFormatterForCash =
         AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ ->
-            organizationDonorCashChartData[value.toInt()].localDate.format(
+            organizationDonorCashChartData.getOrNull(value.toInt())?.localDate?.format(
                 DateTimeFormatter.ofPattern(
                     "MMM yyyy"
                 )
-            )
+            )?: ""
         }
     val horizontalAxisValueFormatterForDonor =
         AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ ->

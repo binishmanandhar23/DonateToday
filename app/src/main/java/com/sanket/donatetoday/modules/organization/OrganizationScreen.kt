@@ -13,13 +13,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.TextButton
@@ -58,7 +56,7 @@ import com.sanket.donatetoday.modules.common.UniversalInnerHorizontalPaddingInDp
 import com.sanket.donatetoday.modules.common.UniversalInnerVerticalPaddingInDp
 import com.sanket.donatetoday.modules.common.UniversalVerticalPaddingInDp
 import com.sanket.donatetoday.modules.common.enums.DonationItemTypes
-import com.sanket.donatetoday.modules.organization.data.ClothesDonationData
+import com.sanket.donatetoday.modules.organization.data.GenericDonationData
 
 @Composable
 fun OrganizationDetailScreen(
@@ -227,7 +225,7 @@ fun CashDonationBottomSheet(
 @Composable
 fun ClothesDonationBottomSheet(
     userDTO: UserDTO,
-    onDonate: (clothesData: List<ClothesDonationData>) -> Unit,
+    onDonate: (clothesData: List<GenericDonationData>) -> Unit,
 ) {
     val leftWeight = remember {
         0.55f
@@ -238,8 +236,8 @@ fun ClothesDonationBottomSheet(
     val rightWeight = remember {
         0.35f
     }
-    val clothesDonationData = remember {
-        mutableStateListOf(ClothesDonationData())
+    val genericDonationData = remember {
+        mutableStateListOf(GenericDonationData())
     }
     LazyColumn(
         modifier = Modifier
@@ -285,7 +283,7 @@ fun ClothesDonationBottomSheet(
         item {
             DonateTodayDivider()
         }
-        itemsIndexed(clothesDonationData, key = { index, item ->
+        itemsIndexed(genericDonationData, key = { index, item ->
             index
         }) { index, item ->
             Row(
@@ -299,7 +297,7 @@ fun ClothesDonationBottomSheet(
                     label = "Enter item name",
                     value = item.itemName,
                     onValueChange = {
-                        clothesDonationData[index] = item.copy(itemName = it)
+                        genericDonationData[index] = item.copy(itemName = it)
                     })
                 Spacer(modifier = Modifier.weight(middleWeight))
                 DonateTodaySingleLineTextField(
@@ -311,14 +309,14 @@ fun ClothesDonationBottomSheet(
                         keyboardType = KeyboardType.Number
                     ),
                     onValueChange = {
-                        clothesDonationData[index] = item.copy(amount = it.toIntOrNull())
+                        genericDonationData[index] = item.copy(amount = it.toIntOrNull())
                     })
             }
         }
         item {
             Row(
                 modifier = Modifier.clickable(role = Role.Button) {
-                    clothesDonationData.add(ClothesDonationData())
+                    genericDonationData.add(GenericDonationData())
                 },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(5.dp)
@@ -334,7 +332,244 @@ fun ClothesDonationBottomSheet(
         item {
             Box(modifier = Modifier.fillMaxWidth()) {
                 DonateTodayButton(modifier = Modifier.align(Alignment.Center), text = "Donate") {
-                    onDonate(clothesDonationData)
+                    onDonate(genericDonationData)
+                }
+            }
+        }
+    }
+}
+
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun UtensilsDonationBottomSheet(
+    userDTO: UserDTO,
+    onDonate: (clothesData: List<GenericDonationData>) -> Unit,
+) {
+    val leftWeight = remember {
+        0.55f
+    }
+    val middleWeight = remember {
+        0.1f
+    }
+    val rightWeight = remember {
+        0.35f
+    }
+    val genericDonationData = remember {
+        mutableStateListOf(GenericDonationData())
+    }
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize().animateContentSize()
+            .padding(
+                horizontal = UniversalHorizontalPaddingInDp,
+                vertical = UniversalVerticalPaddingInDp
+            ), verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        stickyHeader {
+            Text(
+                text = "Utensils to Donate",
+                style = MaterialTheme.typography.h3.copy(
+                    color = MaterialTheme.colors.secondary,
+                    fontWeight = FontWeight.Bold
+                )
+            )
+        }
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    modifier = Modifier.weight(leftWeight),
+                    text = "Item name",
+                    style = MaterialTheme.typography.h5.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colors.secondary
+                    )
+                )
+                Spacer(modifier = Modifier.weight(middleWeight))
+                Text(
+                    modifier = Modifier.weight(rightWeight),
+                    text = "Quantity",
+                    style = MaterialTheme.typography.h5.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colors.secondary
+                    )
+                )
+            }
+        }
+        item {
+            DonateTodayDivider()
+        }
+        itemsIndexed(genericDonationData, key = { index, item ->
+            index
+        }) { index, item ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .animateItemPlacement(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                DonateTodaySingleLineTextField(
+                    modifier = Modifier.weight(leftWeight),
+                    label = "Enter item name",
+                    value = item.itemName,
+                    onValueChange = {
+                        genericDonationData[index] = item.copy(itemName = it)
+                    })
+                Spacer(modifier = Modifier.weight(middleWeight))
+                DonateTodaySingleLineTextField(
+                    modifier = Modifier.weight(rightWeight),
+                    label = "Quantity",
+                    value = item.amount?.toString() ?: "",
+                    keyboardOptions = KeyboardOptions(
+                        imeAction = ImeAction.Done,
+                        keyboardType = KeyboardType.Number
+                    ),
+                    onValueChange = {
+                        genericDonationData[index] = item.copy(amount = it.toIntOrNull())
+                    })
+            }
+        }
+        item {
+            Row(
+                modifier = Modifier.clickable(role = Role.Button) {
+                    genericDonationData.add(GenericDonationData())
+                },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(5.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.AddCircle,
+                    contentDescription = "Add data",
+                    tint = MaterialTheme.colors.secondary
+                )
+                Text(text = "Add more")
+            }
+        }
+        item {
+            Box(modifier = Modifier.fillMaxWidth()) {
+                DonateTodayButton(modifier = Modifier.align(Alignment.Center), text = "Donate") {
+                    onDonate(genericDonationData)
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun FoodDonationBottomSheet(
+    userDTO: UserDTO,
+    onDonate: (clothesData: List<GenericDonationData>) -> Unit,
+) {
+    val leftWeight = remember {
+        0.55f
+    }
+    val middleWeight = remember {
+        0.1f
+    }
+    val rightWeight = remember {
+        0.35f
+    }
+    val genericDonationData = remember {
+        mutableStateListOf(GenericDonationData())
+    }
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize().animateContentSize()
+            .padding(
+                horizontal = UniversalHorizontalPaddingInDp,
+                vertical = UniversalVerticalPaddingInDp
+            ), verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        stickyHeader {
+            Text(
+                text = "Food to Donate",
+                style = MaterialTheme.typography.h3.copy(
+                    color = MaterialTheme.colors.secondary,
+                    fontWeight = FontWeight.Bold
+                )
+            )
+        }
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    modifier = Modifier.weight(leftWeight),
+                    text = "Food name",
+                    style = MaterialTheme.typography.h5.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colors.secondary
+                    )
+                )
+                Spacer(modifier = Modifier.weight(middleWeight))
+                Text(
+                    modifier = Modifier.weight(rightWeight),
+                    text = "Quantity",
+                    style = MaterialTheme.typography.h5.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colors.secondary
+                    )
+                )
+            }
+        }
+        item {
+            DonateTodayDivider()
+        }
+        itemsIndexed(genericDonationData, key = { index, item ->
+            index
+        }) { index, item ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .animateItemPlacement(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                DonateTodaySingleLineTextField(
+                    modifier = Modifier.weight(leftWeight),
+                    label = "Enter item name",
+                    value = item.itemName,
+                    onValueChange = {
+                        genericDonationData[index] = item.copy(itemName = it)
+                    })
+                Spacer(modifier = Modifier.weight(middleWeight))
+                DonateTodaySingleLineTextField(
+                    modifier = Modifier.weight(rightWeight),
+                    label = "Quantity",
+                    value = item.amount?.toString() ?: "",
+                    keyboardOptions = KeyboardOptions(
+                        imeAction = ImeAction.Done,
+                        keyboardType = KeyboardType.Number
+                    ),
+                    onValueChange = {
+                        genericDonationData[index] = item.copy(amount = it.toIntOrNull())
+                    })
+            }
+        }
+        item {
+            Row(
+                modifier = Modifier.clickable(role = Role.Button) {
+                    genericDonationData.add(GenericDonationData())
+                },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(5.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.AddCircle,
+                    contentDescription = "Add data",
+                    tint = MaterialTheme.colors.secondary
+                )
+                Text(text = "Add more")
+            }
+        }
+        item {
+            Box(modifier = Modifier.fillMaxWidth()) {
+                DonateTodayButton(modifier = Modifier.align(Alignment.Center), text = "Donate") {
+                    onDonate(genericDonationData)
                 }
             }
         }
