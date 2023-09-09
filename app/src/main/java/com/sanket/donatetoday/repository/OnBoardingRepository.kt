@@ -1,5 +1,7 @@
 package com.sanket.donatetoday.repository
 
+import android.util.Log
+import com.google.firebase.auth.ActionCodeSettings
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ktx.getValue
@@ -26,13 +28,20 @@ class OnBoardingRepository @Inject constructor(private val database: DatabaseRef
 
     fun syncCurrentUserDataToDatabase(email: String? = auth.currentUser?.email, onSuccess: (UserDTO) -> Unit, onError: (String?) -> Unit){
         getUserFromRealm(email = email)?.let {
-            database.addUser(it.toUserDTO(), onSuccess = {
-                onSuccess(it.toUserDTO())
-            }, onError = {
-                onSuccess(it.toUserDTO())
-            })
+            auth.currentUser?.reload()?.addOnSuccessListener {_ ->
+                database.addUser(
+                    it.toUserDTO(verified = auth.currentUser?.isEmailVerified),
+                    onSuccess = {
+                        onSuccess(it.toUserDTO())
+                    },
+                    onError = {
+                        onSuccess(it.toUserDTO())
+                    })
+            }
         }
     }
+
+    fun sendEmailVerification() = auth.currentUser?.sendEmailVerification()
 
     private fun getUser(email: String? = auth.currentUser?.email, onSuccess: (UserDTO) -> Unit, onError: (String?) -> Unit) {
         if(email == null){

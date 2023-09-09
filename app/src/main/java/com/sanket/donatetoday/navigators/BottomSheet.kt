@@ -11,4 +11,6 @@ sealed class BottomSheet(val route: String){
     object UserStatementDetail: BottomSheet("user_statement_detail")
 
     object ChatSheet: BottomSheet("chat_sheet")
+
+    object VerificationScreen: BottomSheet("verification_screen")
 }

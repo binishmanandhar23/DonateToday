@@ -24,4 +24,5 @@ data class DashboardGetters(
     val onYearChanged: (year: Int) -> Unit,
     val selectedStatementTypes: DonationItemTypes?,
     val onStatementTypeSelected: (DonationItemTypes?) -> Unit,
+    val onVerificationRequired: () -> Unit,
 )

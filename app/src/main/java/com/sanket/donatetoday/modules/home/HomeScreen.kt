@@ -45,6 +45,7 @@ import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -54,6 +55,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -159,7 +161,7 @@ fun DashboardScreenContainer(dashboardGetters: DashboardGetters) {
             .padding(top = 10.dp)
     ) {
         stickyHeader {
-            DashboardToolbar(onSearch = {
+            DashboardToolbar(verified = dashboardGetters.userDTO.verified, onVerificationRequired = dashboardGetters.onVerificationRequired,onSearch = {
 
             })
         }
@@ -197,6 +199,34 @@ fun DashboardScreenContainer(dashboardGetters: DashboardGetters) {
             }
         }
         item { Spacer(modifier = Modifier.size(100.dp)) }
+    }
+}
+
+@Composable
+private fun VerificationRequiredSection(modifier:Modifier = Modifier, onVerificationRequired: () -> Unit) {
+    Box(modifier = modifier) {
+        CardContainer(modifier = Modifier.align(Alignment.CenterStart), onClick = onVerificationRequired, cardColor = Color.Red, shape = MaterialTheme.shapes.large) {
+            Row(
+                modifier = Modifier.padding(
+                    horizontal = 12.dp,
+                    vertical = 8.dp
+                ),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Warning,
+                    contentDescription = "Verification Required"
+                )
+                Text(
+                    text = "Verification Required",
+                    style = MaterialTheme.typography.subtitle1.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                )
+            }
+        }
     }
 }
 
@@ -284,7 +314,7 @@ fun OrganizationDashboard(
                 DateTimeFormatter.ofPattern(
                     "MMM yyyy"
                 )
-            )?: ""
+            ) ?: ""
         }
     val horizontalAxisValueFormatterForDonor =
         AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ ->
@@ -373,6 +403,8 @@ fun DashboardToolbar(
     modifier: Modifier = Modifier,
     toolbarText: String? = null,
     searchEnabled: Boolean = false,
+    verified: Boolean = true,
+    onVerificationRequired: (() -> Unit)? = null,
     onSearch: (String) -> Unit
 ) {
     var search by remember {
@@ -439,6 +471,8 @@ fun DashboardToolbar(
                     }
                 }
             }
+        else if(!verified)
+            VerificationRequiredSection(modifier = Modifier.weight(0.7f), onVerificationRequired = {onVerificationRequired?.invoke()})
         else
             Spacer(modifier = Modifier.weight(0.7f))
         AppLogoHorizontal(

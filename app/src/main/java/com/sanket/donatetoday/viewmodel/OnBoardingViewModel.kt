@@ -41,6 +41,8 @@ class OnBoardingViewModel @Inject constructor(private val onBoardingRepository: 
         }
     }
 
+    fun sendEmailVerification() = onBoardingRepository.sendEmailVerification()
+
     fun updateUserData(
         emailAddress: String? = null,
         password: String? = null,

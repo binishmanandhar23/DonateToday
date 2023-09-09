@@ -62,6 +62,7 @@ import com.sanket.donatetoday.modules.profile.ProfileScreen
 import com.sanket.donatetoday.modules.profile.getters.ProfileScreenGetters
 import com.sanket.donatetoday.viewmodel.OnBoardingViewModel
 import com.sanket.donatetoday.modules.splash.SplashScreen
+import com.sanket.donatetoday.modules.verification.VerificationSheet
 import com.sanket.donatetoday.navigators.BottomSheet
 import com.sanket.donatetoday.navigators.Screen
 import com.sanket.donatetoday.navigators.customAnimatedComposable
@@ -116,10 +117,6 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                                 dialogContent = { dialogType, extraString ->
                                     when (dialogType) {
                                         DialogTypes.SignUpOption -> SignUpOptionDialog(asDonor = {
-                                            onBoardingViewModel.updateUserData(
-                                                userType = UserType.Donor,
-                                                verified = true
-                                            )
                                             sharedViewModel.goToScreen(
                                                 screenNavigator = ScreenNavigator(
                                                     screen = Screen.RegistrationScreen,
@@ -127,10 +124,6 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                                             )
                                             customDialogState.hide()
                                         }, asOrganization = {
-                                            onBoardingViewModel.updateUserData(
-                                                userType = UserType.Organization,
-                                                verified = false
-                                            )
                                             sharedViewModel.goToScreen(
                                                 screenNavigator = ScreenNavigator(
                                                     screen = Screen.RegistrationScreen,
@@ -279,6 +272,8 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                             sharedViewModel.filterStatements(search = it)
                         }, onStatementClick = {
                             mainNavController.navigator(route = BottomSheet.UserStatementDetail.route + "/${it}")
+                        }, onVerificationRequired = {
+                            mainNavController.navigator(route = BottomSheet.VerificationScreen.route)
                         })
                 )
             }
@@ -409,6 +404,15 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                     })
                 }
             }
+
+            bottomSheet(route = BottomSheet.VerificationScreen.route){
+                val userDTO by sharedViewModel.user.collectAsState()
+                VerificationSheet(userDTO = userDTO, onVerify = {
+                    onBoardingViewModel.sendEmailVerification()
+                    mainNavController.popBackStack()
+                    snackBarState.show("Verification sent", overridingDelay = SnackBarLengthMedium)
+                })
+            }
         }
     }
 
@@ -447,6 +451,7 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                 is LoginUIState.Success -> sharedViewModel.goToScreen(ScreenNavigator(screen = Screen.HomeScreen))
                     .also {
                         sharedViewModel.getUser(email = onBoardingViewModel.user.value.emailAddress)
+                        sharedViewModel.getUserFromFirebaseAsynchronously(userDTO = onBoardingViewModel.user.value)
                         loaderState.hide()
                         snackBarState.show(
                             overridingText = loginUIState?.message,

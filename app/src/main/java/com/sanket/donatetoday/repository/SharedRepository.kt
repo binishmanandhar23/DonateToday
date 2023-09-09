@@ -115,6 +115,16 @@ class SharedRepository @Inject constructor(
             })
     }
 
+    suspend fun getUserFromFirebaseAsynchronously(userDTO: UserDTO) = suspendCancellableCoroutine { cont ->
+        database.getUser(userDTO = userDTO, onSuccess = {
+            cont.resume(userDTO) {
+                Exception(it)
+            }
+        }, onError = {
+            cont.resumeWithException(Exception(it))
+        })
+    }
+
     suspend fun getStatementsFromFirebase(userDTO: UserDTO) = suspendCancellableCoroutine { cont ->
         database.getStatements(userDTO = userDTO, onSuccess = { allDonationTypeDTO ->
             cont.resume(allDonationTypeDTO.fillAll()) {

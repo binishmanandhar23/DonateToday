@@ -37,6 +37,26 @@ object DatabaseUtils {
         onError?.invoke()
     }
 
+    fun DatabaseReference.getUser(
+        userDTO: UserDTO,
+        onSuccess: (UserDTO?) -> Unit,
+        onError: (String) -> Unit
+    ) = this.child(FirebasePaths.Users.node).let {
+        when (userDTO.userType) {
+            UserType.Donor.type -> it.child(FirebasePaths.Donors.node)
+            UserType.Organization.type -> it.child(FirebasePaths.Organizations.node)
+            else -> it
+        }
+    }.child(userDTO.id).addValueEventListener(object : ValueEventListener {
+        override fun onDataChange(snapshot: DataSnapshot) {
+            onSuccess(snapshot.getValue<UserDTO>())
+        }
+
+        override fun onCancelled(error: DatabaseError) {
+            onError(error.message)
+        }
+    })
+
     fun DatabaseReference.addDonationItems(userDTO: UserDTO) =
         this.child(FirebasePaths.DonationItems.node).let { ref ->
             userDTO.donationItemTypes.forEach { donationItem ->

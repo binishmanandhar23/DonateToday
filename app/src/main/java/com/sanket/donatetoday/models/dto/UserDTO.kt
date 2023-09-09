@@ -38,7 +38,7 @@ fun UserDTO.toUserEntity() = UserEntity(
     reached = reached
 )
 
-fun UserEntity.toUserDTO() = UserDTO(
+fun UserEntity.toUserDTO(verified: Boolean? = null) = UserDTO(
     id = id,
     name = name,
     emailAddress = emailAddress,
@@ -48,7 +48,7 @@ fun UserEntity.toUserDTO() = UserDTO(
     cardInfo = cardInfo?.toCreditCardDataDTO(),
     donationItemTypes = donationItemTypes.toList(),
     userType = userType,
-    verified = verified,
+    verified = verified?: this.verified,
     totalGoal = totalGoal,
     reached = reached
 )
