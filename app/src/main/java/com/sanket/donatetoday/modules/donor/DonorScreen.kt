@@ -15,6 +15,8 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Message
+import androidx.compose.material.icons.rounded.Email
+import androidx.compose.material.icons.rounded.Phone
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,7 +32,7 @@ import com.sanket.donatetoday.modules.common.UniversalVerticalPaddingInDp
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun DonorDetailScreen(user: UserDTO?, onMessage: (UserDTO) -> Unit) {
+fun DonorDetailScreen(user: UserDTO?, onMessage: (UserDTO) -> Unit, onEmail: (UserDTO) -> Unit, onPhone: (UserDTO) -> Unit) {
     if (user == null)
         return
     LazyColumn(
@@ -59,13 +61,19 @@ fun DonorDetailScreen(user: UserDTO?, onMessage: (UserDTO) -> Unit) {
         }
         item { DonateTodayDivider() }
         item {
-            HorizontalHeaderValue(header = "Email", value = user.emailAddress)
+            HorizontalHeaderValue(header = "Email", value = user.emailAddress, trailingIcon = Icons.Rounded.Email, onTrailingIconClick = {
+                onEmail(user)
+            })
         }
         item {
             AnimatedVisibility(visible = !user.phoneNo.isNullOrEmpty()) {
                 HorizontalHeaderValue(
                     header = "Telephone Number",
-                    value = "${user.countryPhoneCode}-${user.phoneNo}"
+                    value = "${user.countryPhoneCode}-${user.phoneNo}",
+                    trailingIcon = Icons.Rounded.Phone,
+                    onTrailingIconClick = {
+                        onPhone(user)
+                    }
                 )
             }
         }

@@ -327,7 +327,7 @@ fun TextFieldOuterBox(
     errorIconColor: Color = Color.Red,
     content: @Composable BoxScope.() -> Unit
 ) {
-    Column(modifier = modifier,verticalArrangement = Arrangement.spacedBy(5.dp)) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(5.dp)) {
         Box(
             modifier = Modifier.border(
                 width = 0.5.dp,
@@ -622,8 +622,8 @@ fun DonateTodayPhoneNumberInput(
 ) {
     var selectedCountry by remember(countryPhoneCode) {
         mutableStateOf(
-        getLibCountries.find { it.countryPhoneCode == countryPhoneCode }
-            ?: getLibCountries.find { it.countryCode == "us" } ?: getLibCountries.first()
+            getLibCountries.find { it.countryPhoneCode == countryPhoneCode }
+                ?: getLibCountries.find { it.countryCode == "us" } ?: getLibCountries.first()
         )
     }
     val correct by remember(phoneNumber) {
@@ -631,10 +631,14 @@ fun DonateTodayPhoneNumberInput(
             phoneNumber.length == 10
         }
     }
-    LaunchedEffect(key1 = selectedCountry){
+    LaunchedEffect(key1 = selectedCountry) {
         onCountryPhoneCode(selectedCountry.countryPhoneCode)
     }
-    Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
         TextFieldOuterBox {
             AnimatedContent(enabled, label = "") { editable ->
                 if (editable)
@@ -979,9 +983,13 @@ fun DonationGoalIndicator(reached: Int, totalGoal: Int) {
 }
 
 @Composable
-fun DonateTodayCircularButton(onClick: (() -> Unit)? = null, imageVector: ImageVector, contentDescription: String? = null){
+fun DonateTodayCircularButton(
+    onClick: (() -> Unit)? = null,
+    imageVector: ImageVector,
+    contentDescription: String? = null
+) {
     CardContainer(
-        onClick = {onClick?.invoke()},
+        onClick = { onClick?.invoke() },
         cardColor = MaterialTheme.colors.primary,
         shape = CircleShape,
         elevation = 8.dp
@@ -1077,7 +1085,10 @@ fun DonateTodayTabPager(
         }
     ) {
         tabs.forEachIndexed { index, item ->
-            val textColor by animateColorAsState(targetValue = if (index == pagerState.currentPage) indicatorColor else contentColor, label ="")
+            val textColor by animateColorAsState(
+                targetValue = if (index == pagerState.currentPage) indicatorColor else contentColor,
+                label = ""
+            )
             Tab(
                 selected = index == pagerState.currentPage,
                 text = {
@@ -1101,7 +1112,13 @@ fun DonateTodayTabPager(
 }
 
 @Composable
-fun HorizontalHeaderValue(modifier: Modifier = Modifier, header: String, value: String?) {
+fun HorizontalHeaderValue(
+    modifier: Modifier = Modifier,
+    header: String,
+    value: String?,
+    trailingIcon: ImageVector? = null,
+    onTrailingIconClick: (() -> Unit)? = null
+) {
     if (!value.isNullOrEmpty())
         Row(
             modifier = modifier,
@@ -1116,5 +1133,18 @@ fun HorizontalHeaderValue(modifier: Modifier = Modifier, header: String, value: 
                 text = value,
                 style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Normal)
             )
+            trailingIcon?.let {
+                CardContainer(
+                    onClick = { onTrailingIconClick?.invoke() },
+                    cardColor = MaterialTheme.colors.primary
+                ) {
+                    Icon(
+                        modifier = Modifier.padding(5.dp),
+                        imageVector = trailingIcon,
+                        contentDescription = header,
+                        tint = MaterialTheme.colors.onPrimary
+                    )
+                }
+            }
         }
 }

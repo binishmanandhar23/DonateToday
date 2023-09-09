@@ -1,8 +1,11 @@
 package com.sanket.donatetoday
 
+import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,6 +19,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.google.accompanist.navigation.animation.AnimatedNavHost
@@ -23,6 +27,8 @@ import com.google.accompanist.navigation.material.ExperimentalMaterialNavigation
 import com.google.accompanist.navigation.material.ModalBottomSheetLayout
 import com.google.accompanist.navigation.material.bottomSheet
 import com.google.firebase.auth.FirebaseAuth
+import com.sanket.donatetoday.delegates.IntentDelegate
+import com.sanket.donatetoday.delegates.IntentDelegateImpl
 import com.sanket.donatetoday.modules.common.dialog.CustomDialog
 import com.sanket.donatetoday.modules.common.dialog.enums.DialogTypes
 import com.sanket.donatetoday.modules.common.dialog.rememberDialogState
@@ -70,7 +76,7 @@ import com.sanket.donatetoday.viewmodel.SharedViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl() {
     private val sharedViewModel by viewModels<SharedViewModel>()
     private val onBoardingViewModel by viewModels<OnBoardingViewModel>()
 
@@ -299,17 +305,17 @@ class MainActivity : ComponentActivity() {
                             ).also { loaderState.hide() }
                         }
                     }
-                        OrganizationDetailScreen(organization = organization, onBack = {
-                            mainNavController.customPopBackStack()
-                        }, onDonateItem = { item ->
-                            when(item){
-                                DonationItemTypes.Cash.type -> mainNavController.navigator(route = BottomSheet.DonateCashSheet.route)
-                                DonationItemTypes.Clothes.type -> mainNavController.navigator(route = BottomSheet.DonateClothesSheet.route)
-                                DonationItemTypes.Utensils.type -> mainNavController.navigator(route = BottomSheet.DonateUtensilsSheet.route)
-                                DonationItemTypes.Food.type -> mainNavController.navigator(route = BottomSheet.DonateFoodSheet.route)
-                            }
+                    OrganizationDetailScreen(organization = organization, onBack = {
+                        mainNavController.customPopBackStack()
+                    }, onDonateItem = { item ->
+                        when (item) {
+                            DonationItemTypes.Cash.type -> mainNavController.navigator(route = BottomSheet.DonateCashSheet.route)
+                            DonationItemTypes.Clothes.type -> mainNavController.navigator(route = BottomSheet.DonateClothesSheet.route)
+                            DonationItemTypes.Utensils.type -> mainNavController.navigator(route = BottomSheet.DonateUtensilsSheet.route)
+                            DonationItemTypes.Food.type -> mainNavController.navigator(route = BottomSheet.DonateFoodSheet.route)
+                        }
 
-                        })
+                    })
                 }
             }
             customAnimatedComposable(route = Screen.ProfileScreen.route) {
@@ -359,7 +365,7 @@ class MainActivity : ComponentActivity() {
                     sharedViewModel.addFoodDonation(genericDonationData = it)
                 })
             }
-            bottomSheet(route = BottomSheet.UserStatementDetail.route + "/{id}"){ navBackStackEntry ->
+            bottomSheet(route = BottomSheet.UserStatementDetail.route + "/{id}") { navBackStackEntry ->
                 navBackStackEntry.arguments?.getString("id")?.let { id ->
                     LaunchedEffect(key1 = id) {
                         sharedViewModel.getUserBasedOnId(id = id)
@@ -368,6 +374,12 @@ class MainActivity : ComponentActivity() {
                     var user: UserDTO? by remember(homeUIState) {
                         mutableStateOf(null)
                     }
+                    val callPermissionState =
+                        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { _ ->
+                            user?.let {
+                                onPhone(this@MainActivity, it)
+                            }
+                        }
                     LaunchedEffect(key1 = homeUIState) {
                         when (val state = homeUIState) {
                             is HomeUIState.Loading -> loaderState.show()
@@ -384,6 +396,16 @@ class MainActivity : ComponentActivity() {
                     }
                     DonorDetailScreen(user = user, onMessage = {
 
+                    }, onEmail = {
+                        onEmail(activity = this@MainActivity, userDTO = it)
+                    }, onPhone = {
+                        when (PackageManager.PERMISSION_GRANTED) {
+                            ContextCompat.checkSelfPermission(
+                                this@MainActivity,
+                                android.Manifest.permission.CALL_PHONE
+                            ) -> onPhone(this@MainActivity, it)
+                            else -> callPermissionState.launch(android.Manifest.permission.CALL_PHONE)
+                        }
                     })
                 }
             }
