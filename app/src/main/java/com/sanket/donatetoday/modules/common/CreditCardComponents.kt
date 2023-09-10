@@ -14,10 +14,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.runtime.Composable
@@ -25,22 +27,27 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.sanket.donatetoday.R
 import com.sanket.donatetoday.models.dto.CreditCardDataDTO
+import com.sanket.donatetoday.modules.common.enums.DonationStateEnums
 import com.sanket.donatetoday.utils.DateUtils
 import com.sanket.donatetoday.utils.card.CardValidator
 import com.sanket.donatetoday.utils.card.enums.Cards
 import com.sanket.donatetoday.utils.px2dp
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 private fun DonateTodayCardNumberInput(
@@ -191,6 +198,8 @@ fun DonateTodayCardInfoFields(
     modifier: Modifier = Modifier,
     creditCardDataDTO: CreditCardDataDTO,
     enabled: Boolean = true,
+    errorText: String? = null,
+    errorIcon: ImageVector? = null,
     onCardDataUpdate: (CreditCardDataDTO) -> Unit
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -216,6 +225,7 @@ fun DonateTodayCardInfoFields(
             onDateChange = {
                 onCardDataUpdate(creditCardDataDTO.copy(expiresOn = it))
             })
+        ErrorRow(errorText = errorText, errorIcon = errorIcon)
     }
 }
 
@@ -245,6 +255,10 @@ fun CreditCardDetailsWithCVV(
     var rowSize by remember {
         mutableStateOf(IntSize.Zero)
     }
+    var donationState by remember {
+        mutableStateOf(DonationStateEnums.Initial)
+    }
+    val coroutineScope = rememberCoroutineScope()
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -263,7 +277,9 @@ fun CreditCardDetailsWithCVV(
             onCardHolderNameChanged = {})
         Row(
             modifier = Modifier
-                .fillMaxWidth().padding(bottom = 10.dp).onSizeChanged {
+                .fillMaxWidth()
+                .padding(bottom = 10.dp)
+                .onSizeChanged {
                     rowSize = it
                 },
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -282,9 +298,9 @@ fun CreditCardDetailsWithCVV(
                 errorIcon = errorIcon,
                 errorText = errorText
             )
-            Spacer(modifier = Modifier.width((rowSize.width * 0.05f).px2dp().dp),)
+            Spacer(modifier = Modifier.width((rowSize.width * 0.05f).px2dp().dp))
             DonateTodaySingleLineTextField(
-                modifier = Modifier.width((rowSize.width *  0.7f).px2dp().dp),
+                modifier = Modifier.width((rowSize.width * 0.7f).px2dp().dp),
                 value = donationAmount, onValueChange = {
                     donationAmount = it
                 }, label = "Enter donation amount", keyboardOptions = KeyboardOptions(
@@ -295,15 +311,51 @@ fun CreditCardDetailsWithCVV(
                 errorText = amountErrorText
             )
         }
-        DonateTodayButton(text = "Donate") {
-            if (cvv.isEmpty() || cvv.length < 3) {
-                errorIcon = Icons.Default.Error
-                errorText = "Incorrect CVV"
-            } else if (donationAmount.isEmpty() || donationAmount.toIntOrNull() == 0) {
-                amountErrorIcon = Icons.Default.Error
-                amountErrorText = "Invalid amount"
-            } else
-                onDonate(donationAmount.toInt())
+        AnimatedContent(targetState = donationState, label = "Donation state") { state ->
+            when (state) {
+                DonationStateEnums.Initial ->
+                    DonateTodayButton(text = "Donate") {
+                        if (cvv.isEmpty() || cvv.length < 3) {
+                            errorIcon = Icons.Default.Error
+                            errorText = "Incorrect CVV"
+                        } else if (donationAmount.isEmpty() || donationAmount.toIntOrNull() == 0) {
+                            amountErrorIcon = Icons.Default.Error
+                            amountErrorText = "Invalid amount"
+                        } else {
+                            donationState = DonationStateEnums.Donating
+                            coroutineScope.launch {
+                                delay(2000)
+                                donationState = DonationStateEnums.Donated
+                                delay(1500)
+                                onDonate(donationAmount.toInt())
+                            }
+                        }
+                    }
+
+                DonationStateEnums.Donating -> CircularProgressIndicator(
+                    modifier = Modifier.size(40.dp),
+                    color = MaterialTheme.colors.primary
+                )
+
+                DonationStateEnums.Donated -> Column(
+                    modifier = Modifier.padding(top = 10.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = "Donated",
+                        tint = MaterialTheme.colors.secondary
+                    )
+                    Text(
+                        text = "Donated",
+                        style = MaterialTheme.typography.body1.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colors.secondary
+                        )
+                    )
+                }
+            }
         }
     }
 }

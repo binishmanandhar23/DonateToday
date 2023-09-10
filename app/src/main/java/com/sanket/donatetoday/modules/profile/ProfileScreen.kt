@@ -14,8 +14,11 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -43,15 +46,34 @@ import com.sanket.donatetoday.modules.common.enums.DonationItemTypes
 import com.sanket.donatetoday.modules.common.map.DonateTodayAddPlaces
 import com.sanket.donatetoday.modules.profile.getters.ProfileScreenGetters
 import com.sanket.donatetoday.utils.emptyIfNull
+import com.sanket.donatetoday.utils.verifyEmptyOrNull
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ProfileScreen(profileScreenGetters: ProfileScreenGetters) {
+    var numberOfErrors by remember {
+        mutableIntStateOf(0)
+    }
+    var checkForErrors by remember {
+        mutableStateOf(false)
+    }
     var editable by remember {
         mutableStateOf(false)
     }
     var userDTO by remember(profileScreenGetters.userDTO) {
         mutableStateOf(profileScreenGetters.userDTO)
+    }
+    LaunchedEffect(key1 = userDTO) {
+        checkForErrors = false
+        numberOfErrors = 0
+        if (userDTO.emailAddress.verifyEmptyOrNull())
+            numberOfErrors += 1
+        else if (userDTO.name.verifyEmptyOrNull())
+            numberOfErrors += 1
+        else if (userDTO.donationItemTypes.verifyEmptyOrNull())
+            numberOfErrors += 1
+        else if (userDTO.cardInfo.verifyEmptyOrNull(userType = userDTO.userType))
+            numberOfErrors += 1
     }
     LazyColumn(
         modifier = Modifier
@@ -71,7 +93,10 @@ fun ProfileScreen(profileScreenGetters: ProfileScreenGetters) {
             )
         }
         item {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
                 DonateTodayProfilePicture(name = userDTO.name)
                 AnimatedVisibility(visible = !editable) {
                     DonateTodayCircularButton(onClick = {
@@ -92,7 +117,9 @@ fun ProfileScreen(profileScreenGetters: ProfileScreenGetters) {
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Email,
                     imeAction = ImeAction.Next
-                )
+                ),
+                errorText = if (checkForErrors && userDTO.emailAddress.verifyEmptyOrNull()) "Email address must not be empty" else null,
+                errorIcon = Icons.Default.Error,
             )
         }
         item {
@@ -107,7 +134,9 @@ fun ProfileScreen(profileScreenGetters: ProfileScreenGetters) {
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.Next
-                )
+                ),
+                errorText = if (checkForErrors && userDTO.name.verifyEmptyOrNull()) "Name must not be empty" else null,
+                errorIcon = Icons.Default.Error,
             )
 
         }
@@ -185,7 +214,7 @@ fun ProfileScreen(profileScreenGetters: ProfileScreenGetters) {
                 items = DonationItemTypes.values().map { it.type },
                 selectedItems = userDTO.donationItemTypes,
                 onCheckedChanged = { index, item, checked ->
-                    if(!editable)
+                    if (!editable)
                         return@DonateTodayCheckBoxItems
 
                     val items = userDTO.donationItemTypes.toMutableList()
@@ -194,7 +223,9 @@ fun ProfileScreen(profileScreenGetters: ProfileScreenGetters) {
                     else
                         items.remove(item.lowercase())
                     userDTO = userDTO.copy(donationItemTypes = items)
-                }
+                },
+                errorText = if (checkForErrors && userDTO.donationItemTypes.verifyEmptyOrNull()) "Please select at least one item" else null,
+                errorIcon = Icons.Default.Error,
             )
         }
         item {
@@ -233,7 +264,10 @@ fun ProfileScreen(profileScreenGetters: ProfileScreenGetters) {
                 enabled = editable,
                 onCardDataUpdate = {
                     userDTO = userDTO.copy(cardInfo = it)
-                })
+                },
+                errorText = if (checkForErrors && userDTO.cardInfo.verifyEmptyOrNull(userType = userDTO.userType)) "Please fill all of the Card details correctly" else null,
+                errorIcon = Icons.Default.Error,
+            )
         }
         item {
             DonateTodayDivider()
@@ -252,8 +286,11 @@ fun ProfileScreen(profileScreenGetters: ProfileScreenGetters) {
         item {
             AnimatedVisibility(editable) {
                 DonateTodayButton(text = "Update", onClick = {
-                    editable = false
-                    profileScreenGetters.onUpdateProfile(userDTO)
+                    checkForErrors = true
+                    if (numberOfErrors == 0) {
+                        editable = false
+                        profileScreenGetters.onUpdateProfile(userDTO)
+                    }
                 })
             }
         }

@@ -336,6 +336,24 @@ fun TextFieldOuterBox(
             ),
             content = content
         )
+        ErrorRow(
+            errorText = errorText,
+            errorIcon = errorIcon,
+            errorTextColor = errorTextColor,
+            errorIconColor = errorIconColor
+        )
+    }
+
+}
+
+@Composable
+fun ErrorRow(
+    errorText: String?,
+    errorIcon: ImageVector?,
+    errorTextColor: Color = MaterialTheme.colors.error,
+    errorIconColor: Color = Color.Red
+) {
+    AnimatedVisibility(visible = !errorText.isNullOrEmpty()) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -354,7 +372,6 @@ fun TextFieldOuterBox(
             }
         }
     }
-
 }
 
 @Composable
@@ -721,6 +738,8 @@ fun DonateTodayCheckBoxItems(
     header: String,
     items: List<String>,
     selectedItems: List<String>,
+    errorText: String? = null,
+    errorIcon: ImageVector? = null,
     onCheckedChanged: (index: Int, item: String, checked: Boolean) -> Unit
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -739,6 +758,7 @@ fun DonateTodayCheckBoxItems(
                     onCheckedChanged(index, s, it)
                 })
         }
+        ErrorRow(errorText = errorText, errorIcon = errorIcon)
     }
 }
 
@@ -925,8 +945,8 @@ fun DonateTodayProfilePicture(
         Icon(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .offset(x = 5.dp, y = 5.dp),
-            imageVector = Icons.Default.CheckCircle,
+                .offset(x = 5.dp, y = 5.dp).background(color = MaterialTheme.colors.background, shape = CircleShape),
+            imageVector = Icons.Filled.CheckCircle,
             contentDescription = "Verified",
             tint = Color.Green
         )

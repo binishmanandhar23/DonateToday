@@ -86,21 +86,24 @@ class SharedRepository @Inject constructor(
             }
     }
 
-    suspend fun getUserBasedOnId(id: String) = suspendCancellableCoroutine { cont ->
-        database.child(FirebasePaths.Users.node).child(FirebasePaths.Donors.node).child(id)
-            .get().addOnSuccessListener { dataSnapshot ->
-                dataSnapshot.getValue<UserDTO>().let { userDTO ->
-                    if (userDTO == null)
-                        cont.resumeWithException(Exception("User not found."))
-                    else
-                        cont.resume(userDTO) {
-                            Exception(it)
-                        }
+    suspend fun getUserBasedOnId(id: String, currentUserType: String?) =
+        suspendCancellableCoroutine { cont ->
+            database.child(FirebasePaths.Users.node)
+                .child(if (currentUserType == UserType.Organization.type) FirebasePaths.Donors.node else FirebasePaths.Organizations.node)
+                .child(id)
+                .get().addOnSuccessListener { dataSnapshot ->
+                    dataSnapshot.getValue<UserDTO>().let { userDTO ->
+                        if (userDTO == null)
+                            cont.resumeWithException(Exception("User not found."))
+                        else
+                            cont.resume(userDTO) {
+                                Exception(it)
+                            }
+                    }
+                }.addOnFailureListener {
+                    cont.resumeWithException(it)
                 }
-            }.addOnFailureListener {
-                cont.resumeWithException(it)
-            }
-    }
+        }
 
     suspend fun getUserFromFirebase(email: String?) = suspendCancellableCoroutine { cont ->
         if (email == null)
@@ -115,15 +118,11 @@ class SharedRepository @Inject constructor(
             })
     }
 
-    suspend fun getUserFromFirebaseAsynchronously(userDTO: UserDTO) = suspendCancellableCoroutine { cont ->
-        database.getUser(userDTO = userDTO, onSuccess = {
-            cont.resume(userDTO) {
-                Exception(it)
-            }
-        }, onError = {
-            cont.resumeWithException(Exception(it))
-        })
-    }
+    fun getUserFromFirebaseAsynchronously(
+        userDTO: UserDTO,
+        onSuccess: (UserDTO?) -> Unit,
+        onError: (String) -> Unit
+    ) = database.getUser(userDTO = userDTO, onSuccess = onSuccess, onError = onError)
 
     suspend fun getStatementsFromFirebase(userDTO: UserDTO) = suspendCancellableCoroutine { cont ->
         database.getStatements(userDTO = userDTO, onSuccess = { allDonationTypeDTO ->

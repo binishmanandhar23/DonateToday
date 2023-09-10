@@ -29,13 +29,13 @@ import com.google.accompanist.navigation.material.bottomSheet
 import com.google.firebase.auth.FirebaseAuth
 import com.sanket.donatetoday.delegates.IntentDelegate
 import com.sanket.donatetoday.delegates.IntentDelegateImpl
+import com.sanket.donatetoday.enums.UserType
 import com.sanket.donatetoday.modules.common.dialog.CustomDialog
 import com.sanket.donatetoday.modules.common.dialog.enums.DialogTypes
 import com.sanket.donatetoday.modules.common.dialog.rememberDialogState
 import com.sanket.donatetoday.modules.onboarding.LoginScreenMain
 import com.sanket.donatetoday.modules.onboarding.RegistrationScreenMain
 import com.sanket.donatetoday.modules.onboarding.SignUpOptionDialog
-import com.sanket.donatetoday.enums.UserType
 import com.sanket.donatetoday.models.dto.UserDTO
 import com.sanket.donatetoday.modules.common.DonateTodayMonthlyGoalDialog
 import com.sanket.donatetoday.modules.common.dialog.CustomDialogState
@@ -117,6 +117,9 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                                 dialogContent = { dialogType, extraString ->
                                     when (dialogType) {
                                         DialogTypes.SignUpOption -> SignUpOptionDialog(asDonor = {
+                                            onBoardingViewModel.updateUserData(
+                                                userType = UserType.Donor,
+                                            )
                                             sharedViewModel.goToScreen(
                                                 screenNavigator = ScreenNavigator(
                                                     screen = Screen.RegistrationScreen,
@@ -124,6 +127,9 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                                             )
                                             customDialogState.hide()
                                         }, asOrganization = {
+                                            onBoardingViewModel.updateUserData(
+                                                userType = UserType.Organization,
+                                            )
                                             sharedViewModel.goToScreen(
                                                 screenNavigator = ScreenNavigator(
                                                     screen = Screen.RegistrationScreen,
@@ -253,7 +259,7 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                             dialogState.show(dialog = DialogTypes.MonthlyGoal)
                         }, onSettingsClick = { settingsEnums ->
                             when (settingsEnums) {
-                                SettingsEnums.EditProfile -> sharedViewModel.goToScreen(
+                                SettingsEnums.Profile -> sharedViewModel.goToScreen(
                                     ScreenNavigator(screen = Screen.ProfileScreen)
                                 )
 
@@ -310,6 +316,10 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                             DonationItemTypes.Food.type -> mainNavController.navigator(route = BottomSheet.DonateFoodSheet.route)
                         }
 
+                    }, onEmail= {
+                        onEmail(this@MainActivity, it)
+                    }, onPhone = {
+                        onPhone(this@MainActivity, it)
                     })
                 }
             }

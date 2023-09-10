@@ -110,15 +110,16 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
 
     fun getUserFromFirebaseAsynchronously(userDTO: UserDTO) =
         viewModelScope.launch(Dispatchers.Default) {
-            try {
-                sharedRepository.getUserFromFirebaseAsynchronously(
-                    userDTO = userDTO
-                ).let {
-                    updateUser(userDTO = it, updateInFirebase = false)
+            sharedRepository.getUserFromFirebaseAsynchronously(
+                userDTO = userDTO,
+                onSuccess = {
+                    if(it != null)
+                        updateUser(userDTO = it, updateInFirebase = false)
+                },
+                onError = {
+                    _homeUIState.update { _ -> HomeUIState.Error(errorMessage = it) }
                 }
-            } catch (ex: Exception){
-                _homeUIState.update { HomeUIState.Error(errorMessage = ex.message) }
-            }
+            )
         }
 
     private var updateJob: Job? = null
@@ -126,7 +127,7 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
         //_user.update { userDTO }
         sharedRepository.saveUserToRealm(userEntity = userDTO.toUserEntity())
     }.also {
-        if(updateInFirebase) {
+        if (updateInFirebase) {
             if (updateJob?.isActive == true)
                 updateJob?.cancel()
             updateJob = viewModelScope.launch(Dispatchers.Default) {
@@ -158,7 +159,7 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
     fun getUserBasedOnId(id: String) = viewModelScope.launch {
         _homeUIState.update { HomeUIState.Loading() }
         try {
-            val userDTO = sharedRepository.getUserBasedOnId(id = id)
+            val userDTO = sharedRepository.getUserBasedOnId(id = id, currentUserType = user.value.userType)
             _homeUIState.update { HomeUIState.Success(data = userDTO) }
         } catch (ex: Exception) {
             _homeUIState.update { HomeUIState.Error(errorMessage = ex.message) }

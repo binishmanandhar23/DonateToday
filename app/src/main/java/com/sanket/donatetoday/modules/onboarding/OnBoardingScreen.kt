@@ -27,9 +27,12 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -68,6 +71,7 @@ import com.sanket.donatetoday.models.dto.CreditCardDataDTO
 import com.sanket.donatetoday.modules.common.enums.DonationItemTypes
 import com.sanket.donatetoday.modules.common.map.DonateTodayAddPlaces
 import com.sanket.donatetoday.utils.emptyIfNull
+import com.sanket.donatetoday.utils.verifyEmptyOrNull
 
 @Composable
 fun LoginScreenMain(
@@ -178,11 +182,18 @@ fun RegistrationScreenMain(
         mutableStateOf("")
     }
     var addCardInfo by remember {
-        mutableStateOf(false)
+        mutableStateOf(userDTO.userType == UserType.Organization.type)
     }
-    val rotateCardInfo by animateFloatAsState(targetValue = if (addCardInfo) 180f else 0f,
+    val rotateCardInfo by animateFloatAsState(
+        targetValue = if (addCardInfo) 180f else 0f,
         label = ""
     )
+    var checkForErrors by remember {
+        mutableStateOf(false)
+    }
+    var numberOfErrors by remember {
+        mutableIntStateOf(0)
+    }
     val confirmPasswordErrorText by remember(userDTO.password) {
         derivedStateOf {
             if (userDTO.password.isNotEmpty() && confirmPassword.isNotEmpty() && userDTO.password != confirmPassword)
@@ -209,6 +220,20 @@ fun RegistrationScreenMain(
         else
             Color.Red, label = ""
     )
+    LaunchedEffect(key1 = userDTO) {
+        checkForErrors = false
+        numberOfErrors = 0
+        if (userDTO.emailAddress.verifyEmptyOrNull())
+            numberOfErrors += 1
+        else if (userDTO.name.verifyEmptyOrNull())
+            numberOfErrors += 1
+        else if (userDTO.password.verifyEmptyOrNull() || confirmPassword.verifyEmptyOrNull())
+            numberOfErrors += 1
+        else if (userDTO.donationItemTypes.verifyEmptyOrNull())
+            numberOfErrors += 1
+        else if (userDTO.cardInfo.verifyEmptyOrNull(userType = userDTO.userType))
+            numberOfErrors += 1
+    }
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -251,7 +276,9 @@ fun RegistrationScreenMain(
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Email,
                             imeAction = ImeAction.Next
-                        )
+                        ),
+                        errorText = if (checkForErrors && userDTO.emailAddress.verifyEmptyOrNull()) "Email address must not be empty" else null,
+                        errorIcon = Icons.Default.Error,
                     )
                     DonateTodaySingleLineTextField(
                         modifier = Modifier.fillMaxWidth(),
@@ -263,7 +290,9 @@ fun RegistrationScreenMain(
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Text,
                             imeAction = ImeAction.Next
-                        )
+                        ),
+                        errorText = if (checkForErrors && userDTO.name.verifyEmptyOrNull()) "Name must not be empty" else null,
+                        errorIcon = Icons.Default.Error,
                     )
                     DonateTodaySingleLineTextField(
                         modifier = Modifier.fillMaxWidth(),
@@ -276,7 +305,6 @@ fun RegistrationScreenMain(
                             keyboardType = KeyboardType.Password,
                             imeAction = ImeAction.Next
                         ),
-
                         visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
                             IconButton(onClick = { showPassword = !showPassword }) {
@@ -288,7 +316,9 @@ fun RegistrationScreenMain(
                                     )
                                 }
                             }
-                        }
+                        },
+                        errorText = if (checkForErrors && userDTO.password.verifyEmptyOrNull()) "Password must not be empty" else null,
+                        errorIcon = Icons.Default.Error,
                     )
                     DonateTodaySingleLineTextField(
                         modifier = Modifier.fillMaxWidth(),
@@ -334,46 +364,63 @@ fun RegistrationScreenMain(
                         selectedItems = userDTO.donationItemTypes,
                         onCheckedChanged = { index, item, checked ->
                             val items = userDTO.donationItemTypes.toMutableList()
-                            if(checked)
+                            if (checked)
                                 items.add(item.lowercase())
                             else
                                 items.remove(item.lowercase())
                             onUpdate(userDTO.copy(donationItemTypes = items))
-                        }
+                        },
+                        errorText = if (checkForErrors && userDTO.donationItemTypes.verifyEmptyOrNull()) "Please select at least one item" else null,
+                        errorIcon = Icons.Default.Error,
                     )
                     DonateTodayDivider()
                     DonateTodayCheckBox(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { addCardInfo = !addCardInfo },
-                        text = "Card Details (Optional)",
+                        text = "Card Details ${if (userDTO.userType == UserType.Donor.type) "(Optional)" else ""}",
                         textColor = MaterialTheme.colors.secondary,
                         fontWeight = FontWeight.Bold,
                         isChecked = addCardInfo,
                         onCheckedChanged = {
                             addCardInfo = it
                         }, trailingIcon = {
-                            Icon(modifier = Modifier.rotate(rotateCardInfo), imageVector = Icons.Default.ArrowDropDown, contentDescription = "Dropdown")
+                            Icon(
+                                modifier = Modifier.rotate(rotateCardInfo),
+                                imageVector = Icons.Default.ArrowDropDown,
+                                contentDescription = "Dropdown"
+                            )
                         })
                     AnimatedVisibility(visible = addCardInfo) {
                         DonateTodayCardInfoFields(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = UniversalInnerHorizontalPaddingInDp),
-                            creditCardDataDTO = userDTO.cardInfo?: CreditCardDataDTO(),
+                            creditCardDataDTO = userDTO.cardInfo ?: CreditCardDataDTO(),
                             onCardDataUpdate = {
                                 onUpdate(userDTO.copy(cardInfo = it))
-                            })
+                            },
+                            errorText = if (checkForErrors && userDTO.cardInfo.verifyEmptyOrNull(
+                                    userType = userDTO.userType
+                                )
+                            ) "Please fill all of the Card details correctly" else null,
+                            errorIcon = Icons.Default.Error
+                        )
                     }
                     DonateTodayDivider()
-                    if(userDTO.userType == UserType.Organization.type) {
+                    if (userDTO.userType == UserType.Organization.type) {
                         DonateTodayAddPlaces(
                             modifier = Modifier.fillMaxWidth(),
                             onAddNewPlace = onAddNewPlace
                         )
                         DonateTodayDivider()
                     }
-                    DonateTodayButton(text = "Sign up", onClick = onSignUp)
+                    DonateTodayButton(text = "Sign up", onClick = {
+                        if (numberOfErrors == 0)
+                            onSignUp()
+                        else
+                            checkForErrors = true
+                    })
                 }
             }
         }

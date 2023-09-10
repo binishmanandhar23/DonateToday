@@ -104,7 +104,7 @@ fun HomeScreenContainer(dashboardGetters: DashboardGetters) {
         listOf(
             Icons.Default.Home,
             Icons.Default.List,
-            Icons.Default.Message,
+            //Icons.Default.Message,
             Icons.Default.Settings
         )
     }
@@ -132,8 +132,8 @@ fun HomeScreenContainer(dashboardGetters: DashboardGetters) {
                     onStatementTypeSelected = dashboardGetters.onStatementTypeSelected
                 )
 
-                2 -> MessageScreen()
-                3 -> SettingsMainContainer(dashboardGetters = dashboardGetters)
+                //2 -> MessageScreen()
+                2 -> SettingsMainContainer(dashboardGetters = dashboardGetters)
                 else -> Unit
             }
         }
@@ -549,7 +549,7 @@ fun DashboardLists(
                     color = MaterialTheme.colors.primary
                 )
             )
-            LazyRow {
+            LazyRow(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 items(items) {
                     DashboardListItem(modifier = Modifier.width(100.dp), item = it, onClick = {
                         onClick(it)
@@ -591,7 +591,7 @@ fun SettingsMainContainer(dashboardGetters: DashboardGetters) {
     val settingsItems = remember {
         listOf(
             SettingsItem(
-                settingsEnums = SettingsEnums.EditProfile,
+                settingsEnums = SettingsEnums.Profile,
                 icon = Icons.Default.AccountCircle
             ),
             SettingsItem(settingsEnums = SettingsEnums.Logout, icon = Icons.Default.Logout),
