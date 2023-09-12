@@ -42,7 +42,6 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Logout
-import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
@@ -89,17 +88,17 @@ import com.sanket.donatetoday.modules.common.UniversalVerticalPaddingInDp
 import com.sanket.donatetoday.modules.home.data.SettingsItem
 import com.sanket.donatetoday.modules.home.enums.SettingsEnums
 import com.sanket.donatetoday.modules.home.getters.DashboardGetters
-import com.sanket.donatetoday.modules.message.MessageScreen
 import com.sanket.donatetoday.modules.organization.data.OrganizationDonorCashChartData
 import com.sanket.donatetoday.modules.organization.data.OrganizationDonorChartData
 import com.sanket.donatetoday.modules.statements.StatementsScreen
+import com.sanket.donatetoday.utils.DateUtils
 import kotlinx.coroutines.launch
 import org.threeten.bp.format.DateTimeFormatter
 
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun HomeScreenContainer(dashboardGetters: DashboardGetters) {
+fun HomeScreenContainer(dashboardGetters: DashboardGetters, allOrganizations: List<UserDTO>) {
     val pages = remember {
         listOf(
             Icons.Default.Home,
@@ -122,7 +121,7 @@ fun HomeScreenContainer(dashboardGetters: DashboardGetters) {
             state = pagerState
         ) { page ->
             when (page) {
-                0 -> DashboardScreenContainer(dashboardGetters = dashboardGetters)
+                0 -> DashboardScreenContainer(dashboardGetters = dashboardGetters, allOrganizations = allOrganizations)
                 1 -> StatementsScreen(
                     userDTO = dashboardGetters.userDTO,
                     statements = dashboardGetters.listOfAllStatements,
@@ -154,16 +153,19 @@ fun HomeScreenContainer(dashboardGetters: DashboardGetters) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun DashboardScreenContainer(dashboardGetters: DashboardGetters) {
+fun DashboardScreenContainer(dashboardGetters: DashboardGetters, allOrganizations: List<UserDTO>) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .padding(top = 10.dp)
     ) {
         stickyHeader {
-            DashboardToolbar(verified = dashboardGetters.userDTO.verified, onVerificationRequired = dashboardGetters.onVerificationRequired,onSearch = {
+            DashboardToolbar(
+                verified = dashboardGetters.userDTO.verified,
+                onVerificationRequired = dashboardGetters.onVerificationRequired,
+                onSearch = {
 
-            })
+                })
         }
         item {
             Column(
@@ -184,7 +186,7 @@ fun DashboardScreenContainer(dashboardGetters: DashboardGetters) {
                 if (dashboardGetters.userDTO.userType == UserType.Donor.type)
                     UserDashboard(
                         listOfDonationItemUserModel = dashboardGetters.listOfDonationItemUserModel,
-                        onClick = dashboardGetters.onDonationItemUserModelClick,
+                        onClick = dashboardGetters.onOrganizationClick,
                         year = dashboardGetters.year,
                         onYearChanged = dashboardGetters.onYearChanged,
                         donorCashChartData = dashboardGetters.donorCashChartData
@@ -198,14 +200,42 @@ fun DashboardScreenContainer(dashboardGetters: DashboardGetters) {
                     )
             }
         }
+        if (dashboardGetters.userDTO.userType == UserType.Donor.type) {
+            stickyHeader {
+                Text(
+                    modifier = Modifier.padding(
+                        horizontal = UniversalHorizontalPaddingInDp,
+                        vertical = UniversalVerticalPaddingInDp
+                    ),
+                    text = "All Organization",
+                    style = MaterialTheme.typography.h5.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colors.primary
+                    )
+                )
+            }
+            items(allOrganizations) {
+                DashboardAllOrganizationListItem(
+                    organization = it,
+                    onClick = { _ -> dashboardGetters.onOrganizationClick(it.id) })
+            }
+        }
         item { Spacer(modifier = Modifier.size(100.dp)) }
     }
 }
 
 @Composable
-private fun VerificationRequiredSection(modifier:Modifier = Modifier, onVerificationRequired: () -> Unit) {
+private fun VerificationRequiredSection(
+    modifier: Modifier = Modifier,
+    onVerificationRequired: () -> Unit
+) {
     Box(modifier = modifier) {
-        CardContainer(modifier = Modifier.align(Alignment.CenterStart), onClick = onVerificationRequired, cardColor = Color.Red, shape = MaterialTheme.shapes.large) {
+        CardContainer(
+            modifier = Modifier.align(Alignment.CenterStart),
+            onClick = onVerificationRequired,
+            cardColor = Color.Red,
+            shape = MaterialTheme.shapes.large
+        ) {
             Row(
                 modifier = Modifier.padding(
                     horizontal = 12.dp,
@@ -236,7 +266,7 @@ fun UserDashboard(
     year: Int,
     listOfDonationItemUserModel: List<DonationItemUserModel>,
     donorCashChartData: List<OrganizationDonorCashChartData>,
-    onClick: (DonationItemUserModel) -> Unit,
+    onClick: (String) -> Unit,
     onYearChanged: (year: Int) -> Unit
 ) {
     val cashChartEntryModel =
@@ -471,8 +501,10 @@ fun DashboardToolbar(
                     }
                 }
             }
-        else if(!verified)
-            VerificationRequiredSection(modifier = Modifier.weight(0.7f), onVerificationRequired = {onVerificationRequired?.invoke()})
+        else if (!verified)
+            VerificationRequiredSection(
+                modifier = Modifier.weight(0.7f),
+                onVerificationRequired = { onVerificationRequired?.invoke() })
         else
             Spacer(modifier = Modifier.weight(0.7f))
         AppLogoHorizontal(
@@ -538,7 +570,7 @@ fun DashboardLists(
     modifier: Modifier = Modifier,
     title: String,
     items: List<DonationItemUserModel>,
-    onClick: (DonationItemUserModel) -> Unit
+    onClick: (String) -> Unit
 ) {
     AnimatedVisibility(modifier = modifier, visible = items.isNotEmpty()) {
         Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -549,10 +581,13 @@ fun DashboardLists(
                     color = MaterialTheme.colors.primary
                 )
             )
-            LazyRow(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            LazyRow(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 items(items) {
                     DashboardListItem(modifier = Modifier.width(100.dp), item = it, onClick = {
-                        onClick(it)
+                        onClick(it.id)
                     })
                 }
             }
@@ -582,6 +617,67 @@ private fun DashboardListItem(
             overflow = TextOverflow.Ellipsis,
             maxLines = 2
         )
+    }
+}
+
+@Composable
+fun DashboardAllOrganizationListItem(
+    modifier: Modifier = Modifier,
+    organization: UserDTO,
+    onClick: (UserDTO) -> Unit
+) {
+    CardContainer(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = UniversalHorizontalPaddingInDp, vertical = 5.dp),
+        onClick = { onClick(organization) },
+        cardColor = MaterialTheme.colors.background,
+        shape = MaterialTheme.shapes.medium
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = UniversalInnerHorizontalPaddingInDp,
+                    vertical = UniversalInnerVerticalPaddingInDp
+                ),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                DonateTodayProfilePicture(
+                    modifier = Modifier.weight(0.2f),
+                    name = organization.name,
+                    verified = organization.verified
+                )
+                Row(modifier = Modifier.weight(0.8f)) {
+                    Column(
+                        modifier = Modifier.weight(0.7f),
+                        verticalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+                        Text(
+                            text = organization.name,
+                            style = MaterialTheme.typography.h5.copy(fontWeight = FontWeight.Normal)
+                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(5.dp)
+                        ) {
+                            Text(
+                                text = organization.emailAddress,
+                                style = MaterialTheme.typography.body1.copy(
+                                    fontWeight = FontWeight.Normal,
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

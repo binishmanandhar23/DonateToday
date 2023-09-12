@@ -19,7 +19,7 @@ data class DashboardGetters(
     val onStatementClick: (id: String) -> Unit,
     val onEditMonthlyGoal: () -> Unit,
     val onSettingsClick: (SettingsEnums) -> Unit,
-    val onDonationItemUserModelClick: (DonationItemUserModel) -> Unit,
+    val onOrganizationClick: (String) -> Unit,
     val year: Int,
     val onYearChanged: (year: Int) -> Unit,
     val selectedStatementTypes: DonationItemTypes?,

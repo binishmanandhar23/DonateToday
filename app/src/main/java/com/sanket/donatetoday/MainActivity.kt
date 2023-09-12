@@ -239,9 +239,11 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                 val organizationDonorChartData by sharedViewModel.organizationDonorChartData.collectAsState()
                 val donorCashChartData by sharedViewModel.donorCashChartData.collectAsState()
                 val recommendedOrganizations by sharedViewModel.listOfRecommended.collectAsState()
+                val allOrganizations by sharedViewModel.allOrganizations.collectAsState()
                 val year by sharedViewModel.year.collectAsState()
                 val selectedStatementType by sharedViewModel.selectedStatementType.collectAsState()
                 HomeScreenContainer(
+                    allOrganizations = allOrganizations,
                     dashboardGetters = DashboardGetters(
                         userDTO = userDTO,
                         listOfAllStatements = statements,
@@ -266,11 +268,11 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                                 SettingsEnums.Logout -> mainNavController.logout()
                                 else -> Unit
                             }
-                        }, onDonationItemUserModelClick = {
+                        }, onOrganizationClick = {
                             sharedViewModel.goToScreen(
                                 ScreenNavigator(
                                     screen = Screen.OrganizationDetail, values = listOf(
-                                        it.id
+                                        it
                                     )
                                 )
                             )

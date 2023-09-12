@@ -70,6 +70,9 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
     private var _selectedStatementType = MutableStateFlow<DonationItemTypes?>(null)
     val selectedStatementType = _selectedStatementType.asStateFlow()
 
+    private var _allOrganizations = MutableStateFlow((emptyList<UserDTO>()))
+    val allOrganizations = _allOrganizations.asStateFlow()
+
     init {
         viewModelScope.launch {
             year.collect {
@@ -103,6 +106,7 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
                             getDonationReceivedUpdates()
                             getDonationDonatedUpdates()
                         }
+                        getAllOrganizationsFromFirebaseAsynchronously()
                     }
             }
         }
@@ -113,13 +117,23 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
             sharedRepository.getUserFromFirebaseAsynchronously(
                 userDTO = userDTO,
                 onSuccess = {
-                    if(it != null)
+                    if (it != null)
                         updateUser(userDTO = it, updateInFirebase = false)
                 },
                 onError = {
                     _homeUIState.update { _ -> HomeUIState.Error(errorMessage = it) }
                 }
             )
+        }
+
+    private fun getAllOrganizationsFromFirebaseAsynchronously() =
+        viewModelScope.launch(Dispatchers.Default) {
+            if (user.value.userType == UserType.Donor.type)
+                sharedRepository.getAllOrganizationsFromFirebaseAsynchronously(onSuccess = {
+                    _allOrganizations.update { _ -> it }
+                }, onError = {
+                    _homeUIState.update { _ -> HomeUIState.Error(errorMessage = it) }
+                })
         }
 
     private var updateJob: Job? = null
@@ -159,7 +173,8 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
     fun getUserBasedOnId(id: String) = viewModelScope.launch {
         _homeUIState.update { HomeUIState.Loading() }
         try {
-            val userDTO = sharedRepository.getUserBasedOnId(id = id, currentUserType = user.value.userType)
+            val userDTO =
+                sharedRepository.getUserBasedOnId(id = id, currentUserType = user.value.userType)
             _homeUIState.update { HomeUIState.Success(data = userDTO) }
         } catch (ex: Exception) {
             _homeUIState.update { HomeUIState.Error(errorMessage = ex.message) }

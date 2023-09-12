@@ -57,6 +57,19 @@ object DatabaseUtils {
         }
     })
 
+    fun DatabaseReference.getAllOrganizations(
+        onSuccess: (List<UserDTO>) -> Unit,
+        onError: (String?) -> Unit
+    ) = this.child(FirebasePaths.Users.node).child(FirebasePaths.Organizations.node).addValueEventListener(object : ValueEventListener {
+        override fun onDataChange(snapshot: DataSnapshot) {
+            onSuccess(snapshot.getValue<HashMap<String, UserDTO>>()?.map { it.value }?: emptyList())
+        }
+
+        override fun onCancelled(error: DatabaseError) {
+            onError(error.message)
+        }
+    })
+
     fun DatabaseReference.addDonationItems(userDTO: UserDTO) =
         this.child(FirebasePaths.DonationItems.node).let { ref ->
             userDTO.donationItemTypes.forEach { donationItem ->
@@ -140,12 +153,12 @@ object DatabaseUtils {
             .child(if (userDTO.userType == UserType.Donor.type) FirebasePaths.Donated.node else FirebasePaths.Received.node)
             .child(userDTO.id)
             .get().addOnSuccessListener { dataSnapshot ->
-            dataSnapshot.getValue<AllDonationTypeDTO>()?.let { allDonationTypeDTO ->
-                onSuccess(allDonationTypeDTO)
+                dataSnapshot.getValue<AllDonationTypeDTO>()?.let { allDonationTypeDTO ->
+                    onSuccess(allDonationTypeDTO)
+                }
+            }.addOnFailureListener {
+                onError(it.message)
             }
-        }.addOnFailureListener {
-            onError(it.message)
-        }
     }
 
     fun DatabaseReference.getStatementsAsynchronously(

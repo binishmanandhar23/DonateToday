@@ -13,6 +13,7 @@ import com.sanket.donatetoday.models.dto.fillAll
 import com.sanket.donatetoday.models.entity.UserEntity
 import com.sanket.donatetoday.modules.common.enums.DonationItemTypes
 import com.sanket.donatetoday.modules.organization.data.GenericDonationData
+import com.sanket.donatetoday.utils.DatabaseUtils.getAllOrganizations
 import com.sanket.donatetoday.utils.DatabaseUtils.getStatements
 import com.sanket.donatetoday.utils.DatabaseUtils.getStatementsAsynchronously
 import com.sanket.donatetoday.utils.DatabaseUtils.getUser
@@ -123,6 +124,11 @@ class SharedRepository @Inject constructor(
         onSuccess: (UserDTO?) -> Unit,
         onError: (String) -> Unit
     ) = database.getUser(userDTO = userDTO, onSuccess = onSuccess, onError = onError)
+
+    fun getAllOrganizationsFromFirebaseAsynchronously(
+        onSuccess: (List<UserDTO>) -> Unit,
+        onError: (String?) -> Unit
+    ) = database.getAllOrganizations(onSuccess = onSuccess, onError = onError)
 
     suspend fun getStatementsFromFirebase(userDTO: UserDTO) = suspendCancellableCoroutine { cont ->
         database.getStatements(userDTO = userDTO, onSuccess = { allDonationTypeDTO ->
