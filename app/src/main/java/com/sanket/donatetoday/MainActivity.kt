@@ -53,6 +53,7 @@ import com.sanket.donatetoday.modules.donor.DonorDetailScreen
 import com.sanket.donatetoday.modules.home.HomeScreenContainer
 import com.sanket.donatetoday.modules.home.enums.SettingsEnums
 import com.sanket.donatetoday.modules.home.getters.DashboardGetters
+import com.sanket.donatetoday.modules.organization.AllOrganizationsList
 import com.sanket.donatetoday.modules.organization.CashDonationBottomSheet
 import com.sanket.donatetoday.modules.organization.ClothesDonationBottomSheet
 import com.sanket.donatetoday.modules.organization.FoodDonationBottomSheet
@@ -239,11 +240,10 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                 val organizationDonorChartData by sharedViewModel.organizationDonorChartData.collectAsState()
                 val donorCashChartData by sharedViewModel.donorCashChartData.collectAsState()
                 val recommendedOrganizations by sharedViewModel.listOfRecommended.collectAsState()
-                val allOrganizations by sharedViewModel.allOrganizations.collectAsState()
+                val allOrganizations by sharedViewModel.exploreOrganizations.collectAsState()
                 val year by sharedViewModel.year.collectAsState()
                 val selectedStatementType by sharedViewModel.selectedStatementType.collectAsState()
                 HomeScreenContainer(
-                    allOrganizations = allOrganizations,
                     dashboardGetters = DashboardGetters(
                         userDTO = userDTO,
                         listOfAllStatements = statements,
@@ -251,6 +251,7 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                         organizationCashChartData = organizationCashChartData,
                         organizationDonorChartData = organizationDonorChartData,
                         donorCashChartData = donorCashChartData,
+                        allOrganizations = allOrganizations,
                         year = year,
                         selectedStatementTypes = selectedStatementType,
                         onStatementTypeSelected = sharedViewModel::updateSelectedStatementType,
@@ -282,6 +283,8 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                             mainNavController.navigator(route = BottomSheet.UserStatementDetail.route + "/${it}")
                         }, onVerificationRequired = {
                             mainNavController.navigator(route = BottomSheet.VerificationScreen.route)
+                        }, onSeeAllOrganizations = {
+                            sharedViewModel.goToScreen(ScreenNavigator(screen = Screen.AllOrganizationsList))
                         })
                 )
             }
@@ -318,7 +321,7 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                             DonationItemTypes.Food.type -> mainNavController.navigator(route = BottomSheet.DonateFoodSheet.route)
                         }
 
-                    }, onEmail= {
+                    }, onEmail = {
                         onEmail(this@MainActivity, it)
                     }, onPhone = {
                         onPhone(this@MainActivity, it)
@@ -337,6 +340,30 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                         sharedViewModel.updateUser(it)
                     }
                 ))
+            }
+            customAnimatedComposable(route = Screen.AllOrganizationsList.route) {
+                val allFilteredOrganizations by sharedViewModel.allFilteredOrganizations.collectAsState()
+                val selectedDonationTypes by sharedViewModel.selectedDonationItemTypes.collectAsState()
+                AllOrganizationsList(
+                    allFilteredOrganizations = allFilteredOrganizations,
+                    selectedDonationTypes = selectedDonationTypes,
+                    onSearchOrganizations = sharedViewModel::filterOrganizations,
+                    onDonationTypeSelected = sharedViewModel::selectDonationItemTypes,
+                    onClick = {
+                        sharedViewModel.goToScreen(
+                            ScreenNavigator(
+                                screen = Screen.OrganizationDetail, values = listOf(
+                                    it.id
+                                )
+                            )
+                        )
+                    },
+                    onPhone = {
+                        onPhone(this@MainActivity, it)
+                    }, onEmail = {
+                        onEmail(this@MainActivity, it)
+                    }
+                )
             }
             bottomSheet(route = BottomSheet.MapSheet.route) {
                 DonateTodayMap(modifier = Modifier.fillMaxSize())
@@ -411,13 +438,14 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                                 this@MainActivity,
                                 android.Manifest.permission.CALL_PHONE
                             ) -> onPhone(this@MainActivity, it)
+
                             else -> callPermissionState.launch(android.Manifest.permission.CALL_PHONE)
                         }
                     })
                 }
             }
 
-            bottomSheet(route = BottomSheet.VerificationScreen.route){
+            bottomSheet(route = BottomSheet.VerificationScreen.route) {
                 val userDTO by sharedViewModel.user.collectAsState()
                 VerificationSheet(userDTO = userDTO, onVerify = {
                     onBoardingViewModel.sendEmailVerification()

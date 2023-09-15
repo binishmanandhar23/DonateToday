@@ -44,7 +44,7 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
     val user = _user.asStateFlow()
 
     private var _listOfAllStatements = MutableStateFlow(AllDonationTypeDTO())
-    val listOfAllStatements = _listOfAllStatements.asStateFlow()
+    private val listOfAllStatements = _listOfAllStatements.asStateFlow()
 
     private var _filteredListOfAllStatements = MutableStateFlow(AllDonationTypeDTO())
     val filteredListOfAllStatements = _filteredListOfAllStatements.asStateFlow()
@@ -70,8 +70,17 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
     private var _selectedStatementType = MutableStateFlow<DonationItemTypes?>(null)
     val selectedStatementType = _selectedStatementType.asStateFlow()
 
+    private var _selectedDonationItemTypes = MutableStateFlow<List<DonationItemTypes>?>(null)
+    val selectedDonationItemTypes = _selectedDonationItemTypes.asStateFlow()
+
+    private var _exploreOrganizations = MutableStateFlow((emptyList<UserDTO>()))
+    val exploreOrganizations = _exploreOrganizations.asStateFlow()
+
     private var _allOrganizations = MutableStateFlow((emptyList<UserDTO>()))
-    val allOrganizations = _allOrganizations.asStateFlow()
+    private val allOrganizations = _allOrganizations.asStateFlow()
+
+    private var _allFilteredOrganizations = MutableStateFlow((emptyList<UserDTO>()))
+    val allFilteredOrganizations = _allFilteredOrganizations.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -130,6 +139,7 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
         viewModelScope.launch(Dispatchers.Default) {
             if (user.value.userType == UserType.Donor.type)
                 sharedRepository.getAllOrganizationsFromFirebaseAsynchronously(onSuccess = {
+                    _exploreOrganizations.update { _ -> it.take(5) }
                     _allOrganizations.update { _ -> it }
                 }, onError = {
                     _homeUIState.update { _ -> HomeUIState.Error(errorMessage = it) }
@@ -331,6 +341,46 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
                 })
             }
         }
+    }
+
+    fun filterOrganizations(search: String = "") = viewModelScope.launch(Dispatchers.IO) {
+        _allFilteredOrganizations.update { _ ->
+            allOrganizations.value.let { organizations ->
+                organizations.filter {
+                    it.name.contains(
+                        search,
+                        ignoreCase = true
+                    ) || search.isEmpty()
+                }.let { filteredList ->
+                    if (selectedDonationItemTypes.value == null)
+                        filteredList
+                    else
+                        filteredList.filter { dto ->
+                            selectedDonationItemTypes.value!!.any { selected ->  dto.donationItemTypes.contains(selected.type) }
+                        }
+                }
+            }
+        }
+    }
+
+    fun selectDonationItemTypes(donationItemTypes: DonationItemTypes?) = viewModelScope.launch {
+        _selectedDonationItemTypes.update { previousItems ->
+            if(donationItemTypes == null){
+                null
+                return@launch
+            }
+            val newList = previousItems?.toMutableList()?: mutableListOf()
+            if(newList.contains(donationItemTypes))
+                newList.remove(donationItemTypes)
+            else
+                newList.add(donationItemTypes)
+
+            if(newList.isEmpty() || newList.size == DonationItemTypes.values().size)
+                null
+            else
+                newList
+        }
+        filterOrganizations()
     }
 
     private fun getDonationReceivedUpdates() = viewModelScope.launch(Dispatchers.IO) {

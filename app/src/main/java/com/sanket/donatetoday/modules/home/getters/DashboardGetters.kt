@@ -15,6 +15,7 @@ data class DashboardGetters(
     val organizationCashChartData: List<OrganizationDonorCashChartData>,
     val donorCashChartData: List<OrganizationDonorCashChartData>,
     val organizationDonorChartData: List<OrganizationDonorChartData>,
+    val allOrganizations: List<UserDTO>,
     val onSearchStatements: (String) -> Unit,
     val onStatementClick: (id: String) -> Unit,
     val onEditMonthlyGoal: () -> Unit,
@@ -25,4 +26,5 @@ data class DashboardGetters(
     val selectedStatementTypes: DonationItemTypes?,
     val onStatementTypeSelected: (DonationItemTypes?) -> Unit,
     val onVerificationRequired: () -> Unit,
+    val onSeeAllOrganizations: () -> Unit
 )

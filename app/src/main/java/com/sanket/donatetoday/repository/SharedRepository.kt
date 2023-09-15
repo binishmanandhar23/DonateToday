@@ -126,9 +126,10 @@ class SharedRepository @Inject constructor(
     ) = database.getUser(userDTO = userDTO, onSuccess = onSuccess, onError = onError)
 
     fun getAllOrganizationsFromFirebaseAsynchronously(
+        limit: Int? = null,
         onSuccess: (List<UserDTO>) -> Unit,
         onError: (String?) -> Unit
-    ) = database.getAllOrganizations(onSuccess = onSuccess, onError = onError)
+    ) = database.getAllOrganizations(limit = limit, onSuccess = onSuccess, onError = onError)
 
     suspend fun getStatementsFromFirebase(userDTO: UserDTO) = suspendCancellableCoroutine { cont ->
         database.getStatements(userDTO = userDTO, onSuccess = { allDonationTypeDTO ->

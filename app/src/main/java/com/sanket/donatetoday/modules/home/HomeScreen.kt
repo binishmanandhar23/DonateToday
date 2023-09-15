@@ -35,6 +35,7 @@ import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
+import androidx.compose.material.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Clear
@@ -98,7 +99,7 @@ import org.threeten.bp.format.DateTimeFormatter
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun HomeScreenContainer(dashboardGetters: DashboardGetters, allOrganizations: List<UserDTO>) {
+fun HomeScreenContainer(dashboardGetters: DashboardGetters) {
     val pages = remember {
         listOf(
             Icons.Default.Home,
@@ -121,7 +122,7 @@ fun HomeScreenContainer(dashboardGetters: DashboardGetters, allOrganizations: Li
             state = pagerState
         ) { page ->
             when (page) {
-                0 -> DashboardScreenContainer(dashboardGetters = dashboardGetters, allOrganizations = allOrganizations)
+                0 -> DashboardScreenContainer(dashboardGetters = dashboardGetters)
                 1 -> StatementsScreen(
                     userDTO = dashboardGetters.userDTO,
                     statements = dashboardGetters.listOfAllStatements,
@@ -153,7 +154,7 @@ fun HomeScreenContainer(dashboardGetters: DashboardGetters, allOrganizations: Li
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun DashboardScreenContainer(dashboardGetters: DashboardGetters, allOrganizations: List<UserDTO>) {
+fun DashboardScreenContainer(dashboardGetters: DashboardGetters) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -202,19 +203,34 @@ fun DashboardScreenContainer(dashboardGetters: DashboardGetters, allOrganization
         }
         if (dashboardGetters.userDTO.userType == UserType.Donor.type) {
             stickyHeader {
-                Text(
-                    modifier = Modifier.padding(
-                        horizontal = UniversalHorizontalPaddingInDp,
-                        vertical = UniversalVerticalPaddingInDp
-                    ),
-                    text = "All Organization",
-                    style = MaterialTheme.typography.h5.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colors.primary
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        modifier = Modifier.padding(
+                            horizontal = UniversalHorizontalPaddingInDp,
+                            vertical = UniversalVerticalPaddingInDp
+                        ),
+                        text = "Explore Organizations",
+                        style = MaterialTheme.typography.h5.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colors.primary
+                        )
                     )
-                )
+                    TextButton(onClick = { dashboardGetters.onSeeAllOrganizations() }) {
+                        Text(
+                            modifier = Modifier.padding(
+                                horizontal = UniversalHorizontalPaddingInDp,
+                                vertical = UniversalVerticalPaddingInDp
+                            ),
+                            text = "See All",
+                            style = MaterialTheme.typography.body2.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colors.secondary
+                            )
+                        )
+                    }
+                }
             }
-            items(allOrganizations) {
+            items(dashboardGetters.allOrganizations) {
                 DashboardAllOrganizationListItem(
                     organization = it,
                     onClick = { _ -> dashboardGetters.onOrganizationClick(it.id) })
@@ -661,7 +677,7 @@ fun DashboardAllOrganizationListItem(
                     ) {
                         Text(
                             text = organization.name,
-                            style = MaterialTheme.typography.h5.copy(fontWeight = FontWeight.Normal)
+                            style = MaterialTheme.typography.h5.copy(fontWeight = FontWeight.Bold)
                         )
                         Row(
                             verticalAlignment = Alignment.CenterVertically,

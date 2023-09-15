@@ -58,17 +58,21 @@ object DatabaseUtils {
     })
 
     fun DatabaseReference.getAllOrganizations(
+        limit: Int? = null,
         onSuccess: (List<UserDTO>) -> Unit,
         onError: (String?) -> Unit
-    ) = this.child(FirebasePaths.Users.node).child(FirebasePaths.Organizations.node).addValueEventListener(object : ValueEventListener {
-        override fun onDataChange(snapshot: DataSnapshot) {
-            onSuccess(snapshot.getValue<HashMap<String, UserDTO>>()?.map { it.value }?: emptyList())
-        }
+    ) = this.child(FirebasePaths.Users.node).child(FirebasePaths.Organizations.node)
+        .let { if (limit != null) it.limitToFirst(limit) else it }
+        .addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                onSuccess(snapshot.getValue<HashMap<String, UserDTO>>()?.map { it.value }
+                    ?: emptyList())
+            }
 
-        override fun onCancelled(error: DatabaseError) {
-            onError(error.message)
-        }
-    })
+            override fun onCancelled(error: DatabaseError) {
+                onError(error.message)
+            }
+        })
 
     fun DatabaseReference.addDonationItems(userDTO: UserDTO) =
         this.child(FirebasePaths.DonationItems.node).let { ref ->
