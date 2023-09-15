@@ -1,5 +1,6 @@
 package com.sanket.donatetoday.modules.organization
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,14 +14,19 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.Email
 import androidx.compose.material.icons.rounded.Phone
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.capitalize
@@ -30,10 +36,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.sanket.donatetoday.models.dto.UserDTO
 import com.sanket.donatetoday.modules.common.CardContainer
+import com.sanket.donatetoday.modules.common.DonateTodayButton
 import com.sanket.donatetoday.modules.common.DonateTodayProfilePicture
 import com.sanket.donatetoday.modules.common.UniversalHorizontalPaddingInDp
 import com.sanket.donatetoday.modules.common.UniversalInnerHorizontalPaddingInDp
 import com.sanket.donatetoday.modules.common.UniversalInnerVerticalPaddingInDp
+import com.sanket.donatetoday.modules.common.UniversalVerticalPaddingInDp
 import com.sanket.donatetoday.modules.common.enums.DonationItemTypes
 import com.sanket.donatetoday.modules.common.fullSpan
 import com.sanket.donatetoday.modules.home.DashboardToolbar
@@ -47,13 +55,25 @@ fun AllOrganizationsList(
     onClick: (UserDTO) -> Unit,
     onPhone: (UserDTO) -> Unit,
     onEmail: (UserDTO) -> Unit,
+    onBack: () -> Unit
 ) {
+    BackHandler(enabled = true, onBack = onBack)
+
+    val scrollState = rememberLazyGridState()
+
+    val scrollInProgress by remember(scrollState.isScrollInProgress) {
+        derivedStateOf { scrollState.isScrollInProgress }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         LazyVerticalGrid(
-            modifier = Modifier.fillMaxSize().padding(horizontal = UniversalHorizontalPaddingInDp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = UniversalHorizontalPaddingInDp),
             columns = GridCells.Fixed(2),
             verticalArrangement = Arrangement.spacedBy(15.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            state = scrollState
         ) {
             fullSpan {
                 Spacer(modifier = Modifier.size(140.dp))
@@ -145,6 +165,17 @@ fun AllOrganizationsList(
                 }
             }
         }
+
+        DonateTodayButton(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(
+                    vertical = UniversalVerticalPaddingInDp,
+                    horizontal = UniversalHorizontalPaddingInDp
+                ), text = "Go Back", onClick = onBack,
+            hideText = scrollInProgress,
+            leadingIcon = Icons.Default.ArrowBackIosNew
+        )
     }
 }
 
@@ -158,7 +189,12 @@ private fun AllOrganizationsListItem(
 ) {
     CardContainer(modifier = modifier, onClick = { onClick(organization) }) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = UniversalInnerHorizontalPaddingInDp, vertical = UniversalInnerVerticalPaddingInDp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = UniversalInnerHorizontalPaddingInDp,
+                    vertical = UniversalInnerVerticalPaddingInDp
+                ),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(15.dp)
         ) {

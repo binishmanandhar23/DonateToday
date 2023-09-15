@@ -7,6 +7,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateFloat
@@ -501,24 +502,33 @@ fun DonateTodayButton(
     contentPadding: PaddingValues = PaddingValues(horizontal = 22.dp, vertical = 12.dp),
     textColor: Color = MaterialTheme.colors.onSecondary,
     backgroundColor: Color = MaterialTheme.colors.secondary,
+    leadingIcon: ImageVector? = null,
+    hideText: Boolean = false,
     onClick: () -> Unit
 ) {
     Button(
-        modifier = modifier,
+        modifier = modifier.animateContentSize(),
         onClick = onClick,
         contentPadding = contentPadding,
         colors = ButtonDefaults.buttonColors(backgroundColor = backgroundColor),
         shape = shape
     ) {
-        Text(
-            text = text.let {
-                if (allCaps)
-                    it.uppercase()
-                else
-                    it
-            },
-            style = MaterialTheme.typography.button.copy(color = textColor, fontSize = fontSize)
-        )
+        leadingIcon?.let {
+            Icon(imageVector = leadingIcon, contentDescription = text)
+            if (!hideText)
+                Spacer(modifier = Modifier.size(10.dp))
+        }
+        AnimatedVisibility (!hideText) {
+            Text(
+                text = text.let {
+                    if (allCaps)
+                        it.uppercase()
+                    else
+                        it
+                },
+                style = MaterialTheme.typography.button.copy(color = textColor, fontSize = fontSize)
+            )
+        }
     }
 }
 
@@ -948,7 +958,8 @@ fun DonateTodayProfilePicture(
         Icon(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .offset(x = 5.dp, y = 5.dp).background(color = MaterialTheme.colors.background, shape = CircleShape),
+                .offset(x = 5.dp, y = 5.dp)
+                .background(color = MaterialTheme.colors.background, shape = CircleShape),
             imageVector = Icons.Filled.CheckCircle,
             contentDescription = "Verified",
             tint = Color.Green

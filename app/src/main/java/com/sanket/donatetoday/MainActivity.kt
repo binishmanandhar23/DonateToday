@@ -362,6 +362,9 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                         onPhone(this@MainActivity, it)
                     }, onEmail = {
                         onEmail(this@MainActivity, it)
+                    },
+                    onBack = {
+                        mainNavController.customPopBackStack()
                     }
                 )
             }
