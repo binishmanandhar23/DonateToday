@@ -1,8 +1,6 @@
 package com.sanket.donatetoday.navigators
 
 sealed class BottomSheet(val route: String){
-    object MapSheet: BottomSheet("map_bottom_sheet")
-
     object DonateCashSheet: BottomSheet("donate_cash_bottom_sheet")
     object DonateFoodSheet: BottomSheet("donate_food_bottom_sheet")
     object DonateClothesSheet: BottomSheet("donate_clothes_bottom_sheet")

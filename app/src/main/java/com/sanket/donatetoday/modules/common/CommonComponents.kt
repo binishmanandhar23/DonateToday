@@ -1018,11 +1018,13 @@ fun DonationGoalIndicator(reached: Int, totalGoal: Int) {
 
 @Composable
 fun DonateTodayCircularButton(
+    modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
     imageVector: ImageVector,
     contentDescription: String? = null
 ) {
     CardContainer(
+        modifier = modifier,
         onClick = { onClick?.invoke() },
         cardColor = MaterialTheme.colors.primary,
         shape = CircleShape,

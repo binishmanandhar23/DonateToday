@@ -1,8 +1,14 @@
 package com.sanket.donatetoday.utils
 
+import android.content.Context
+import android.location.Geocoder
+import android.location.Location
+import android.os.Build
+import com.google.android.gms.maps.model.LatLng
 import com.sanket.donatetoday.enums.UserType
 import com.sanket.donatetoday.models.dto.CreditCardDataDTO
 import com.sanket.donatetoday.models.dto.UserDTO
+import java.util.Locale
 
 
 const val MaximumMonthlyGoal = 10000
@@ -24,4 +30,53 @@ fun String.isValidPassword(): Boolean {
     if (this.firstOrNull { !it.isLetterOrDigit() } == null) return false
 
     return true
+}
+
+fun Location.toLatLng(): LatLng {
+    return LatLng(this.latitude, this.longitude)
+}
+
+fun getAddress(context: Context, latitude: Double, longitude: Double, onValueAccessed: (street: String?, city: String?, country: String?) -> Unit) {
+    try {
+        val geocoder = Geocoder(context, Locale.getDefault())
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            geocoder.getFromLocation(latitude.toDouble(), longitude.toDouble(), 1) { addressList ->
+                if (addressList != null && addressList.size > 0) {
+                    val address = addressList[0]
+                    val sb = StringBuilder()
+
+                    for (i in 0 until address.maxAddressLineIndex) {
+                        sb.append(address.getAddressLine(i)).append("\n")
+                    }
+
+                    if (address.featureName != null) sb.append(address.featureName).append(", ")
+                    if (address.thoroughfare != null) sb.append(address.thoroughfare).append(", ")
+                    if (address.subLocality != null) sb.append(address.subLocality).append(", ")
+                    if (address.subAdminArea != null) sb.append(address.subAdminArea)
+                    sb.toString()
+                    onValueAccessed(address.subLocality, address.locality, address.countryName)
+                }
+            }
+        } else {
+            val addressList =  geocoder?.getFromLocation(latitude.toDouble(), longitude.toDouble(), 1)
+            if (addressList != null && addressList.size > 0) {
+                val address = addressList[0]
+                val sb = StringBuilder()
+
+                for (i in 0 until address.maxAddressLineIndex) {
+                    sb.append(address.getAddressLine(i)).append("\n")
+                }
+
+                if (address.featureName != null) sb.append(address.featureName).append(", ")
+                if (address.thoroughfare != null) sb.append(address.thoroughfare).append(", ")
+                if (address.subLocality != null) sb.append(address.subLocality).append(", ")
+                if (address.subAdminArea != null) sb.append(address.subAdminArea)
+                sb.toString()
+
+                onValueAccessed(address.subLocality, address.locality, address.countryName)
+            }
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
 }

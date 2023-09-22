@@ -7,6 +7,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.MaterialTheme
@@ -231,7 +233,7 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                 }, onSignUp = {
                     onBoardingViewModel.onSignUp()
                 }, onAddNewPlace = {
-                    mainNavController.navigator(route = BottomSheet.MapSheet.route)
+                    sharedViewModel.goToScreen(ScreenNavigator(screen = Screen.MapSheet))
                 })
             }
 
@@ -370,8 +372,16 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                     }
                 )
             }
-            bottomSheet(route = BottomSheet.MapSheet.route) {
-                DonateTodayMap(modifier = Modifier.fillMaxSize())
+            customAnimatedComposable(
+                route = Screen.MapSheet.route,
+                enterTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Up,
+                exitTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Up,
+                popEnterTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Down,
+                popExitTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Down,
+            ) {
+                DonateTodayMap(modifier = Modifier.fillMaxSize(), onBack = {
+                    mainNavController.customPopBackStack()
+                })
             }
             bottomSheet(route = BottomSheet.DonateCashSheet.route) {
                 val userDTO by sharedViewModel.user.collectAsState()
