@@ -1,9 +1,15 @@
 package com.sanket.donatetoday.utils
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.location.Geocoder
 import android.location.Location
 import android.os.Build
+import androidx.annotation.DrawableRes
+import androidx.core.content.ContextCompat
+import com.google.android.gms.maps.model.BitmapDescriptor
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.sanket.donatetoday.enums.UserType
 import com.sanket.donatetoday.models.dto.CreditCardDataDTO
@@ -36,7 +42,7 @@ fun Location.toLatLng(): LatLng {
     return LatLng(this.latitude, this.longitude)
 }
 
-fun getAddress(context: Context, latitude: Double, longitude: Double, onValueAccessed: (street: String?, city: String?, country: String?) -> Unit) {
+fun getAddress(context: Context, latitude: Double, longitude: Double, onValueAccessed: (fullAddress: String, street: String?, city: String?, country: String?) -> Unit) {
     try {
         val geocoder = Geocoder(context, Locale.getDefault())
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -45,16 +51,11 @@ fun getAddress(context: Context, latitude: Double, longitude: Double, onValueAcc
                     val address = addressList[0]
                     val sb = StringBuilder()
 
-                    for (i in 0 until address.maxAddressLineIndex) {
-                        sb.append(address.getAddressLine(i)).append("\n")
+                    for (i in 0 .. address.maxAddressLineIndex) {
+                        sb.append(address.getAddressLine(i))
                     }
 
-                    if (address.featureName != null) sb.append(address.featureName).append(", ")
-                    if (address.thoroughfare != null) sb.append(address.thoroughfare).append(", ")
-                    if (address.subLocality != null) sb.append(address.subLocality).append(", ")
-                    if (address.subAdminArea != null) sb.append(address.subAdminArea)
-                    sb.toString()
-                    onValueAccessed(address.subLocality, address.locality, address.countryName)
+                    onValueAccessed(sb.toString(), address.subLocality, address.locality, address.countryName)
                 }
             }
         } else {
@@ -63,20 +64,23 @@ fun getAddress(context: Context, latitude: Double, longitude: Double, onValueAcc
                 val address = addressList[0]
                 val sb = StringBuilder()
 
-                for (i in 0 until address.maxAddressLineIndex) {
-                    sb.append(address.getAddressLine(i)).append("\n")
+                for (i in 0 .. address.maxAddressLineIndex) {
+                    sb.append(address.getAddressLine(i))
                 }
 
-                if (address.featureName != null) sb.append(address.featureName).append(", ")
-                if (address.thoroughfare != null) sb.append(address.thoroughfare).append(", ")
-                if (address.subLocality != null) sb.append(address.subLocality).append(", ")
-                if (address.subAdminArea != null) sb.append(address.subAdminArea)
-                sb.toString()
-
-                onValueAccessed(address.subLocality, address.locality, address.countryName)
+                onValueAccessed(sb.toString(), address.subLocality, address.locality, address.countryName)
             }
         }
     } catch (e: Exception) {
         e.printStackTrace()
+    }
+}
+
+fun Context.bitmapDescriptorFromVector(@DrawableRes vectorResId: Int): BitmapDescriptor? {
+    return ContextCompat.getDrawable(this, vectorResId)?.run {
+        setBounds(0, 0, intrinsicWidth, intrinsicHeight)
+        val bitmap = Bitmap.createBitmap(intrinsicWidth, intrinsicHeight, Bitmap.Config.ARGB_8888)
+        draw(Canvas(bitmap))
+        BitmapDescriptorFactory.fromBitmap(bitmap)
     }
 }

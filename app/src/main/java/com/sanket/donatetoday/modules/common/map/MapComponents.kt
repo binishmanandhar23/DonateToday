@@ -1,5 +1,6 @@
 package com.sanket.donatetoday.modules.common.map
 
+import android.app.Activity
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -7,6 +8,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,6 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.ArrowBackIos
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.rounded.MyLocation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -50,34 +53,72 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.widget.Autocomplete
+import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
 import com.google.maps.android.compose.DragState
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapType
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.maps.android.compose.rememberMarkerState
+import com.sanket.donatetoday.BuildConfig
+import com.sanket.donatetoday.R
+import com.sanket.donatetoday.models.dto.LocationDTO
 import com.sanket.donatetoday.modules.common.CardContainer
 import com.sanket.donatetoday.modules.common.DonateTodayCircularButton
 import com.sanket.donatetoday.ui.theme.ColorPrimary
+import com.sanket.donatetoday.utils.bitmapDescriptorFromVector
 import com.sanket.donatetoday.utils.getAddress
 import com.sanket.donatetoday.utils.toLatLng
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @Composable
-fun DonateTodayMap(
+private fun CoreMapComponent(
     modifier: Modifier = Modifier,
+    enableSearch: Boolean = true,
+    markerTitle: String? = null,
+    markerSnippet: String? = null,
+    userLocation: LocationDTO? = null,
+    markers: List<LocationDTO> = emptyList(),
     properties: MapProperties = MapProperties(isBuildingEnabled = true, isIndoorEnabled = true),
     mapUiSettings: MapUiSettings = MapUiSettings(
         zoomControlsEnabled = true,
         zoomGesturesEnabled = true,
         compassEnabled = true
     ),
-    onBack: () -> Unit
+    onBack: (() -> Unit)? = null,
+    onLocation: ((location: LatLng, fullAddress: String, city: String?, country: String?) -> Unit)? = null,
+    content: (@Composable BoxScope.() -> Unit)? = null
 ) {
     val context = LocalContext.current
+    LaunchedEffect(key1 = Unit) {
+        Places.initialize(
+            context,
+            BuildConfig.API_KEY
+        )
+    }
+    val defaultLocation = remember(userLocation) {
+        LatLng(
+            userLocation?.latitude ?: 27.712,
+            userLocation?.longitude ?: 85.32
+        )
+    }
+    var currentLocation: LatLng? by remember {
+        mutableStateOf(null)
+    }
+
+    val markerState = rememberMarkerState(
+        position = defaultLocation
+    )
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(defaultLocation, 10f)
+    }
     var mapProperties by remember(properties) {
         mutableStateOf(properties)
     }
@@ -94,24 +135,10 @@ fun DonateTodayMap(
                 addCurrentLocationOption()
         }
 
-    val userLocation = remember {
-        LatLng(
-            27.712,
-            85.32
-        )
+    LaunchedEffect(key1 = userLocation) {
+        if (userLocation == null && currentLocation != null)
+            markerState.position = currentLocation!!
     }
-
-    var currentLocation: LatLng? by remember {
-        mutableStateOf(null)
-    }
-
-    val markerState = rememberMarkerState(
-        position = userLocation
-    )
-    val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(userLocation, 10f)
-    }
-
 
     LaunchedEffect(key1 = Unit) {
         when (PackageManager.PERMISSION_GRANTED) {
@@ -131,6 +158,14 @@ fun DonateTodayMap(
             )
         }
     }
+    LaunchedEffect(key1 = locationPermissionGranted) {
+        if (locationPermissionGranted)
+            LocationServices.getFusedLocationProviderClient(context)
+                .getCurrentLocation(CurrentLocationRequest.Builder().build(), null)
+                .addOnSuccessListener {
+                    currentLocation = it.toLatLng()
+                }
+    }
 
     LaunchedEffect(key1 = markerState.dragState, key2 = markerState.position) {
         if (markerState.dragState == DragState.END) {
@@ -139,8 +174,8 @@ fun DonateTodayMap(
                     context = context,
                     latitude = markerState.position.latitude,
                     longitude = markerState.position.longitude
-                ) { street, city, country ->
-
+                ) { fullAddress, _, city, country ->
+                    onLocation?.invoke(markerState.position, fullAddress, city, country)
                 }
             }
             cameraPositionState.animate(
@@ -154,15 +189,6 @@ fun DonateTodayMap(
         }
     }
 
-    if (locationPermissionGranted)
-        LocationServices.getFusedLocationProviderClient(context)
-            .getCurrentLocation(CurrentLocationRequest.Builder().build(), null)
-            .addOnSuccessListener {
-                currentLocation = it.toLatLng()
-            }
-
-
-
     Box(modifier = modifier) {
         GoogleMap(
             modifier = Modifier.matchParentSize(),
@@ -175,13 +201,34 @@ fun DonateTodayMap(
         ) {
             Marker(
                 state = markerState,
-                title = "Kathmandu",
-                snippet = "This is Kathmandu",
+                title = markerTitle,
+                snippet = markerSnippet,
+                icon = context.bitmapDescriptorFromVector(R.drawable.ic_location_pin_black),
                 draggable = true
             )
+            markers.forEach {
+                if (it.latitude != null && it.longitude != null)
+                    Marker(
+                        state = MarkerState(position = LatLng(it.latitude, it.longitude)),
+                        title = it.fullAddress,
+                        snippet = "${it.fullAddress}/n${it.city}, ${it.country}",
+                        icon = context.bitmapDescriptorFromVector(R.drawable.ic_location_pin_blue),
+                    )
+            }
         }
 
-        LocationToolbar(onBack = onBack)
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(5.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            if (onBack != null)
+                LocationToolbar(onBack = onBack)
+            if (enableSearch)
+                SearchLocation {
+                    markerState.position = it
+                }
+        }
 
         DonateTodayCircularButton(
             modifier = Modifier
@@ -193,8 +240,19 @@ fun DonateTodayMap(
                     markerState.position = it
                 }
             })
+
+        content?.invoke(this)
     }
 }
+
+@Composable
+fun DonateTodayMap(
+    modifier: Modifier = Modifier,
+    onBack: () -> Unit
+) {
+    CoreMapComponent(modifier = modifier, onBack = onBack)
+}
+
 
 @Composable
 private fun LocationToolbar(
@@ -249,6 +307,45 @@ private fun LocationToolbar(
         }
     else
         Spacer(modifier = Modifier.size(40.dp))
+}
+
+@Composable
+private fun SearchLocation(locationText: String = "", onLocation: (LatLng) -> Unit) {
+    val context = LocalContext.current
+
+    val intent = Autocomplete.IntentBuilder(
+        AutocompleteActivityMode.OVERLAY,
+        listOf(Place.Field.NAME, Place.Field.LAT_LNG)
+    ).build(context)
+
+    val launcher =
+        rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            if (it.resultCode == Activity.RESULT_OK && it.data != null) {
+                val place = Autocomplete.getPlaceFromIntent(it.data!!)
+                place.latLng?.let { latLng -> onLocation(latLng) }
+            }
+        }
+    CardContainer(onClick = {
+        launcher.launch(intent)
+    }, cardColor = MaterialTheme.colors.background) {
+        Row(
+            modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Search,
+                contentDescription = "Search Location",
+                tint = MaterialTheme.colors.primary
+            )
+            Text(
+                text = locationText.ifEmpty { "Search Location" },
+                style = MaterialTheme.typography.body1.copy(
+                    color = MaterialTheme.colors.onBackground.copy(alpha = if (locationText.isEmpty()) 0.6f else 1f)
+                )
+            )
+        }
+    }
 }
 
 @Composable

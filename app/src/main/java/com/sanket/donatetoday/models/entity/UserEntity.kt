@@ -1,6 +1,7 @@
 package com.sanket.donatetoday.models.entity
 
 import com.sanket.donatetoday.models.User
+import com.sanket.donatetoday.models.dto.LocationDTO
 import io.realm.kotlin.ext.realmListOf
 import io.realm.kotlin.types.RealmList
 import io.realm.kotlin.types.RealmObject
@@ -16,6 +17,8 @@ class UserEntity : RealmObject, User {
     override var countryPhoneCode: String? = null
     var cardInfo: CreditCardDataEntity? = null
     var donationItemTypes: RealmList<String> = realmListOf()
+    var location: LocationEntity? = null
+    var dropOffLocations: RealmList<LocationEntity> = realmListOf()
     override var userType: String? = null
     override var emailVerified: Boolean = false
     override var userVerified: Boolean = false
@@ -31,6 +34,8 @@ class UserEntity : RealmObject, User {
         phoneNo: String? = null,
         cardInfo: CreditCardDataEntity? = null,
         donationItemTypes: RealmList<String> = realmListOf(),
+        location: LocationEntity,
+        dropOffLocations: RealmList<LocationEntity>,
         userType: String? = null,
         emailVerified: Boolean = false,
         userVerified: Boolean = false,
@@ -45,6 +50,8 @@ class UserEntity : RealmObject, User {
         this.phoneNo = phoneNo
         this.cardInfo = cardInfo
         this.donationItemTypes = donationItemTypes
+        this.location = location
+        this.dropOffLocations = dropOffLocations
         this.userType = userType
         this.emailVerified = emailVerified
         this.userVerified = userVerified

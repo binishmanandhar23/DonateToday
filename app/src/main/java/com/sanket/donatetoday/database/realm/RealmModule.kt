@@ -4,6 +4,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.sanket.donatetoday.models.entity.CreditCardDataEntity
+import com.sanket.donatetoday.models.entity.LocationEntity
 import com.sanket.donatetoday.models.entity.UserEntity
 import dagger.Module
 import dagger.Provides
@@ -21,13 +22,13 @@ object RealmModule {
     fun provideRealm(): Realm {
         return try {
             val config = RealmConfiguration.Builder(
-                schema = setOf(UserEntity::class, CreditCardDataEntity::class)
+                schema = setOf(UserEntity::class, CreditCardDataEntity::class, LocationEntity::class)
             ).build()
             Realm.open(config)
         } catch (ex: Exception){
             Firebase.auth.signOut()
             val config = RealmConfiguration.Builder(
-                schema = setOf(UserEntity::class, CreditCardDataEntity::class)
+                schema = setOf(UserEntity::class, CreditCardDataEntity::class, LocationEntity::class)
             ).deleteRealmIfMigrationNeeded().build()
             Realm.open(config)
         }

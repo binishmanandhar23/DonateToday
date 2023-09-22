@@ -12,4 +12,5 @@ interface User {
     var userVerified: Boolean
     var totalGoal: Int
     var reached: Int
+
 }
