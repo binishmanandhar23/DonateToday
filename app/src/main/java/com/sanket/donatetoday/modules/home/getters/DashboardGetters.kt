@@ -5,6 +5,7 @@ import com.sanket.donatetoday.models.dto.DonationItemUserModel
 import com.sanket.donatetoday.models.dto.UserDTO
 import com.sanket.donatetoday.modules.common.enums.DonationItemTypes
 import com.sanket.donatetoday.modules.home.enums.SettingsEnums
+import com.sanket.donatetoday.modules.home.enums.VerificationEnum
 import com.sanket.donatetoday.modules.organization.data.OrganizationDonorCashChartData
 import com.sanket.donatetoday.modules.organization.data.OrganizationDonorChartData
 
@@ -25,6 +26,6 @@ data class DashboardGetters(
     val onYearChanged: (year: Int) -> Unit,
     val selectedStatementTypes: DonationItemTypes?,
     val onStatementTypeSelected: (DonationItemTypes?) -> Unit,
-    val onVerificationRequired: () -> Unit,
+    val onVerificationRequired: (VerificationEnum) -> Unit,
     val onSeeAllOrganizations: () -> Unit
 )

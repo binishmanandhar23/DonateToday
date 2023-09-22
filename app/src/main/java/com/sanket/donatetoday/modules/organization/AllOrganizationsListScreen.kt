@@ -15,7 +15,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -35,6 +34,7 @@ import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.sanket.donatetoday.models.dto.UserDTO
+import com.sanket.donatetoday.models.dto.verifyOrganization
 import com.sanket.donatetoday.modules.common.CardContainer
 import com.sanket.donatetoday.modules.common.DonateTodayButton
 import com.sanket.donatetoday.modules.common.DonateTodayProfilePicture
@@ -198,7 +198,7 @@ private fun AllOrganizationsListItem(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(15.dp)
         ) {
-            DonateTodayProfilePicture(name = organization.name, verified = organization.verified)
+            DonateTodayProfilePicture(name = organization.name, verified = organization.verifyOrganization())
             Text(
                 text = organization.name,
                 style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold)

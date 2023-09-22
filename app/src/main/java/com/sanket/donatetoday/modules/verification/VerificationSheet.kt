@@ -15,15 +15,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.sanket.donatetoday.enums.UserType
 import com.sanket.donatetoday.models.dto.UserDTO
 import com.sanket.donatetoday.modules.common.DonateTodayButton
 import com.sanket.donatetoday.modules.common.HorizontalHeaderValue
 import com.sanket.donatetoday.modules.common.UniversalHorizontalPaddingInDp
 import com.sanket.donatetoday.modules.common.UniversalVerticalPaddingInDp
+import com.sanket.donatetoday.modules.home.enums.VerificationEnum
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun VerificationSheet(userDTO: UserDTO, onVerify: (userDTO: UserDTO) -> Unit) {
+fun VerificationSheet(
+    userDTO: UserDTO,
+    verificationEnum: VerificationEnum,
+    onVerify: (userDTO: UserDTO) -> Unit
+) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -35,7 +41,7 @@ fun VerificationSheet(userDTO: UserDTO, onVerify: (userDTO: UserDTO) -> Unit) {
     ) {
         stickyHeader {
             Text(
-                text = "Verify your email",
+                text = if (verificationEnum == VerificationEnum.EMAIL) "Verify your email" else "Why are you seeing this?",
                 style = MaterialTheme.typography.h3.copy(
                     color = MaterialTheme.colors.secondary,
                     fontWeight = FontWeight.Bold
@@ -44,19 +50,30 @@ fun VerificationSheet(userDTO: UserDTO, onVerify: (userDTO: UserDTO) -> Unit) {
         }
         item {
             Text(
-                text = "You'll get an official verification check after you verify you email.",
+                text = when(verificationEnum){
+                    VerificationEnum.EMAIL -> if (userDTO.userType == UserType.Donor.type) "You'll get an official verification check after you verify your email." else "You'll get an official verification check after you verify your email and an admin approves your account."
+                    VerificationEnum.USER -> "An admin needs to verify your account for authenticity"
+                },
                 style = MaterialTheme.typography.h5.copy(
                     color = MaterialTheme.colors.onBackground,
                 )
             )
         }
-        item {
-            HorizontalHeaderValue(header = "Send verification email to:", value = userDTO.emailAddress)
-        }
-        item {
-            Box(modifier = Modifier.fillMaxWidth()) {
-                DonateTodayButton(modifier = Modifier.align(Alignment.Center), text = "Verify") {
-                    onVerify(userDTO)
+        if (verificationEnum == VerificationEnum.EMAIL) {
+            item {
+                HorizontalHeaderValue(
+                    header = "Send verification email to:",
+                    value = userDTO.emailAddress
+                )
+            }
+            item {
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    DonateTodayButton(
+                        modifier = Modifier.align(Alignment.Center),
+                        text = "Verify"
+                    ) {
+                        onVerify(userDTO)
+                    }
                 }
             }
         }

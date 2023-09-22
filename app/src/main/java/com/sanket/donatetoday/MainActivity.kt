@@ -52,6 +52,7 @@ import com.sanket.donatetoday.modules.common.snackbar.rememberSnackBarState
 import com.sanket.donatetoday.modules.donor.DonorDetailScreen
 import com.sanket.donatetoday.modules.home.HomeScreenContainer
 import com.sanket.donatetoday.modules.home.enums.SettingsEnums
+import com.sanket.donatetoday.modules.home.enums.VerificationEnum
 import com.sanket.donatetoday.modules.home.getters.DashboardGetters
 import com.sanket.donatetoday.modules.organization.AllOrganizationsList
 import com.sanket.donatetoday.modules.organization.CashDonationBottomSheet
@@ -120,6 +121,7 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                                         DialogTypes.SignUpOption -> SignUpOptionDialog(asDonor = {
                                             onBoardingViewModel.updateUserData(
                                                 userType = UserType.Donor,
+                                                userVerified = true
                                             )
                                             sharedViewModel.goToScreen(
                                                 screenNavigator = ScreenNavigator(
@@ -282,7 +284,7 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                         }, onStatementClick = {
                             mainNavController.navigator(route = BottomSheet.UserStatementDetail.route + "/${it}")
                         }, onVerificationRequired = {
-                            mainNavController.navigator(route = BottomSheet.VerificationScreen.route)
+                            mainNavController.navigator(route = BottomSheet.VerificationScreen.route + "/${it.type}")
                         }, onSeeAllOrganizations = {
                             sharedViewModel.goToScreen(ScreenNavigator(screen = Screen.AllOrganizationsList))
                         })
@@ -448,13 +450,20 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                 }
             }
 
-            bottomSheet(route = BottomSheet.VerificationScreen.route) {
+            bottomSheet(route = BottomSheet.VerificationScreen.route + "/{verificationType}") { navBackStackEntry ->
                 val userDTO by sharedViewModel.user.collectAsState()
-                VerificationSheet(userDTO = userDTO, onVerify = {
-                    onBoardingViewModel.sendEmailVerification()
-                    mainNavController.popBackStack()
-                    snackBarState.show("Verification sent", overridingDelay = SnackBarLengthMedium)
-                })
+                navBackStackEntry.arguments?.getString("verificationType")?.let { type ->
+                    VerificationEnum.getEnumFromString(type = type)?.let {
+                        VerificationSheet(userDTO = userDTO, verificationEnum = it, onVerify = {
+                            onBoardingViewModel.sendEmailVerification()
+                            mainNavController.popBackStack()
+                            snackBarState.show(
+                                "Verification sent",
+                                overridingDelay = SnackBarLengthMedium
+                            )
+                        })
+                    }
+                }
             }
         }
     }

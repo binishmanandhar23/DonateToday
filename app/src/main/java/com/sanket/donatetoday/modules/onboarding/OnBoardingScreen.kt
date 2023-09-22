@@ -71,6 +71,7 @@ import com.sanket.donatetoday.models.dto.CreditCardDataDTO
 import com.sanket.donatetoday.modules.common.enums.DonationItemTypes
 import com.sanket.donatetoday.modules.common.map.DonateTodayAddPlaces
 import com.sanket.donatetoday.utils.emptyIfNull
+import com.sanket.donatetoday.utils.isValidPassword
 import com.sanket.donatetoday.utils.verifyEmptyOrNull
 
 @Composable
@@ -198,6 +199,8 @@ fun RegistrationScreenMain(
         derivedStateOf {
             if (userDTO.password.isNotEmpty() && confirmPassword.isNotEmpty() && userDTO.password != confirmPassword)
                 "Passwords don't match"
+            else if (!userDTO.password.isValidPassword() && userDTO.password.isNotEmpty())
+                "Valid must be 8 digits and contain Alpha Numeric cases"
             else if (userDTO.password.isNotEmpty() && confirmPassword.isNotEmpty() && userDTO.password == confirmPassword)
                 "Passwords match"
             else
@@ -206,7 +209,9 @@ fun RegistrationScreenMain(
     }
     val confirmPasswordErrorIcon by remember(userDTO.password) {
         derivedStateOf {
-            if (userDTO.password.isNotEmpty() && confirmPassword.isNotEmpty() && userDTO.password != confirmPassword)
+            if (!userDTO.password.isValidPassword() && userDTO.password.isNotEmpty())
+                Icons.Default.Close
+            else if (userDTO.password.isNotEmpty() && confirmPassword.isNotEmpty() && userDTO.password != confirmPassword)
                 Icons.Default.Close
             else if (userDTO.password.isNotEmpty() && confirmPassword.isNotEmpty() && userDTO.password == confirmPassword)
                 Icons.Default.Check
@@ -215,7 +220,7 @@ fun RegistrationScreenMain(
         }
     }
     val errorColor by animateColorAsState(
-        targetValue = if (userDTO.password.isNotEmpty() && confirmPassword.isNotEmpty() && userDTO.password == confirmPassword)
+        targetValue = if (userDTO.password.isNotEmpty() && confirmPassword.isNotEmpty() && userDTO.password == confirmPassword && userDTO.password.isValidPassword())
             Color.Green
         else
             Color.Red, label = ""
@@ -227,7 +232,7 @@ fun RegistrationScreenMain(
             numberOfErrors += 1
         else if (userDTO.name.verifyEmptyOrNull())
             numberOfErrors += 1
-        else if (userDTO.password.verifyEmptyOrNull() || confirmPassword.verifyEmptyOrNull())
+        else if (userDTO.password.verifyEmptyOrNull() || confirmPassword.verifyEmptyOrNull() || !userDTO.password.isValidPassword())
             numberOfErrors += 1
         else if (userDTO.donationItemTypes.verifyEmptyOrNull())
             numberOfErrors += 1

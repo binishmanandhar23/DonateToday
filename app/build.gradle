@@ -18,6 +18,7 @@ android {
         versionCode 1
         versionName "1.0"
 
+
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary true
@@ -25,10 +26,18 @@ android {
     }
 
     buildTypes {
+        debug {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+
+            buildConfigField "String", "API_KEY", "\"AIzaSyBhq4Xx_0OSRrC3ISqIZyauPIRS-I5YaIQ\""
+        }
         release {
             //MongoDB: Password -> SF4irXTIxh6kR1aJ
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+
+            buildConfigField "String", "API_KEY", "\"AIzaSyBhq4Xx_0OSRrC3ISqIZyauPIRS-I5YaIQ\""
         }
     }
     compileOptions {
@@ -40,6 +49,7 @@ android {
     }
     buildFeatures {
         compose true
+        buildConfig true
     }
     composeOptions {
         kotlinCompilerExtensionVersion '1.4.8'
@@ -115,7 +125,7 @@ dependencies {
     implementation("com.google.firebase:firebase-auth-ktx")
 
     /*Google Maps*/
-    implementation 'com.google.maps.android:maps-compose:2.12.0'
+    implementation 'com.google.maps.android:maps-compose:2.14.0'
     implementation 'com.google.android.gms:play-services-maps:18.1.0'
     /*************/
 

@@ -28,7 +28,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Accessibility
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DeviceUnknown
-import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Fastfood
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.Palette
@@ -52,6 +51,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.dp
 import com.sanket.donatetoday.models.dto.UserDTO
+import com.sanket.donatetoday.models.dto.verifyOrganization
 import com.sanket.donatetoday.modules.common.CardContainer
 import com.sanket.donatetoday.modules.common.CreditCardDetailsWithCVV
 import com.sanket.donatetoday.modules.common.DonateTodayButton
@@ -111,7 +111,7 @@ fun OrganizationDetailScreen(
                 ) {
                     DonateTodayProfilePicture(
                         name = organization!!.name,
-                        verified = organization.verified
+                        verified = organization.verifyOrganization()
                     )
                     Text(text = organization.name, style = MaterialTheme.typography.h3)
                 }

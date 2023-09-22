@@ -8,7 +8,8 @@ interface User {
     var phoneNo: String?
     var countryPhoneCode: String?
     var userType: String?
-    var verified: Boolean
+    var emailVerified: Boolean
+    var userVerified: Boolean
     var totalGoal: Int
     var reached: Int
 }

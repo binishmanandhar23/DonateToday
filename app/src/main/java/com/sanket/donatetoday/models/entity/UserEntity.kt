@@ -17,7 +17,8 @@ class UserEntity : RealmObject, User {
     var cardInfo: CreditCardDataEntity? = null
     var donationItemTypes: RealmList<String> = realmListOf()
     override var userType: String? = null
-    override var verified: Boolean = false
+    override var emailVerified: Boolean = false
+    override var userVerified: Boolean = false
     override var totalGoal: Int = 0
     override var reached: Int = 0
 
@@ -31,7 +32,8 @@ class UserEntity : RealmObject, User {
         cardInfo: CreditCardDataEntity? = null,
         donationItemTypes: RealmList<String> = realmListOf(),
         userType: String? = null,
-        verified: Boolean = false,
+        emailVerified: Boolean = false,
+        userVerified: Boolean = false,
         totalGoal: Int = 0,
         reached: Int = 0
     ): super() {
@@ -44,7 +46,8 @@ class UserEntity : RealmObject, User {
         this.cardInfo = cardInfo
         this.donationItemTypes = donationItemTypes
         this.userType = userType
-        this.verified = verified
+        this.emailVerified = emailVerified
+        this.userVerified = userVerified
         this.totalGoal = totalGoal
         this.reached = reached
     }

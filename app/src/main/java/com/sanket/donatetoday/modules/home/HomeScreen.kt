@@ -74,6 +74,7 @@ import com.patrykandpatrick.vico.core.entry.entryModelOf
 import com.sanket.donatetoday.enums.UserType
 import com.sanket.donatetoday.models.dto.DonationItemUserModel
 import com.sanket.donatetoday.models.dto.UserDTO
+import com.sanket.donatetoday.models.dto.verifyOrganization
 import com.sanket.donatetoday.modules.common.AppLogoHorizontal
 import com.sanket.donatetoday.modules.common.AutoSizeText
 import com.sanket.donatetoday.modules.common.CardContainer
@@ -88,11 +89,11 @@ import com.sanket.donatetoday.modules.common.UniversalInnerVerticalPaddingInDp
 import com.sanket.donatetoday.modules.common.UniversalVerticalPaddingInDp
 import com.sanket.donatetoday.modules.home.data.SettingsItem
 import com.sanket.donatetoday.modules.home.enums.SettingsEnums
+import com.sanket.donatetoday.modules.home.enums.VerificationEnum
 import com.sanket.donatetoday.modules.home.getters.DashboardGetters
 import com.sanket.donatetoday.modules.organization.data.OrganizationDonorCashChartData
 import com.sanket.donatetoday.modules.organization.data.OrganizationDonorChartData
 import com.sanket.donatetoday.modules.statements.StatementsScreen
-import com.sanket.donatetoday.utils.DateUtils
 import kotlinx.coroutines.launch
 import org.threeten.bp.format.DateTimeFormatter
 
@@ -162,7 +163,8 @@ fun DashboardScreenContainer(dashboardGetters: DashboardGetters) {
     ) {
         stickyHeader {
             DashboardToolbar(
-                verified = dashboardGetters.userDTO.verified,
+                emailVerified = dashboardGetters.userDTO.emailVerified,
+                userVerified = dashboardGetters.userDTO.userVerified,
                 onVerificationRequired = dashboardGetters.onVerificationRequired,
                 onSearch = {
 
@@ -243,13 +245,15 @@ fun DashboardScreenContainer(dashboardGetters: DashboardGetters) {
 @Composable
 private fun VerificationRequiredSection(
     modifier: Modifier = Modifier,
+    text: String = "Verification Required",
+    backgroundColor: Color = Color.Red,
     onVerificationRequired: () -> Unit
 ) {
     Box(modifier = modifier) {
         CardContainer(
             modifier = Modifier.align(Alignment.CenterStart),
             onClick = onVerificationRequired,
-            cardColor = Color.Red,
+            cardColor = backgroundColor,
             shape = MaterialTheme.shapes.large
         ) {
             Row(
@@ -262,7 +266,8 @@ private fun VerificationRequiredSection(
             ) {
                 Icon(
                     imageVector = Icons.Filled.Warning,
-                    contentDescription = "Verification Required"
+                    contentDescription = text,
+                    tint = Color.White
                 )
                 Text(
                     text = "Verification Required",
@@ -449,8 +454,9 @@ fun DashboardToolbar(
     modifier: Modifier = Modifier,
     toolbarText: String? = null,
     searchEnabled: Boolean = false,
-    verified: Boolean = true,
-    onVerificationRequired: (() -> Unit)? = null,
+    emailVerified: Boolean = true,
+    userVerified: Boolean = false,
+    onVerificationRequired: ((VerificationEnum) -> Unit)? = null,
     onSearch: (String) -> Unit
 ) {
     var search by remember {
@@ -517,10 +523,16 @@ fun DashboardToolbar(
                     }
                 }
             }
-        else if (!verified)
+        else if (!emailVerified)
             VerificationRequiredSection(
                 modifier = Modifier.weight(0.7f),
-                onVerificationRequired = { onVerificationRequired?.invoke() })
+                onVerificationRequired = { onVerificationRequired?.invoke(VerificationEnum.EMAIL) })
+        else if(!userVerified)
+            VerificationRequiredSection(
+                modifier = Modifier.weight(0.7f),
+                text = "Approval Required",
+                backgroundColor = Color.Gray,
+                onVerificationRequired = { onVerificationRequired?.invoke(VerificationEnum.USER) })
         else
             Spacer(modifier = Modifier.weight(0.7f))
         AppLogoHorizontal(
@@ -668,7 +680,7 @@ fun DashboardAllOrganizationListItem(
                 DonateTodayProfilePicture(
                     modifier = Modifier.weight(0.2f),
                     name = organization.name,
-                    verified = organization.verified
+                    verified = organization.verifyOrganization()
                 )
                 Row(modifier = Modifier.weight(0.8f)) {
                     Column(

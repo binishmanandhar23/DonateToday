@@ -51,7 +51,8 @@ class OnBoardingViewModel @Inject constructor(private val onBoardingRepository: 
         cardData: CreditCardDataDTO? = null,
         donationItemTypes: List<DonationItemTypes>? = null,
         userType: UserType? = null,
-        verified: Boolean? = false
+        emailVerified: Boolean? = false,
+        userVerified: Boolean? = false,
     ) =
         _userDTO.update {
             var newUser = it
@@ -70,8 +71,10 @@ class OnBoardingViewModel @Inject constructor(private val onBoardingRepository: 
                     newUser.copy(donationItemTypes = donationItemTypes.map { item -> item.type })
             if (userType != null)
                 newUser = newUser.copy(userType = userType.type)
-            if (verified != null)
-                newUser = newUser.copy(verified = verified)
+            if (emailVerified != null)
+                newUser = newUser.copy(emailVerified = emailVerified)
+            if (userVerified != null)
+                newUser = newUser.copy(emailVerified = userVerified)
             newUser
         }
 

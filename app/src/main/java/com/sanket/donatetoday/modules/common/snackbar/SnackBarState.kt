@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.MutableLiveData
+import com.sanket.donatetoday.BuildConfig
 import kotlinx.coroutines.delay
 
 @Composable
@@ -31,6 +32,7 @@ fun CustomSnackBar(
     val overridingText by snackBarState.overridingText.observeAsState(text)
     val overridingDelay by snackBarState.overridingDelay.observeAsState(delay)
     val innerText by remember(overridingText) { mutableStateOf(overridingText) }
+
     overridingDelay?.let {
         LaunchedEffect(key1 = visible) {
             delay(it)
