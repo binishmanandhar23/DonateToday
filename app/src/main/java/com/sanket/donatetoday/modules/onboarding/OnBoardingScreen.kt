@@ -12,9 +12,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -28,6 +30,8 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -42,6 +46,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -68,7 +73,10 @@ import com.sanket.donatetoday.modules.common.UniversalInnerVerticalPaddingInDp
 import com.sanket.donatetoday.modules.common.UniversalVerticalPaddingInDp
 import com.sanket.donatetoday.modules.common.UniversalVerticalSpacingInDp
 import com.sanket.donatetoday.models.dto.CreditCardDataDTO
+import com.sanket.donatetoday.models.dto.LocationDTO
+import com.sanket.donatetoday.modules.common.DonateTodayCircularButton
 import com.sanket.donatetoday.modules.common.enums.DonationItemTypes
+import com.sanket.donatetoday.modules.common.map.DonateTodayAddDropOffLocations
 import com.sanket.donatetoday.modules.common.map.DonateTodayAddPlaces
 import com.sanket.donatetoday.utils.emptyIfNull
 import com.sanket.donatetoday.utils.isValidPassword
@@ -174,7 +182,8 @@ fun RegistrationScreenMain(
     onBack: () -> Unit,
     onUpdate: (UserDTO) -> Unit,
     onSignUp: () -> Unit,
-    onAddNewPlace: () -> Unit
+    onAddNewPlace: () -> Unit,
+    onAddDropOffLocations: () -> Unit
 ) {
     var showPassword by remember {
         mutableStateOf(false)
@@ -414,10 +423,49 @@ fun RegistrationScreenMain(
                     }
                     DonateTodayDivider()
                     if (userDTO.userType == UserType.Organization.type) {
-                        DonateTodayAddPlaces(
-                            modifier = Modifier.fillMaxWidth(),
-                            onAddNewPlace = onAddNewPlace
-                        )
+                        if (userDTO.location.latitude == null || userDTO.location.longitude == null || userDTO.location.fullAddress == null)
+                            DonateTodayAddPlaces(
+                                modifier = Modifier.fillMaxWidth(),
+                                onAddNewPlace = onAddNewPlace
+                            )
+                        else
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                                    Text(
+                                        text = "Location",
+                                        style = MaterialTheme.typography.body1.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colors.secondary
+                                        )
+                                    )
+                                    Text(
+                                        text = userDTO.location.fullAddress!!,
+                                        style = MaterialTheme.typography.body1.copy(fontStyle = FontStyle.Italic)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.size(10.dp))
+                                DonateTodayCircularButton(
+                                    size = 30.dp,
+                                    imageVector = Icons.Rounded.Edit,
+                                    onClick = onAddNewPlace
+                                )
+                                DonateTodayCircularButton(
+                                    size = 30.dp,
+                                    backgroundColor = Color.Red,
+                                    imageVector = Icons.Rounded.Delete,
+                                    onClick = {
+                                        onUpdate(userDTO.copy(location = LocationDTO()))
+                                    }
+                                )
+                            }
+                        DonateTodayDivider()
+
+                        DonateTodayAddDropOffLocations(dropOffLocations = userDTO.dropOffLocations, onAddLocation = onAddDropOffLocations)
+
                         DonateTodayDivider()
                     }
                     DonateTodayButton(text = "Sign up", onClick = {

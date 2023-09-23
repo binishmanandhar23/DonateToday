@@ -15,4 +15,5 @@ sealed class Screen(val route: String){
     object AllOrganizationsList: Screen("all_organizations_list")
 
     object MapSheet: Screen("map_screen")
+    object DropOffLocation: Screen("drop_off_location")
 }

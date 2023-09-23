@@ -7,7 +7,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.fillMaxSize
@@ -45,7 +44,8 @@ import com.sanket.donatetoday.modules.common.enums.DonationItemTypes
 import com.sanket.donatetoday.modules.common.loader.DonateTodayLoader
 import com.sanket.donatetoday.modules.common.loader.LoaderState
 import com.sanket.donatetoday.modules.common.loader.rememberLoaderState
-import com.sanket.donatetoday.modules.common.map.DonateTodayMap
+import com.sanket.donatetoday.modules.common.map.SelectDropOffLocationsFromMap
+import com.sanket.donatetoday.modules.common.map.SelectLocationFromMap
 import com.sanket.donatetoday.modules.common.snackbar.CustomSnackBar
 import com.sanket.donatetoday.modules.common.snackbar.SnackBarLengthLong
 import com.sanket.donatetoday.modules.common.snackbar.SnackBarLengthMedium
@@ -234,6 +234,8 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                     onBoardingViewModel.onSignUp()
                 }, onAddNewPlace = {
                     sharedViewModel.goToScreen(ScreenNavigator(screen = Screen.MapSheet))
+                }, onAddDropOffLocations = {
+                    sharedViewModel.goToScreen(ScreenNavigator(screen = Screen.DropOffLocation))
                 })
             }
 
@@ -379,9 +381,35 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                 popEnterTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Down,
                 popExitTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Down,
             ) {
-                DonateTodayMap(modifier = Modifier.fillMaxSize(), onBack = {
-                    mainNavController.customPopBackStack()
-                })
+                val user by onBoardingViewModel.user.collectAsState()
+                SelectLocationFromMap(
+                    modifier = Modifier.fillMaxSize(),
+                    locationDTO = user.location,
+                    onLocationUpdate = {
+                        onBoardingViewModel.updateUserData(user.copy(location = it))
+                        mainNavController.customPopBackStack()
+                    },
+                    onBack = {
+                        mainNavController.customPopBackStack()
+                    })
+            }
+            customAnimatedComposable(
+                route = Screen.DropOffLocation.route,
+                enterTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Up,
+                exitTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Up,
+                popEnterTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Down,
+                popExitTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Down,
+            ) {
+                val user by onBoardingViewModel.user.collectAsState()
+                SelectDropOffLocationsFromMap(
+                    modifier = Modifier.fillMaxSize(),
+                    dropOffLocations = user.dropOffLocations,
+                    onLocationUpdate = {
+                        mainNavController.customPopBackStack()
+                    },
+                    onBack = {
+                        mainNavController.customPopBackStack()
+                    })
             }
             bottomSheet(route = BottomSheet.DonateCashSheet.route) {
                 val userDTO by sharedViewModel.user.collectAsState()

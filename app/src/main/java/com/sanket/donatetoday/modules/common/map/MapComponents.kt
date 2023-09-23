@@ -4,28 +4,43 @@ import android.app.Activity
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.with
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
-import androidx.compose.material.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.ArrowBackIos
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.rounded.AddCircle
 import androidx.compose.material.icons.rounded.MyLocation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,9 +55,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.capitalize
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -50,7 +64,6 @@ import androidx.core.content.ContextCompat
 import com.google.android.gms.location.CurrentLocationRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.Places
@@ -70,9 +83,14 @@ import com.sanket.donatetoday.BuildConfig
 import com.sanket.donatetoday.R
 import com.sanket.donatetoday.models.dto.LocationDTO
 import com.sanket.donatetoday.modules.common.CardContainer
+import com.sanket.donatetoday.modules.common.DonateTodayButton
+import com.sanket.donatetoday.modules.common.DonateTodayChip
 import com.sanket.donatetoday.modules.common.DonateTodayCircularButton
+import com.sanket.donatetoday.modules.common.UniversalHorizontalPaddingInDp
+import com.sanket.donatetoday.modules.common.UniversalVerticalPaddingInDp
 import com.sanket.donatetoday.ui.theme.ColorPrimary
 import com.sanket.donatetoday.utils.bitmapDescriptorFromVector
+import com.sanket.donatetoday.utils.emptyIfNull
 import com.sanket.donatetoday.utils.getAddress
 import com.sanket.donatetoday.utils.toLatLng
 import kotlinx.coroutines.Dispatchers
@@ -81,10 +99,12 @@ import kotlinx.coroutines.launch
 @Composable
 private fun CoreMapComponent(
     modifier: Modifier = Modifier,
+    contentAlignment: Alignment = Alignment.BottomCenter,
     enableSearch: Boolean = true,
     markerTitle: String? = null,
     markerSnippet: String? = null,
     userLocation: LocationDTO? = null,
+    toolbarText: String = "Select Location",
     markers: List<LocationDTO> = emptyList(),
     properties: MapProperties = MapProperties(isBuildingEnabled = true, isIndoorEnabled = true),
     mapUiSettings: MapUiSettings = MapUiSettings(
@@ -94,7 +114,7 @@ private fun CoreMapComponent(
     ),
     onBack: (() -> Unit)? = null,
     onLocation: ((location: LatLng, fullAddress: String, city: String?, country: String?) -> Unit)? = null,
-    content: (@Composable BoxScope.() -> Unit)? = null
+    content: (@Composable AnimatedContentScope.() -> Unit)? = null
 ) {
     val context = LocalContext.current
     LaunchedEffect(key1 = Unit) {
@@ -102,6 +122,9 @@ private fun CoreMapComponent(
             context,
             BuildConfig.API_KEY
         )
+    }
+    var contentVisible by remember {
+        mutableStateOf(true)
     }
     val defaultLocation = remember(userLocation) {
         LatLng(
@@ -168,6 +191,7 @@ private fun CoreMapComponent(
     }
 
     LaunchedEffect(key1 = markerState.dragState, key2 = markerState.position) {
+        contentVisible = false
         if (markerState.dragState == DragState.END) {
             launch(Dispatchers.IO) {
                 getAddress(
@@ -175,6 +199,7 @@ private fun CoreMapComponent(
                     latitude = markerState.position.latitude,
                     longitude = markerState.position.longitude
                 ) { fullAddress, _, city, country ->
+                    contentVisible = true
                     onLocation?.invoke(markerState.position, fullAddress, city, country)
                 }
             }
@@ -223,7 +248,7 @@ private fun CoreMapComponent(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             if (onBack != null)
-                LocationToolbar(onBack = onBack)
+                LocationToolbar(headerText = toolbarText,onBack = onBack)
             if (enableSearch)
                 SearchLocation {
                     markerState.position = it
@@ -232,8 +257,8 @@ private fun CoreMapComponent(
 
         DonateTodayCircularButton(
             modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(end = 8.dp, bottom = 100.dp),
+                .align(Alignment.TopEnd)
+                .padding(end = 8.dp, top = 10.dp),
             imageVector = Icons.Rounded.MyLocation,
             onClick = {
                 currentLocation?.let {
@@ -241,22 +266,166 @@ private fun CoreMapComponent(
                 }
             })
 
-        content?.invoke(this)
+        AnimatedContent(
+            modifier = Modifier.align(contentAlignment),
+            targetState = contentVisible,
+            transitionSpec = {
+                slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up) + fadeIn() togetherWith slideOutOfContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Down
+                ) + fadeOut()
+            },
+            label = "Address Box",
+        ) { show ->
+            if (show)
+                content?.invoke(this)
+            else
+                Spacer(modifier = Modifier.fillMaxWidth())
+        }
     }
 }
 
 @Composable
-fun DonateTodayMap(
+fun SelectLocationFromMap(
     modifier: Modifier = Modifier,
-    onBack: () -> Unit
+    locationDTO: LocationDTO? = null,
+    onBack: () -> Unit,
+    onLocationUpdate: (LocationDTO) -> Unit
 ) {
-    CoreMapComponent(modifier = modifier, onBack = onBack)
+    var locationDTOInner by remember(locationDTO) {
+        mutableStateOf(locationDTO ?: LocationDTO())
+    }
+    CoreMapComponent(
+        modifier = modifier,
+        userLocation = locationDTO,
+        onBack = onBack,
+        contentAlignment = Alignment.BottomCenter,
+        onLocation = { location, fullAddress, city, country ->
+            locationDTOInner = locationDTOInner.copy(
+                fullAddress = fullAddress,
+                city = city,
+                country = country,
+                latitude = location.latitude,
+                longitude = location.longitude
+            )
+        }) {
+        CardContainer(
+            modifier = Modifier.padding(
+                horizontal = UniversalHorizontalPaddingInDp,
+                vertical = UniversalVerticalPaddingInDp
+            ),
+            cardColor = MaterialTheme.colors.background,
+            shape = MaterialTheme.shapes.medium
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        horizontal = UniversalHorizontalPaddingInDp,
+                        vertical = UniversalVerticalPaddingInDp
+                    )
+                    .animateContentSize(),
+                verticalArrangement = Arrangement.spacedBy(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_location_pin_blue),
+                        contentDescription = locationDTOInner?.fullAddress
+                    )
+                    Text(
+                        text = locationDTOInner?.fullAddress.emptyIfNull(),
+                        style = MaterialTheme.typography.body1.copy(color = MaterialTheme.colors.secondary)
+                    )
+                }
+                DonateTodayButton(
+                    text = "Select Location",
+                    onClick = {
+                        onLocationUpdate(locationDTOInner)
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SelectDropOffLocationsFromMap(
+    modifier: Modifier = Modifier,
+    dropOffLocations: List<LocationDTO>,
+    onBack: () -> Unit,
+    onLocationUpdate: (LocationDTO) -> Unit
+) {
+    var locationDTOInner by remember {
+        mutableStateOf(LocationDTO())
+    }
+    CoreMapComponent(
+        modifier = modifier,
+        toolbarText = "Select drop-off locations",
+        userLocation = locationDTOInner,
+        markers = dropOffLocations,
+        onBack = onBack,
+        contentAlignment = Alignment.BottomCenter,
+        onLocation = { location, fullAddress, city, country ->
+            locationDTOInner = locationDTOInner.copy(
+                fullAddress = fullAddress,
+                city = city,
+                country = country,
+                latitude = location.latitude,
+                longitude = location.longitude
+            )
+        }) {
+        CardContainer(
+            modifier = Modifier.padding(
+                horizontal = UniversalHorizontalPaddingInDp,
+                vertical = UniversalVerticalPaddingInDp
+            ),
+            cardColor = MaterialTheme.colors.background,
+            shape = MaterialTheme.shapes.medium
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        horizontal = UniversalHorizontalPaddingInDp,
+                        vertical = UniversalVerticalPaddingInDp
+                    )
+                    .animateContentSize(),
+                verticalArrangement = Arrangement.spacedBy(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_location_pin_blue),
+                        contentDescription = locationDTOInner.fullAddress
+                    )
+                    Text(
+                        text = locationDTOInner.fullAddress.emptyIfNull(),
+                        style = MaterialTheme.typography.body1.copy(color = MaterialTheme.colors.secondary)
+                    )
+                }
+                DonateTodayButton(
+                    text = "Select Location",
+                    onClick = {
+                        onLocationUpdate(locationDTOInner)
+                    }
+                )
+            }
+        }
+    }
 }
 
 
 @Composable
 private fun LocationToolbar(
-    headerText: String = "Select Location",
+    headerText: String,
     onBack: () -> Unit,
     onClear: (() -> Unit)? = null
 ) = Row(
@@ -349,7 +518,10 @@ private fun SearchLocation(locationText: String = "", onLocation: (LatLng) -> Un
 }
 
 @Composable
-private fun MapTypeChange(mapProperties: MapProperties, onPropertyChange: (MapProperties) -> Unit) {
+private fun MapTypeChange(
+    mapProperties: MapProperties,
+    onPropertyChange: (MapProperties) -> Unit
+) {
     val normalBackgroundColor by animateColorAsState(
         targetValue = if (mapProperties.mapType == MapType.NORMAL) ColorPrimary else Color.Transparent,
         label = ""
@@ -434,7 +606,9 @@ private fun MapTypeChange(mapProperties: MapProperties, onPropertyChange: (MapPr
 fun DonateTodayAddPlaces(modifier: Modifier = Modifier, onAddNewPlace: () -> Unit) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(role = Role.Button, onClick = onAddNewPlace),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -445,12 +619,45 @@ fun DonateTodayAddPlaces(modifier: Modifier = Modifier, onAddNewPlace: () -> Uni
                     fontWeight = FontWeight.Bold
                 )
             )
-            IconButton(onClick = onAddNewPlace) {
-                Icon(
-                    imageVector = Icons.Default.AddCircle,
-                    contentDescription = "Add new place",
-                    tint = MaterialTheme.colors.primary
+            Icon(
+                imageVector = Icons.Default.AddCircle,
+                contentDescription = "Add new place",
+                tint = MaterialTheme.colors.primary
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun DonateTodayAddDropOffLocations(
+    modifier: Modifier = Modifier,
+    dropOffLocations: List<LocationDTO>,
+    onAddLocation: () -> Unit
+) {
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(
+            text = "Drop off Locations",
+            style = MaterialTheme.typography.h5.copy(
+                color = MaterialTheme.colors.secondary,
+                fontWeight = FontWeight.Bold
+            )
+        )
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            stickyHeader {
+                DonateTodayCircularButton(
+                    imageVector = Icons.Rounded.AddCircle,
+                    onClick = onAddLocation
                 )
+            }
+            items(dropOffLocations) {
+                if (it.fullAddress != null)
+                    DonateTodayChip(text = it.fullAddress) {
+
+                    }
             }
         }
     }

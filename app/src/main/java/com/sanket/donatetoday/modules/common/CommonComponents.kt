@@ -80,6 +80,7 @@ import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.rounded.Clear
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -518,7 +519,7 @@ fun DonateTodayButton(
             if (!hideText)
                 Spacer(modifier = Modifier.size(10.dp))
         }
-        AnimatedVisibility (!hideText) {
+        AnimatedVisibility(!hideText) {
             Text(
                 text = text.let {
                     if (allCaps)
@@ -1019,6 +1020,8 @@ fun DonationGoalIndicator(reached: Int, totalGoal: Int) {
 @Composable
 fun DonateTodayCircularButton(
     modifier: Modifier = Modifier,
+    size: Dp = 40.dp,
+    backgroundColor: Color = MaterialTheme.colors.primary,
     onClick: (() -> Unit)? = null,
     imageVector: ImageVector,
     contentDescription: String? = null
@@ -1026,12 +1029,14 @@ fun DonateTodayCircularButton(
     CardContainer(
         modifier = modifier,
         onClick = { onClick?.invoke() },
-        cardColor = MaterialTheme.colors.primary,
+        cardColor = backgroundColor,
         shape = CircleShape,
         elevation = 8.dp
     ) {
         Icon(
-            modifier = Modifier.padding(10.dp),
+            modifier = Modifier
+                .size(size)
+                .padding(8.dp),
             imageVector = imageVector, contentDescription = contentDescription,
             tint = ColorWhite
         )
@@ -1183,6 +1188,39 @@ fun HorizontalHeaderValue(
                 }
             }
         }
+}
+
+@Composable
+fun DonateTodayChip(
+    modifier: Modifier = Modifier,
+    text: String,
+    backgroundColor: Color = MaterialTheme.colors.secondary,
+    textColor: Color = MaterialTheme.colors.onSecondary,
+    elevation: Dp = 3.dp,
+    shape: CornerBasedShape = MaterialTheme.shapes.small,
+    onRemove: () -> Unit
+) {
+    CardContainer(
+        modifier = modifier,
+        cardColor = backgroundColor,
+        shape = shape,
+        elevation = elevation
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            Text(text = text, style = MaterialTheme.typography.subtitle2.copy(color = textColor))
+            IconButton(onClick = onRemove) {
+                Icon(
+                    imageVector = Icons.Rounded.Clear,
+                    contentDescription = "Remove",
+                    tint = textColor
+                )
+            }
+        }
+    }
 }
 
 fun LazyGridScope.fullSpan(
