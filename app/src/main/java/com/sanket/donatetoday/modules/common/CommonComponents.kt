@@ -1193,6 +1193,7 @@ fun HorizontalHeaderValue(
 @Composable
 fun DonateTodayChip(
     modifier: Modifier = Modifier,
+    innerModifier: Modifier = Modifier,
     text: String,
     backgroundColor: Color = MaterialTheme.colors.secondary,
     textColor: Color = MaterialTheme.colors.onSecondary,
@@ -1207,12 +1208,12 @@ fun DonateTodayChip(
         elevation = elevation
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+            modifier = innerModifier.padding(horizontal = 8.dp, vertical = 1.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(5.dp)
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(text = text, style = MaterialTheme.typography.subtitle2.copy(color = textColor))
-            IconButton(onClick = onRemove) {
+            Text(modifier = Modifier.weight(0.8f), text = text, style = MaterialTheme.typography.subtitle1.copy(color = textColor))
+            IconButton(modifier = Modifier.weight(0.2f), onClick = onRemove) {
                 Icon(
                     imageVector = Icons.Rounded.Clear,
                     contentDescription = "Remove",

@@ -5,6 +5,7 @@ import io.realm.kotlin.ext.toRealmList
 import io.realm.kotlin.types.RealmList
 
 data class LocationDTO(
+    val title: String? = null,
     val fullAddress: String? = null,
     val city: String? = null,
     val country: String? = null,
@@ -12,9 +13,9 @@ data class LocationDTO(
     val longitude: Double? = null
 )
 
-fun LocationDTO.toLocationEntity() = LocationEntity(fullAddress, city, country, latitude, longitude)
+fun LocationDTO.toLocationEntity() = LocationEntity(title, fullAddress, city, country, latitude, longitude)
 
-fun LocationEntity.toLocationDTO() = LocationDTO(fullAddress, city, country, latitude, longitude)
+fun LocationEntity.toLocationDTO() = LocationDTO(title, fullAddress, city, country, latitude, longitude)
 
 fun List<LocationDTO>.toRealmListOfLocationEntity() = map { it.toLocationEntity() }.toRealmList()
 

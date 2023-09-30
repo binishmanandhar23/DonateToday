@@ -19,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
@@ -404,11 +405,15 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                 SelectDropOffLocationsFromMap(
                     modifier = Modifier.fillMaxSize(),
                     dropOffLocations = user.dropOffLocations,
-                    onLocationUpdate = {
-                        mainNavController.customPopBackStack()
+                    onAddDropOffLocation = {
+                        onBoardingViewModel.updateUserData(userDTO = user.copy(dropOffLocations = listOf(*user.dropOffLocations.toTypedArray(), it)))
                     },
                     onBack = {
                         mainNavController.customPopBackStack()
+                    }, onRemove = {
+                        val newLocations = user.dropOffLocations.toMutableStateList()
+                        newLocations.remove(it)
+                        onBoardingViewModel.updateUserData(userDTO = user.copy(dropOffLocations = newLocations))
                     })
             }
             bottomSheet(route = BottomSheet.DonateCashSheet.route) {

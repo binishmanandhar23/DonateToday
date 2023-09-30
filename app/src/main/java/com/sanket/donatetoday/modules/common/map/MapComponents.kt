@@ -28,8 +28,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
@@ -86,6 +90,7 @@ import com.sanket.donatetoday.modules.common.CardContainer
 import com.sanket.donatetoday.modules.common.DonateTodayButton
 import com.sanket.donatetoday.modules.common.DonateTodayChip
 import com.sanket.donatetoday.modules.common.DonateTodayCircularButton
+import com.sanket.donatetoday.modules.common.DonateTodaySingleLineTextField
 import com.sanket.donatetoday.modules.common.UniversalHorizontalPaddingInDp
 import com.sanket.donatetoday.modules.common.UniversalVerticalPaddingInDp
 import com.sanket.donatetoday.ui.theme.ColorPrimary
@@ -248,7 +253,7 @@ private fun CoreMapComponent(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             if (onBack != null)
-                LocationToolbar(headerText = toolbarText,onBack = onBack)
+                LocationToolbar(headerText = toolbarText, onBack = onBack)
             if (enableSearch)
                 SearchLocation {
                     markerState.position = it
@@ -357,7 +362,8 @@ fun SelectDropOffLocationsFromMap(
     modifier: Modifier = Modifier,
     dropOffLocations: List<LocationDTO>,
     onBack: () -> Unit,
-    onLocationUpdate: (LocationDTO) -> Unit
+    onAddDropOffLocation: (LocationDTO) -> Unit,
+    onRemove: (LocationDTO) -> Unit
 ) {
     var locationDTOInner by remember {
         mutableStateOf(LocationDTO())
@@ -382,7 +388,7 @@ fun SelectDropOffLocationsFromMap(
             modifier = Modifier.padding(
                 horizontal = UniversalHorizontalPaddingInDp,
                 vertical = UniversalVerticalPaddingInDp
-            ),
+            ).sizeIn(maxHeight = 320.dp),
             cardColor = MaterialTheme.colors.background,
             shape = MaterialTheme.shapes.medium
         ) {
@@ -403,20 +409,47 @@ fun SelectDropOffLocationsFromMap(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Image(
+                        modifier = Modifier.size(20.dp),
                         painter = painterResource(id = R.drawable.ic_location_pin_blue),
                         contentDescription = locationDTOInner.fullAddress
                     )
                     Text(
                         text = locationDTOInner.fullAddress.emptyIfNull(),
-                        style = MaterialTheme.typography.body1.copy(color = MaterialTheme.colors.secondary)
+                        style = MaterialTheme.typography.subtitle1.copy(color = MaterialTheme.colors.secondary)
                     )
                 }
-                DonateTodayButton(
-                    text = "Select Location",
-                    onClick = {
-                        onLocationUpdate(locationDTOInner)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    DonateTodaySingleLineTextField(
+                        modifier = Modifier.weight(0.7f),
+                        value = locationDTOInner.title.emptyIfNull(),
+                        onValueChange = {
+                            locationDTOInner = locationDTOInner.copy(title = it)
+                        },
+                        label = "Enter name for the location"
+                    )
+                    DonateTodayButton(modifier = Modifier.weight(0.3f), text = "Add") {
+                        onAddDropOffLocation(locationDTOInner)
                     }
-                )
+                }
+                LazyVerticalGrid(
+                    modifier = Modifier.fillMaxWidth(),
+                    columns = GridCells.Fixed(3),
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    verticalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    items(dropOffLocations) {
+                        DonateTodayChip(
+                            innerModifier = Modifier.fillMaxWidth(),
+                            text = (it.title ?: it.fullAddress).emptyIfNull()
+                        ) {
+                            onRemove(it)
+                        }
+                    }
+                }
             }
         }
     }
@@ -613,7 +646,7 @@ fun DonateTodayAddPlaces(modifier: Modifier = Modifier, onAddNewPlace: () -> Uni
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = "Add places",
+                text = "Add place",
                 style = MaterialTheme.typography.h5.copy(
                     color = MaterialTheme.colors.secondary,
                     fontWeight = FontWeight.Bold
