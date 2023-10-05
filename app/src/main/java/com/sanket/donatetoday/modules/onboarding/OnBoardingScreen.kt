@@ -188,9 +188,6 @@ fun RegistrationScreenMain(
     var showPassword by remember {
         mutableStateOf(false)
     }
-    var confirmPassword by remember {
-        mutableStateOf("")
-    }
     var addCardInfo by remember {
         mutableStateOf(userDTO.userType == UserType.Organization.type)
     }
@@ -204,32 +201,32 @@ fun RegistrationScreenMain(
     var numberOfErrors by remember {
         mutableIntStateOf(0)
     }
-    val confirmPasswordErrorText by remember(userDTO.password) {
+    val confirmPasswordErrorText by remember(userDTO.password, userDTO.confirmPassword) {
         derivedStateOf {
-            if (userDTO.password.isNotEmpty() && confirmPassword.isNotEmpty() && userDTO.password != confirmPassword)
+            if (userDTO.password.isNotEmpty() && userDTO.confirmPassword.isNotEmpty() && userDTO.password != userDTO.confirmPassword)
                 "Passwords don't match"
             else if (!userDTO.password.isValidPassword() && userDTO.password.isNotEmpty())
                 "Valid must be 8 digits and contain Alpha Numeric cases"
-            else if (userDTO.password.isNotEmpty() && confirmPassword.isNotEmpty() && userDTO.password == confirmPassword)
+            else if (userDTO.password.isNotEmpty() && userDTO.confirmPassword.isNotEmpty() && userDTO.password == userDTO.confirmPassword)
                 "Passwords match"
             else
                 null
         }
     }
-    val confirmPasswordErrorIcon by remember(userDTO.password) {
+    val confirmPasswordErrorIcon by remember(userDTO.password, userDTO.confirmPassword) {
         derivedStateOf {
             if (!userDTO.password.isValidPassword() && userDTO.password.isNotEmpty())
                 Icons.Default.Close
-            else if (userDTO.password.isNotEmpty() && confirmPassword.isNotEmpty() && userDTO.password != confirmPassword)
+            else if (userDTO.password.isNotEmpty() && userDTO.confirmPassword.isNotEmpty() && userDTO.password != userDTO.confirmPassword)
                 Icons.Default.Close
-            else if (userDTO.password.isNotEmpty() && confirmPassword.isNotEmpty() && userDTO.password == confirmPassword)
+            else if (userDTO.password.isNotEmpty() && userDTO.confirmPassword.isNotEmpty() && userDTO.password == userDTO.confirmPassword)
                 Icons.Default.Check
             else
                 null
         }
     }
     val errorColor by animateColorAsState(
-        targetValue = if (userDTO.password.isNotEmpty() && confirmPassword.isNotEmpty() && userDTO.password == confirmPassword && userDTO.password.isValidPassword())
+        targetValue = if (userDTO.password.isNotEmpty() && userDTO.confirmPassword.isNotEmpty() && userDTO.password == userDTO.confirmPassword && userDTO.password.isValidPassword())
             Color.Green
         else
             Color.Red, label = ""
@@ -241,7 +238,7 @@ fun RegistrationScreenMain(
             numberOfErrors += 1
         else if (userDTO.name.verifyEmptyOrNull())
             numberOfErrors += 1
-        else if (userDTO.password.verifyEmptyOrNull() || confirmPassword.verifyEmptyOrNull() || !userDTO.password.isValidPassword() || userDTO.password != confirmPassword)
+        else if (userDTO.password.verifyEmptyOrNull() || userDTO.confirmPassword.verifyEmptyOrNull() || !userDTO.password.isValidPassword() || userDTO.password != userDTO.confirmPassword)
             numberOfErrors += 1
         else if (userDTO.donationItemTypes.verifyEmptyOrNull())
             numberOfErrors += 1
@@ -336,9 +333,9 @@ fun RegistrationScreenMain(
                     )
                     DonateTodaySingleLineTextField(
                         modifier = Modifier.fillMaxWidth(),
-                        value = confirmPassword,
+                        value = userDTO.confirmPassword,
                         onValueChange = {
-                            confirmPassword = it
+                            onUpdate(userDTO.copy(confirmPassword = it))
                         },
                         label = "Confirm Password",
                         errorIcon = confirmPasswordErrorIcon,

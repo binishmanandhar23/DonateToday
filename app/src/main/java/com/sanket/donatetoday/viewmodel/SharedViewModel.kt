@@ -91,10 +91,12 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
         }
     }
 
-    fun clearData() {
-        _currentScreen.update { null }
-        _homeUIState.update { null }
-    }
+    fun clearData()=
+        viewModelScope.launch {
+            _currentScreen.update { null }
+            _homeUIState.update { null }
+            sharedRepository.clearRealmData()
+        }
 
 
     fun changeYear(year: Int) = _year.update { year }

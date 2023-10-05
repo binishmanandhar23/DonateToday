@@ -1,5 +1,6 @@
 package com.sanket.donatetoday.models.dto
 
+import com.google.firebase.database.Exclude
 import com.sanket.donatetoday.models.User
 import com.sanket.donatetoday.models.entity.UserEntity
 import io.realm.kotlin.ext.toRealmList
@@ -11,6 +12,8 @@ data class UserDTO(
     override var name: String = "",
     override var emailAddress: String = "",
     override var password: String = "",
+    @Exclude
+    var confirmPassword: String = "",
     override var phoneNo: String? = null,
     override var countryPhoneCode: String? = null,
     val cardInfo: CreditCardDataDTO? = null,

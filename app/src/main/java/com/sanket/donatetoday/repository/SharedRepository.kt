@@ -45,7 +45,7 @@ class SharedRepository @Inject constructor(
             database.child(FirebasePaths.DonationItems.node).child(type).child(userType)
                 .get()
                 .addOnSuccessListener { dataSnapshot ->
-                    (dataSnapshot.getValue<List<DonationItemUserModel>>()).let { list ->
+                    (dataSnapshot.getValue<List<DonationItemUserModel?>>()).let { list ->
                         cont.resume(list) {
                             Exception(it)
                         }
@@ -64,7 +64,7 @@ class SharedRepository @Inject constructor(
                 type = type,
                 userType = UserType.Organization.type
             )?.forEach { donationItemUserModel ->
-                if (!list.contains(donationItemUserModel))
+                if (!list.contains(donationItemUserModel) && donationItemUserModel != null)
                     list.add(donationItemUserModel)
             }
         }
@@ -481,4 +481,11 @@ class SharedRepository @Inject constructor(
         }, onCancelled = {
             onError(it.message)
         })
+
+    suspend fun clearRealmData(){
+        realm.write {
+            val allUsers = this.query<UserEntity>().find()
+            delete(allUsers)
+        }
+    }
 }
