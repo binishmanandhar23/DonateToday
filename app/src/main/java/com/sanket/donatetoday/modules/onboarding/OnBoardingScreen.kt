@@ -233,7 +233,7 @@ fun RegistrationScreenMain(
             Color.Green
         else
             Color.Red, label = ""
-    )
+    ) //378734493671000
     LaunchedEffect(key1 = userDTO) {
         checkForErrors = false
         numberOfErrors = 0
@@ -241,7 +241,7 @@ fun RegistrationScreenMain(
             numberOfErrors += 1
         else if (userDTO.name.verifyEmptyOrNull())
             numberOfErrors += 1
-        else if (userDTO.password.verifyEmptyOrNull() || confirmPassword.verifyEmptyOrNull() || !userDTO.password.isValidPassword())
+        else if (userDTO.password.verifyEmptyOrNull() || confirmPassword.verifyEmptyOrNull() || !userDTO.password.isValidPassword() || userDTO.password != confirmPassword)
             numberOfErrors += 1
         else if (userDTO.donationItemTypes.verifyEmptyOrNull())
             numberOfErrors += 1

@@ -144,6 +144,16 @@ fun OrganizationDetailScreen(
                                 }
                             )
                         }
+                        AnimatedVisibility(visible = !organization.location.fullAddress.isNullOrEmpty()) {
+                            HorizontalHeaderValue(
+                                header = "Location",
+                                value = organization.location.fullAddress,
+                                trailingIcon = Icons.Rounded.Phone,
+                                onTrailingIconClick = {
+                                    onPhone(organization)
+                                }
+                            )
+                        }
                         DonateTodayDivider()
                         Column(
                             modifier = Modifier.fillMaxWidth(),

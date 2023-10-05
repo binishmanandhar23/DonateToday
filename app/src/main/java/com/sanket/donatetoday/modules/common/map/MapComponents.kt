@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -677,6 +678,7 @@ fun DonateTodayAddDropOffLocations(
             )
         )
         LazyRow(
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -687,8 +689,8 @@ fun DonateTodayAddDropOffLocations(
                 )
             }
             items(dropOffLocations) {
-                if (it.fullAddress != null)
-                    DonateTodayChip(text = it.fullAddress) {
+                if (it.title != null)
+                    DonateTodayChip(innerModifier = Modifier.widthIn(min = 70.dp, max = 150.dp),text = it.title) {
 
                     }
             }
