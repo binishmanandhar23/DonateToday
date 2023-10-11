@@ -3,11 +3,14 @@ package com.sanket.donatetoday.modules.profile
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.MaterialTheme
@@ -15,6 +18,8 @@ import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -24,12 +29,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.sanket.donatetoday.enums.UserType
 import com.sanket.donatetoday.models.dto.CreditCardDataDTO
+import com.sanket.donatetoday.models.dto.LocationDTO
 import com.sanket.donatetoday.modules.common.DonateTodayButton
 import com.sanket.donatetoday.modules.common.DonateTodayCardInfoFields
 import com.sanket.donatetoday.modules.common.DonateTodayCheckBoxItems
@@ -274,10 +282,47 @@ fun ProfileScreen(profileScreenGetters: ProfileScreenGetters) {
         }
         item {
             if (userDTO.userType == UserType.Organization.type)
-                DonateTodayAddPlaces(
-                    modifier = Modifier.fillMaxWidth(),
-                    onAddNewPlace = profileScreenGetters.onAddNewPlace
-                )
+                if (userDTO.location.latitude == null || userDTO.location.longitude == null || userDTO.location.fullAddress == null)
+                    DonateTodayAddPlaces(
+                        modifier = Modifier.fillMaxWidth(),
+                        onAddNewPlace = profileScreenGetters.onAddNewPlace
+                    )
+                else
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                            Text(
+                                text = "Location",
+                                style = MaterialTheme.typography.body1.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colors.secondary
+                                )
+                            )
+                            Text(
+                                text = userDTO.location.fullAddress!!,
+                                style = MaterialTheme.typography.body1.copy(fontStyle = FontStyle.Italic)
+                            )
+                        }
+                        Spacer(modifier = Modifier.size(10.dp))
+                        if(editable) {
+                            DonateTodayCircularButton(
+                                size = 30.dp,
+                                imageVector = Icons.Rounded.Edit,
+                                onClick = profileScreenGetters.onAddNewPlace
+                            )
+                            DonateTodayCircularButton(
+                                size = 30.dp,
+                                backgroundColor = Color.Red,
+                                imageVector = Icons.Rounded.Delete,
+                                onClick = {
+                                    profileScreenGetters.onUpdateProfile(userDTO.copy(location = LocationDTO()))
+                                }
+                            )
+                        }
+                    }
         }
         item {
             if (userDTO.userType == UserType.Organization.type)

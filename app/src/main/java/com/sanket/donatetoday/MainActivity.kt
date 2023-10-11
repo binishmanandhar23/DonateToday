@@ -237,7 +237,12 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                 }, onSignUp = {
                     onBoardingViewModel.onSignUp()
                 }, onAddNewPlace = {
-                    sharedViewModel.goToScreen(ScreenNavigator(screen = Screen.MapSheet))
+                    sharedViewModel.goToScreen(
+                        ScreenNavigator(
+                            screen = Screen.MapSheet,
+                            values = listOf("true")
+                        )
+                    )
                 }, onAddDropOffLocations = {
                     sharedViewModel.goToScreen(ScreenNavigator(screen = Screen.DropOffLocation))
                 })
@@ -346,12 +351,13 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                             )
                         )
                     }, onViewDropOffLocations = {
-                        sharedViewModel.goToScreen(ScreenNavigator(
-                            screen = Screen.DropOffLocation,
-                            values = listOf(
-                                id
+                        sharedViewModel.goToScreen(
+                            ScreenNavigator(
+                                screen = Screen.DropOffLocation,
+                                values = listOf(
+                                    id
+                                )
                             )
-                        )
                         )
                     })
                 }
@@ -363,7 +369,14 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                     onBackButton = {
                         mainNavController.customPopBackStack()
                     },
-                    onAddNewPlace = {},
+                    onAddNewPlace = {
+                        sharedViewModel.goToScreen(
+                            ScreenNavigator(
+                                screen = Screen.MapSheet,
+                                values = listOf("false")
+                            )
+                        )
+                    },
                     onUpdateProfile = {
                         sharedViewModel.updateUser(it)
                     }
@@ -438,24 +451,33 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                             ).also { loaderState.hide() }
                         }
                     }
-                    ViewDropOffLocationOnMap(modifier = Modifier.fillMaxSize(), dropOffLocations = organization?.dropOffLocations?: emptyList()) {
+                    ViewDropOffLocationOnMap(
+                        modifier = Modifier.fillMaxSize(),
+                        dropOffLocations = organization?.dropOffLocations ?: emptyList()
+                    ) {
                         mainNavController.customPopBackStack()
                     }
                 }
             }
             customAnimatedComposable(
-                route = Screen.MapSheet.route,
+                route = Screen.MapSheet.route + "/{fromOnboarding}",
                 enterTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Up,
                 exitTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Up,
                 popEnterTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Down,
                 popExitTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Down,
-            ) {
-                val user by onBoardingViewModel.user.collectAsState()
+            ) { backStackEntry ->
+                val fromOnboarding =
+                    backStackEntry.arguments?.getString("fromOnboarding")?.toBooleanStrictOrNull()
+                        ?: true
+                val user by if (fromOnboarding) onBoardingViewModel.user.collectAsState() else sharedViewModel.user.collectAsState()
                 SelectLocationFromMap(
                     modifier = Modifier.fillMaxSize(),
                     locationDTO = user.location,
                     onLocationUpdate = {
-                        onBoardingViewModel.updateUserData(user.copy(location = it))
+                        if (fromOnboarding)
+                            onBoardingViewModel.updateUserData(user.copy(location = it))
+                        else
+                            sharedViewModel.updateUser(user.copy(location = it))
                         mainNavController.customPopBackStack()
                     },
                     onBack = {
