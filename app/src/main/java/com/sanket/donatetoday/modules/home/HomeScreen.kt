@@ -610,7 +610,7 @@ fun DashboardLists(
                 )
             )
             LazyRow(
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.Top,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 items(items) {
