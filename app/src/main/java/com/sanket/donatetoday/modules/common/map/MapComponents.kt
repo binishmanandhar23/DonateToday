@@ -108,11 +108,13 @@ private fun CoreMapComponent(
     contentAlignment: Alignment = Alignment.BottomCenter,
     enableSearch: Boolean = true,
     enableMyLocationButton: Boolean = true,
+    enableCurrentLocationMarker: Boolean = true,
     markerTitle: String? = null,
     markerSnippet: String? = null,
     userLocation: LocationDTO? = null,
     toolbarText: String = "Select Location",
     markers: List<LocationDTO> = emptyList(),
+    onMarkerClick: ((LocationDTO?) -> Unit)? = null,
     isDraggable: Boolean = true,
     properties: MapProperties = MapProperties(isBuildingEnabled = true, isIndoorEnabled = true),
     mapUiSettings: MapUiSettings = MapUiSettings(
@@ -231,15 +233,18 @@ private fun CoreMapComponent(
             onMapClick = {
                 if (isDraggable)
                     markerState.position = it
+                else
+                    onMarkerClick?.invoke(null)
             }
         ) {
-            Marker(
-                state = markerState,
-                title = markerTitle,
-                snippet = markerSnippet,
-                icon = context.bitmapDescriptorFromVector(R.drawable.ic_location_pin_black),
-                draggable = isDraggable
-            )
+            if (enableCurrentLocationMarker)
+                Marker(
+                    state = markerState,
+                    title = markerTitle,
+                    snippet = markerSnippet,
+                    icon = context.bitmapDescriptorFromVector(R.drawable.ic_location_pin_black),
+                    draggable = isDraggable
+                )
             markers.forEach {
                 if (it.latitude != null && it.longitude != null)
                     Marker(
@@ -247,6 +252,10 @@ private fun CoreMapComponent(
                         title = it.fullAddress,
                         snippet = "${it.fullAddress}/n${it.city}, ${it.country}",
                         icon = context.bitmapDescriptorFromVector(R.drawable.ic_location_pin_blue),
+                        onClick = { _ ->
+                            onMarkerClick?.invoke(it)
+                            false
+                        }
                     )
             }
         }
@@ -352,6 +361,68 @@ fun ViewLocationOnMap(modifier: Modifier = Modifier, lat: Double, lon: Double, o
                 }
             }
         }
+    }
+}
+
+@Composable
+fun ViewDropOffLocationOnMap(
+    modifier: Modifier = Modifier,
+    dropOffLocations: List<LocationDTO>,
+    onBack: () -> Unit
+) {
+    var selectedLocation: LocationDTO? by remember {
+        mutableStateOf(null)
+    }
+    CoreMapComponent(
+        modifier = modifier,
+        onBack = onBack,
+        contentAlignment = Alignment.BottomCenter,
+        enableSearch = false,
+        enableMyLocationButton = false,
+        enableCurrentLocationMarker = false,
+        toolbarText = "Drop-off Locations",
+        isDraggable = false,
+        markers = dropOffLocations,
+        onMarkerClick = {
+            selectedLocation = it
+        }
+    ) {
+        if (selectedLocation != null)
+            CardContainer(
+                modifier = Modifier.padding(
+                    horizontal = UniversalHorizontalPaddingInDp,
+                    vertical = UniversalVerticalPaddingInDp
+                ),
+                cardColor = MaterialTheme.colors.background,
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            horizontal = UniversalHorizontalPaddingInDp,
+                            vertical = UniversalVerticalPaddingInDp
+                        )
+                        .animateContentSize(),
+                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_location_pin_blue),
+                            contentDescription = selectedLocation?.fullAddress.emptyIfNull()
+                        )
+                        Text(
+                            text = selectedLocation?.fullAddress.emptyIfNull(),
+                            style = MaterialTheme.typography.body1.copy(color = MaterialTheme.colors.secondary)
+                        )
+                    }
+                }
+            }
     }
 }
 

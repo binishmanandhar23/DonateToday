@@ -48,6 +48,7 @@ import com.sanket.donatetoday.modules.common.loader.LoaderState
 import com.sanket.donatetoday.modules.common.loader.rememberLoaderState
 import com.sanket.donatetoday.modules.common.map.SelectDropOffLocationsFromMap
 import com.sanket.donatetoday.modules.common.map.SelectLocationFromMap
+import com.sanket.donatetoday.modules.common.map.ViewDropOffLocationOnMap
 import com.sanket.donatetoday.modules.common.map.ViewLocationOnMap
 import com.sanket.donatetoday.modules.common.snackbar.CustomSnackBar
 import com.sanket.donatetoday.modules.common.snackbar.SnackBarLengthLong
@@ -339,10 +340,18 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                             ScreenNavigator(
                                 screen = Screen.ViewLocationScreen,
                                 values = listOf(
-                                    (it.latitude?: 0.0).toString(),
-                                    (it.longitude?: 0.0).toString()
+                                    (it.latitude ?: 0.0).toString(),
+                                    (it.longitude ?: 0.0).toString()
                                 )
                             )
+                        )
+                    }, onViewDropOffLocations = {
+                        sharedViewModel.goToScreen(ScreenNavigator(
+                            screen = Screen.DropOffLocation,
+                            values = listOf(
+                                id
+                            )
+                        )
                         )
                     })
                 }
@@ -394,10 +403,44 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                 popEnterTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Down,
                 popExitTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Down,
             ) { backStackEntry ->
-                val lat = backStackEntry.arguments?.getString("lat")?.toDoubleOrNull()?: 0.0
-                val lon = backStackEntry.arguments?.getString("lon")?.toDoubleOrNull()?: 0.0
+                val lat = backStackEntry.arguments?.getString("lat")?.toDoubleOrNull() ?: 0.0
+                val lon = backStackEntry.arguments?.getString("lon")?.toDoubleOrNull() ?: 0.0
                 ViewLocationOnMap(modifier = Modifier.fillMaxSize(), lat = lat, lon = lon) {
                     mainNavController.customPopBackStack()
+                }
+            }
+            customAnimatedComposable(
+                route = Screen.DropOffLocation.route + "/{id}",
+                enterTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Up,
+                exitTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Up,
+                popEnterTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Down,
+                popExitTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Down,
+            ) { backStackEntry ->
+                backStackEntry.arguments?.getString("id")?.let { id ->
+                    LaunchedEffect(key1 = id) {
+                        sharedViewModel.getOrganizationBasedOnId(id = id)
+                    }
+                    val homeUIState by sharedViewModel.homeUIState.collectAsState()
+                    var organization: UserDTO? by remember(homeUIState) {
+                        mutableStateOf(null)
+                    }
+                    LaunchedEffect(key1 = homeUIState) {
+                        when (val state = homeUIState) {
+                            is HomeUIState.Loading -> loaderState.show()
+                            is HomeUIState.Success -> {
+                                organization = state.data
+                                loaderState.hide()
+                            }
+
+                            else -> snackBarState.show(
+                                overridingText = state?.message,
+                                overridingDelay = SnackBarLengthMedium
+                            ).also { loaderState.hide() }
+                        }
+                    }
+                    ViewDropOffLocationOnMap(modifier = Modifier.fillMaxSize(), dropOffLocations = organization?.dropOffLocations?: emptyList()) {
+                        mainNavController.customPopBackStack()
+                    }
                 }
             }
             customAnimatedComposable(

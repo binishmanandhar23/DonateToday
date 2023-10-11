@@ -32,7 +32,9 @@ import androidx.compose.material.icons.filled.Fastfood
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.rounded.AddCircle
+import androidx.compose.material.icons.rounded.AddLocation
 import androidx.compose.material.icons.rounded.Email
+import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.Map
 import androidx.compose.material.icons.rounded.Phone
 import androidx.compose.runtime.Composable
@@ -71,6 +73,7 @@ import com.sanket.donatetoday.modules.common.UniversalVerticalPaddingInDp
 import com.sanket.donatetoday.modules.common.enums.DonationItemTypes
 import com.sanket.donatetoday.modules.common.enums.DonationStateEnums
 import com.sanket.donatetoday.modules.organization.data.GenericDonationData
+import com.sanket.donatetoday.utils.emptyIfNull
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -81,7 +84,8 @@ fun OrganizationDetailScreen(
     onDonateItem: (String) -> Unit,
     onPhone: (UserDTO) -> Unit,
     onEmail: (UserDTO) -> Unit,
-    onViewLocation: (LocationDTO) -> Unit
+    onViewLocation: (LocationDTO) -> Unit,
+    onViewDropOffLocations: (List<LocationDTO>) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -162,6 +166,21 @@ fun OrganizationDetailScreen(
                                     trailingIcon = Icons.Rounded.Map,
                                     onTrailingIconClick = {
                                         onViewLocation(organization.location)
+                                    }
+                                )
+                            }
+                        }
+                        AnimatedVisibility(visible = organization.dropOffLocations.isNotEmpty()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(5.dp)
+                            ) {
+                                HorizontalHeaderValue(
+                                    header = "Drop-off Locations",
+                                    value = organization.dropOffLocations.joinToString(", "){ (it.title?: it.fullAddress).emptyIfNull() },
+                                    trailingIcon = Icons.Rounded.LocationOn,
+                                    onTrailingIconClick = {
+                                        onViewDropOffLocations(organization.dropOffLocations)
                                     }
                                 )
                             }

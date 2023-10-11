@@ -18,4 +18,5 @@ sealed class Screen(val route: String){
     object DropOffLocation: Screen("drop_off_location")
 
     object ViewLocationScreen: Screen("view_location")
+    object ViewDropOffLocationScreen: Screen("view_drop_off_location")
 }
