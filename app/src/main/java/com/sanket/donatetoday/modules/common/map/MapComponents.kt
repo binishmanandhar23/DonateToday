@@ -136,10 +136,10 @@ private fun CoreMapComponent(
     var contentVisible by remember {
         mutableStateOf(true)
     }
-    val defaultLocation = remember(userLocation) {
+    val defaultLocation = remember(userLocation, markers) {
         LatLng(
-            userLocation?.latitude ?: 27.712,
-            userLocation?.longitude ?: 85.32
+            userLocation?.latitude ?: markers.firstOrNull()?.latitude ?: 27.712,
+            userLocation?.longitude ?: markers.firstOrNull()?.longitude  ?: 85.32
         )
     }
     var currentLocation: LatLng? by remember {
@@ -168,9 +168,11 @@ private fun CoreMapComponent(
                 addCurrentLocationOption()
         }
 
-    LaunchedEffect(key1 = userLocation) {
-        if (userLocation == null && currentLocation != null)
+    LaunchedEffect(key1 = userLocation, key2 = markers) {
+        if (userLocation == null && currentLocation != null && markers.isEmpty())
             markerState.position = currentLocation!!
+        else if(userLocation == null && markers.isNotEmpty())
+            markerState.position = defaultLocation
     }
 
     LaunchedEffect(key1 = Unit) {
