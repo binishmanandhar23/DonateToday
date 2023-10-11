@@ -1164,18 +1164,20 @@ fun HorizontalHeaderValue(
         Row(
             modifier = modifier,
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(5.dp)
         ) {
-            Text(
-                text = header,
-                style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold)
-            )
-            Text(
-                text = value,
-                style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Normal)
-            )
+            Row(modifier = Modifier.weight(if(trailingIcon == null) 1f else 0.8f), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text(
+                    text = header,
+                    style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold)
+                )
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Normal)
+                )
+            }
             trailingIcon?.let {
                 CardContainer(
+                    modifier = Modifier.weight(0.2f),
                     onClick = { onTrailingIconClick?.invoke() },
                     cardColor = MaterialTheme.colors.primary
                 ) {

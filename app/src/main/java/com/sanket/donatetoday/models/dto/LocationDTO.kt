@@ -4,6 +4,7 @@ import com.sanket.donatetoday.models.entity.LocationEntity
 import io.realm.kotlin.ext.toRealmList
 import io.realm.kotlin.types.RealmList
 
+
 data class LocationDTO(
     val title: String? = null,
     val fullAddress: String? = null,

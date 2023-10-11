@@ -32,6 +32,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.sanket.donatetoday.delegates.IntentDelegate
 import com.sanket.donatetoday.delegates.IntentDelegateImpl
 import com.sanket.donatetoday.enums.UserType
+import com.sanket.donatetoday.models.dto.LocationDTO
 import com.sanket.donatetoday.modules.common.dialog.CustomDialog
 import com.sanket.donatetoday.modules.common.dialog.enums.DialogTypes
 import com.sanket.donatetoday.modules.common.dialog.rememberDialogState
@@ -47,6 +48,7 @@ import com.sanket.donatetoday.modules.common.loader.LoaderState
 import com.sanket.donatetoday.modules.common.loader.rememberLoaderState
 import com.sanket.donatetoday.modules.common.map.SelectDropOffLocationsFromMap
 import com.sanket.donatetoday.modules.common.map.SelectLocationFromMap
+import com.sanket.donatetoday.modules.common.map.ViewLocationOnMap
 import com.sanket.donatetoday.modules.common.snackbar.CustomSnackBar
 import com.sanket.donatetoday.modules.common.snackbar.SnackBarLengthLong
 import com.sanket.donatetoday.modules.common.snackbar.SnackBarLengthMedium
@@ -332,6 +334,16 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                         onEmail(this@MainActivity, it)
                     }, onPhone = {
                         onPhone(this@MainActivity, it)
+                    }, onViewLocation = {
+                        sharedViewModel.goToScreen(
+                            ScreenNavigator(
+                                screen = Screen.ViewLocationScreen,
+                                values = listOf(
+                                    (it.latitude?: 0.0).toString(),
+                                    (it.longitude?: 0.0).toString()
+                                )
+                            )
+                        )
                     })
                 }
             }
@@ -376,6 +388,19 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                 )
             }
             customAnimatedComposable(
+                route = Screen.ViewLocationScreen.route + "/{lat}/{lon}",
+                enterTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Up,
+                exitTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Up,
+                popEnterTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Down,
+                popExitTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Down,
+            ) { backStackEntry ->
+                val lat = backStackEntry.arguments?.getString("lat")?.toDoubleOrNull()?: 0.0
+                val lon = backStackEntry.arguments?.getString("lon")?.toDoubleOrNull()?: 0.0
+                ViewLocationOnMap(modifier = Modifier.fillMaxSize(), lat = lat, lon = lon) {
+                    mainNavController.customPopBackStack()
+                }
+            }
+            customAnimatedComposable(
                 route = Screen.MapSheet.route,
                 enterTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Up,
                 exitTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Up,
@@ -406,7 +431,14 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                     modifier = Modifier.fillMaxSize(),
                     dropOffLocations = user.dropOffLocations,
                     onAddDropOffLocation = {
-                        onBoardingViewModel.updateUserData(userDTO = user.copy(dropOffLocations = listOf(*user.dropOffLocations.toTypedArray(), it)))
+                        onBoardingViewModel.updateUserData(
+                            userDTO = user.copy(
+                                dropOffLocations = listOf(
+                                    *user.dropOffLocations.toTypedArray(),
+                                    it
+                                )
+                            )
+                        )
                     },
                     onBack = {
                         mainNavController.customPopBackStack()

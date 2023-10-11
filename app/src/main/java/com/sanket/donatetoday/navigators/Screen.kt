@@ -16,4 +16,6 @@ sealed class Screen(val route: String){
 
     object MapSheet: Screen("map_screen")
     object DropOffLocation: Screen("drop_off_location")
+
+    object ViewLocationScreen: Screen("view_location")
 }

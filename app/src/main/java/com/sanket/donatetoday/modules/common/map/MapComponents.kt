@@ -107,11 +107,13 @@ private fun CoreMapComponent(
     modifier: Modifier = Modifier,
     contentAlignment: Alignment = Alignment.BottomCenter,
     enableSearch: Boolean = true,
+    enableMyLocationButton: Boolean = true,
     markerTitle: String? = null,
     markerSnippet: String? = null,
     userLocation: LocationDTO? = null,
     toolbarText: String = "Select Location",
     markers: List<LocationDTO> = emptyList(),
+    isDraggable: Boolean = true,
     properties: MapProperties = MapProperties(isBuildingEnabled = true, isIndoorEnabled = true),
     mapUiSettings: MapUiSettings = MapUiSettings(
         zoomControlsEnabled = true,
@@ -227,7 +229,8 @@ private fun CoreMapComponent(
             cameraPositionState = cameraPositionState,
             uiSettings = mapUiSettings,
             onMapClick = {
-                markerState.position = it
+                if (isDraggable)
+                    markerState.position = it
             }
         ) {
             Marker(
@@ -235,7 +238,7 @@ private fun CoreMapComponent(
                 title = markerTitle,
                 snippet = markerSnippet,
                 icon = context.bitmapDescriptorFromVector(R.drawable.ic_location_pin_black),
-                draggable = true
+                draggable = isDraggable
             )
             markers.forEach {
                 if (it.latitude != null && it.longitude != null)
@@ -261,16 +264,17 @@ private fun CoreMapComponent(
                 }
         }
 
-        DonateTodayCircularButton(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(end = 8.dp, top = 10.dp),
-            imageVector = Icons.Rounded.MyLocation,
-            onClick = {
-                currentLocation?.let {
-                    markerState.position = it
-                }
-            })
+        if (enableMyLocationButton)
+            DonateTodayCircularButton(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(end = 8.dp, top = 10.dp),
+                imageVector = Icons.Rounded.MyLocation,
+                onClick = {
+                    currentLocation?.let {
+                        markerState.position = it
+                    }
+                })
 
         AnimatedContent(
             modifier = Modifier.align(contentAlignment),
@@ -286,6 +290,67 @@ private fun CoreMapComponent(
                 content?.invoke(this)
             else
                 Spacer(modifier = Modifier.fillMaxWidth())
+        }
+    }
+}
+
+@Composable
+fun ViewLocationOnMap(modifier: Modifier = Modifier, lat: Double, lon: Double, onBack: () -> Unit) {
+    var locationDTO by remember {
+        mutableStateOf(LocationDTO(latitude = lat, longitude = lon))
+    }
+    CoreMapComponent(
+        modifier = modifier,
+        userLocation = locationDTO,
+        onBack = onBack,
+        contentAlignment = Alignment.BottomCenter,
+        enableSearch = false,
+        enableMyLocationButton = false,
+        toolbarText = "Location",
+        isDraggable = false,
+        onLocation = { location, fullAddress, city, country ->
+            locationDTO = locationDTO.copy(
+                fullAddress = fullAddress,
+                city = city,
+                country = country,
+                latitude = location.latitude,
+                longitude = location.longitude
+            )
+        }) {
+        CardContainer(
+            modifier = Modifier.padding(
+                horizontal = UniversalHorizontalPaddingInDp,
+                vertical = UniversalVerticalPaddingInDp
+            ),
+            cardColor = MaterialTheme.colors.background,
+            shape = MaterialTheme.shapes.medium
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        horizontal = UniversalHorizontalPaddingInDp,
+                        vertical = UniversalVerticalPaddingInDp
+                    )
+                    .animateContentSize(),
+                verticalArrangement = Arrangement.spacedBy(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_location_pin_blue),
+                        contentDescription = locationDTO.fullAddress
+                    )
+                    Text(
+                        text = locationDTO.fullAddress.emptyIfNull(),
+                        style = MaterialTheme.typography.body1.copy(color = MaterialTheme.colors.secondary)
+                    )
+                }
+            }
         }
     }
 }
@@ -340,10 +405,10 @@ fun SelectLocationFromMap(
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.ic_location_pin_blue),
-                        contentDescription = locationDTOInner?.fullAddress
+                        contentDescription = locationDTOInner.fullAddress
                     )
                     Text(
-                        text = locationDTOInner?.fullAddress.emptyIfNull(),
+                        text = locationDTOInner.fullAddress.emptyIfNull(),
                         style = MaterialTheme.typography.body1.copy(color = MaterialTheme.colors.secondary)
                     )
                 }
@@ -386,10 +451,12 @@ fun SelectDropOffLocationsFromMap(
             )
         }) {
         CardContainer(
-            modifier = Modifier.padding(
-                horizontal = UniversalHorizontalPaddingInDp,
-                vertical = UniversalVerticalPaddingInDp
-            ).sizeIn(maxHeight = 320.dp),
+            modifier = Modifier
+                .padding(
+                    horizontal = UniversalHorizontalPaddingInDp,
+                    vertical = UniversalVerticalPaddingInDp
+                )
+                .sizeIn(maxHeight = 320.dp),
             cardColor = MaterialTheme.colors.background,
             shape = MaterialTheme.shapes.medium
         ) {
@@ -690,7 +757,10 @@ fun DonateTodayAddDropOffLocations(
             }
             items(dropOffLocations) {
                 if (it.title != null)
-                    DonateTodayChip(innerModifier = Modifier.widthIn(min = 70.dp, max = 150.dp),text = it.title) {
+                    DonateTodayChip(
+                        innerModifier = Modifier.widthIn(min = 70.dp, max = 150.dp),
+                        text = it.title
+                    ) {
 
                     }
             }

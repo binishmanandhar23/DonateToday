@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.rounded.AddCircle
 import androidx.compose.material.icons.rounded.Email
+import androidx.compose.material.icons.rounded.Map
 import androidx.compose.material.icons.rounded.Phone
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -50,6 +51,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.dp
+import com.sanket.donatetoday.models.dto.LocationDTO
 import com.sanket.donatetoday.models.dto.UserDTO
 import com.sanket.donatetoday.models.dto.verifyOrganization
 import com.sanket.donatetoday.modules.common.CardContainer
@@ -78,7 +80,8 @@ fun OrganizationDetailScreen(
     onBack: () -> Unit,
     onDonateItem: (String) -> Unit,
     onPhone: (UserDTO) -> Unit,
-    onEmail: (UserDTO) -> Unit
+    onEmail: (UserDTO) -> Unit,
+    onViewLocation: (LocationDTO) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -131,9 +134,13 @@ fun OrganizationDetailScreen(
                             .verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(25.dp)
                     ) {
-                        HorizontalHeaderValue(header = "Email", value = organization!!.emailAddress, trailingIcon = Icons.Rounded.Email, onTrailingIconClick = {
-                            onEmail(organization)
-                        })
+                        HorizontalHeaderValue(
+                            header = "Email",
+                            value = organization!!.emailAddress,
+                            trailingIcon = Icons.Rounded.Email,
+                            onTrailingIconClick = {
+                                onEmail(organization)
+                            })
                         AnimatedVisibility(visible = !organization.phoneNo.isNullOrEmpty()) {
                             HorizontalHeaderValue(
                                 header = "Telephone Number",
@@ -145,14 +152,19 @@ fun OrganizationDetailScreen(
                             )
                         }
                         AnimatedVisibility(visible = !organization.location.fullAddress.isNullOrEmpty()) {
-                            HorizontalHeaderValue(
-                                header = "Location",
-                                value = organization.location.fullAddress,
-                                trailingIcon = Icons.Rounded.Phone,
-                                onTrailingIconClick = {
-                                    onPhone(organization)
-                                }
-                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(5.dp)
+                            ) {
+                                HorizontalHeaderValue(
+                                    header = "Location",
+                                    value = organization.location.fullAddress,
+                                    trailingIcon = Icons.Rounded.Map,
+                                    onTrailingIconClick = {
+                                        onViewLocation(organization.location)
+                                    }
+                                )
+                            }
                         }
                         DonateTodayDivider()
                         Column(
@@ -277,7 +289,8 @@ fun ClothesDonationBottomSheet(
     val coroutineScope = rememberCoroutineScope()
     LazyColumn(
         modifier = Modifier
-            .fillMaxSize().animateContentSize()
+            .fillMaxSize()
+            .animateContentSize()
             .padding(
                 horizontal = UniversalHorizontalPaddingInDp,
                 vertical = UniversalVerticalPaddingInDp
@@ -367,7 +380,11 @@ fun ClothesDonationBottomSheet(
         }
         item {
             Box(modifier = Modifier.fillMaxWidth()) {
-                AnimatedContent(modifier = Modifier.align(Alignment.Center), targetState = donationState, label = "Donation state") { state ->
+                AnimatedContent(
+                    modifier = Modifier.align(Alignment.Center),
+                    targetState = donationState,
+                    label = "Donation state"
+                ) { state ->
                     when (state) {
                         DonationStateEnums.Initial ->
                             DonateTodayButton(text = "Donate") {
@@ -435,7 +452,8 @@ fun UtensilsDonationBottomSheet(
     val coroutineScope = rememberCoroutineScope()
     LazyColumn(
         modifier = Modifier
-            .fillMaxSize().animateContentSize()
+            .fillMaxSize()
+            .animateContentSize()
             .padding(
                 horizontal = UniversalHorizontalPaddingInDp,
                 vertical = UniversalVerticalPaddingInDp
@@ -525,7 +543,11 @@ fun UtensilsDonationBottomSheet(
         }
         item {
             Box(modifier = Modifier.fillMaxWidth()) {
-                AnimatedContent(modifier = Modifier.align(Alignment.Center), targetState = donationState, label = "Donation state") { state ->
+                AnimatedContent(
+                    modifier = Modifier.align(Alignment.Center),
+                    targetState = donationState,
+                    label = "Donation state"
+                ) { state ->
                     when (state) {
                         DonationStateEnums.Initial ->
                             DonateTodayButton(text = "Donate") {
@@ -592,7 +614,8 @@ fun FoodDonationBottomSheet(
     val coroutineScope = rememberCoroutineScope()
     LazyColumn(
         modifier = Modifier
-            .fillMaxSize().animateContentSize()
+            .fillMaxSize()
+            .animateContentSize()
             .padding(
                 horizontal = UniversalHorizontalPaddingInDp,
                 vertical = UniversalVerticalPaddingInDp
@@ -682,7 +705,11 @@ fun FoodDonationBottomSheet(
         }
         item {
             Box(modifier = Modifier.fillMaxWidth()) {
-                AnimatedContent(modifier = Modifier.align(Alignment.Center), targetState = donationState, label = "Donation state") { state ->
+                AnimatedContent(
+                    modifier = Modifier.align(Alignment.Center),
+                    targetState = donationState,
+                    label = "Donation state"
+                ) { state ->
                     when (state) {
                         DonationStateEnums.Initial ->
                             DonateTodayButton(text = "Donate") {
