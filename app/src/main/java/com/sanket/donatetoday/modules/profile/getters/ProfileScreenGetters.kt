@@ -6,5 +6,6 @@ data class ProfileScreenGetters(
     val userDTO: UserDTO,
     val onBackButton:() -> Unit,
     val onUpdateProfile: (UserDTO) -> Unit,
-    val onAddNewPlace: () -> Unit
+    val onAddNewPlace: () -> Unit,
+    val onAddDropOffLocation: () -> Unit
 )

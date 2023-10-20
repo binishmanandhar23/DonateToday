@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -307,7 +309,7 @@ fun ProfileScreen(profileScreenGetters: ProfileScreenGetters) {
                             )
                         }
                         Spacer(modifier = Modifier.size(10.dp))
-                        if(editable) {
+                        if (editable) {
                             DonateTodayCircularButton(
                                 size = 30.dp,
                                 imageVector = Icons.Rounded.Edit,
@@ -327,6 +329,61 @@ fun ProfileScreen(profileScreenGetters: ProfileScreenGetters) {
         item {
             if (userDTO.userType == UserType.Organization.type)
                 DonateTodayDivider()
+        }
+        item {
+            if (userDTO.userType == UserType.Organization.type)
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    Text(
+                        text = "Drop-off Locations",
+                        style = MaterialTheme.typography.body1.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colors.secondary
+                        )
+                    )
+                    if(editable)
+                    DonateTodayAddPlaces(
+                        modifier = Modifier.fillMaxWidth(),
+                        onAddNewPlace = profileScreenGetters.onAddDropOffLocation
+                    )
+                }
+        }
+        itemsIndexed(userDTO.dropOffLocations, key = {index, item ->
+            "${item.title}_$index"
+        }) { index,  location ->
+            if (location.fullAddress != null)
+                Row(
+                    modifier = Modifier.fillMaxWidth().animateItemPlacement(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = location.title ?: location.fullAddress,
+                            style = MaterialTheme.typography.body1.copy(fontStyle = FontStyle.Normal)
+                        )
+                        if(!location.title.isNullOrEmpty())
+                            Text(
+                                text = location.fullAddress,
+                                style = MaterialTheme.typography.subtitle1.copy(fontStyle = FontStyle.Italic)
+                            )
+                    }
+                    Spacer(modifier = Modifier.size(10.dp))
+                    if (editable) {
+                        DonateTodayCircularButton(
+                            size = 30.dp,
+                            backgroundColor = Color.Red,
+                            imageVector = Icons.Rounded.Delete,
+                            onClick = {
+                                val newDropOffLocations = userDTO.dropOffLocations.toMutableList()
+                                newDropOffLocations.removeAt(index)
+                                profileScreenGetters.onUpdateProfile(userDTO.copy(dropOffLocations = newDropOffLocations))
+                            }
+                        )
+                    }
+                }
         }
         item {
             AnimatedVisibility(editable) {

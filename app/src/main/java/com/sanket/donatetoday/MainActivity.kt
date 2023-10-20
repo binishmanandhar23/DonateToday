@@ -353,7 +353,7 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                     }, onViewDropOffLocations = {
                         sharedViewModel.goToScreen(
                             ScreenNavigator(
-                                screen = Screen.DropOffLocation,
+                                screen = Screen.ViewDropOffLocationScreen,
                                 values = listOf(
                                     id
                                 )
@@ -379,6 +379,14 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                     },
                     onUpdateProfile = {
                         sharedViewModel.updateUser(it)
+                    },
+                    onAddDropOffLocation = {
+                        sharedViewModel.goToScreen(
+                            ScreenNavigator(
+                                screen = Screen.DropOffLocation,
+                                values = listOf("false")
+                            )
+                        )
                     }
                 ))
             }
@@ -423,7 +431,7 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                 }
             }
             customAnimatedComposable(
-                route = Screen.DropOffLocation.route + "/{id}",
+                route = Screen.ViewDropOffLocationScreen.route + "/{id}",
                 enterTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Up,
                 exitTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Up,
                 popEnterTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Down,
@@ -485,32 +493,49 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                     })
             }
             customAnimatedComposable(
-                route = Screen.DropOffLocation.route,
+                route = Screen.DropOffLocation.route + "/{fromOnboarding}",
                 enterTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Up,
                 exitTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Up,
                 popEnterTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Down,
                 popExitTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Down,
-            ) {
-                val user by onBoardingViewModel.user.collectAsState()
+            ) { backStackEntry ->
+                val fromOnboarding =
+                    backStackEntry.arguments?.getString("fromOnboarding")?.toBooleanStrictOrNull()
+                        ?: true
+
+                val user by if (fromOnboarding) onBoardingViewModel.user.collectAsState() else sharedViewModel.user.collectAsState()
                 SelectDropOffLocationsFromMap(
                     modifier = Modifier.fillMaxSize(),
                     dropOffLocations = user.dropOffLocations,
                     onAddDropOffLocation = {
-                        onBoardingViewModel.updateUserData(
-                            userDTO = user.copy(
-                                dropOffLocations = listOf(
-                                    *user.dropOffLocations.toTypedArray(),
-                                    it
+                        if (fromOnboarding)
+                            onBoardingViewModel.updateUserData(
+                                userDTO = user.copy(
+                                    dropOffLocations = listOf(
+                                        *user.dropOffLocations.toTypedArray(),
+                                        it
+                                    )
                                 )
                             )
-                        )
+                        else
+                            sharedViewModel.updateUser(
+                                userDTO = user.copy(
+                                    dropOffLocations = listOf(
+                                        *user.dropOffLocations.toTypedArray(),
+                                        it
+                                    )
+                                )
+                            )
                     },
                     onBack = {
                         mainNavController.customPopBackStack()
                     }, onRemove = {
                         val newLocations = user.dropOffLocations.toMutableStateList()
                         newLocations.remove(it)
-                        onBoardingViewModel.updateUserData(userDTO = user.copy(dropOffLocations = newLocations))
+                        if (fromOnboarding)
+                            onBoardingViewModel.updateUserData(userDTO = user.copy(dropOffLocations = newLocations))
+                        else
+                            sharedViewModel.updateUser(userDTO = user.copy(dropOffLocations = newLocations))
                     })
             }
             bottomSheet(route = BottomSheet.DonateCashSheet.route) {

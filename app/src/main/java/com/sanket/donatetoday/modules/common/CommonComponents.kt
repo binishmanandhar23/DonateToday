@@ -11,6 +11,7 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -969,14 +970,23 @@ fun DonateTodayProfilePicture(
 
 @Composable
 fun DonationGoalIndicator(reached: Int, totalGoal: Int) {
+    val infiniteTransition = rememberInfiniteTransition(label = "")
     var actualProgress by remember(totalGoal) {
         mutableFloatStateOf(0f)
     }
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.03f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1200),
+            repeatMode = RepeatMode.Reverse
+        ), label = ""
+    )
     val current by remember(actualProgress) {
         derivedStateOf {
             (totalGoal * actualProgress).let {
                 if (it.isNaN())
-                    reached
+                    reached.toFloat()
                 else
                     it
             }
@@ -996,7 +1006,7 @@ fun DonationGoalIndicator(reached: Int, totalGoal: Int) {
         LinearProgressIndicator(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(15.dp),
+                .height(15.dp).scale(if(current >= totalGoal.toFloat()) scale else 1f),
             progress = actualProgress,
             strokeCap = StrokeCap.Round
         )

@@ -507,6 +507,9 @@ fun SelectDropOffLocationsFromMap(
     var locationDTOInner by remember {
         mutableStateOf(LocationDTO())
     }
+    var errorText: String? by remember(dropOffLocations, locationDTOInner) {
+        mutableStateOf(null)
+    }
     CoreMapComponent(
         modifier = modifier,
         toolbarText = "Select drop-off locations",
@@ -570,10 +573,18 @@ fun SelectDropOffLocationsFromMap(
                         onValueChange = {
                             locationDTOInner = locationDTOInner.copy(title = it)
                         },
-                        label = "Enter name for the location"
+                        label = "Enter name for the location",
+                        errorText = errorText
                     )
                     DonateTodayButton(modifier = Modifier.weight(0.3f), text = "Add") {
-                        onAddDropOffLocation(locationDTOInner)
+                        if(dropOffLocations.find { it.longitude == locationDTOInner.longitude && it.latitude == locationDTOInner.latitude } != null)
+                            errorText = "Please select a new location"
+                        else if(!locationDTOInner.title.isNullOrEmpty())
+                            onAddDropOffLocation(locationDTOInner).also {
+                                errorText = null
+                            }
+                        else
+                            errorText = "This field is required"
                     }
                 }
                 LazyVerticalGrid(
