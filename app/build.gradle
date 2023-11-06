@@ -84,7 +84,7 @@ dependencies {
     // Integration with LiveData
     implementation 'androidx.compose.runtime:runtime-livedata'
 
-    /*Realm*/
+    /*Realm*/ /*Third party library*/
     implementation 'io.realm.kotlin:library-base:1.10.0' // Add to use local realm (no sync)
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1' // Add to use coroutines with the SDK
     /*******/
@@ -107,11 +107,11 @@ dependencies {
     implementation 'com.google.firebase:firebase-analytics-ktx'
     /*****************/
 
-    /*Country Code Picker*/
+    /*Country Code Picker*/ /*Third party library*/
     implementation 'com.github.togisoft:jetpack_compose_country_code_picker:1.1.4'
     /*****************/
 
-    /*Threeten library*/
+    /*Threeten library*/ /*Third party library*/
     implementation 'com.jakewharton.threetenabp:threetenabp:1.3.1'
     /*****************/
 
@@ -135,6 +135,7 @@ dependencies {
     implementation "androidx.compose.material:material-icons-extended"
     /*************/
 
+    /*Third party library*/
     // Includes the core logic for charts and other elements.
     implementation "com.patrykandpatrick.vico:core:1.9.2"
 
@@ -143,6 +144,7 @@ dependencies {
 
     // For `compose`. Creates a `ChartStyle` based on an M2 Material Theme.
     implementation "com.patrykandpatrick.vico:compose-m2:1.9.2"
+    /*********************/
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
