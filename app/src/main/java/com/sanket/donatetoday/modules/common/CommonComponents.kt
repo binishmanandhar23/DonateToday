@@ -112,6 +112,7 @@ import androidx.compose.ui.text.capitalize
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
@@ -935,6 +936,38 @@ fun DonateTodayMonthlyGoalDialog(totalGoal: Int, onGoalChanged: (Int) -> Unit) {
 }
 
 @Composable
+fun DonateTodayDeleteDialog(onDelete: (password: String) -> Unit) {
+    var password by remember {
+        mutableStateOf("")
+    }
+    Text(
+        text = "Are you sure want to delete your data?",
+        style = MaterialTheme.typography.h3.copy(
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center
+        )
+    )
+    Text(
+        text = "Selecting yes, will wipe all of your data from the database. This process is irreversible.",
+        style = MaterialTheme.typography.body2.copy(fontWeight = FontWeight.Normal)
+    )
+    DonateTodaySingleLineTextField(
+        value = password,
+        onValueChange = {
+            password = it
+        },
+        label = "Type your password for confirmation",
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Password,
+            imeAction = ImeAction.Done
+        ), visualTransformation = PasswordVisualTransformation()
+    )
+    DonateTodayButton(text = "Delete") {
+        onDelete(password)
+    }
+}
+
+@Composable
 fun DonateTodayProfilePicture(
     modifier: Modifier = Modifier,
     name: String?,
@@ -1006,7 +1039,8 @@ fun DonationGoalIndicator(reached: Int, totalGoal: Int) {
         LinearProgressIndicator(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(15.dp).scale(if(current >= totalGoal.toFloat()) scale else 1f),
+                .height(15.dp)
+                .scale(if (current >= totalGoal.toFloat()) scale else 1f),
             progress = actualProgress,
             strokeCap = StrokeCap.Round
         )
@@ -1175,7 +1209,10 @@ fun HorizontalHeaderValue(
             modifier = modifier,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(modifier = Modifier.weight(if(trailingIcon == null) 1f else 0.8f), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+            Row(
+                modifier = Modifier.weight(if (trailingIcon == null) 1f else 0.8f),
+                horizontalArrangement = Arrangement.spacedBy(5.dp)
+            ) {
                 Text(
                     text = header,
                     style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold)
@@ -1224,7 +1261,11 @@ fun DonateTodayChip(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(modifier = Modifier.weight(0.8f), text = text, style = MaterialTheme.typography.subtitle1.copy(color = textColor))
+            Text(
+                modifier = Modifier.weight(0.8f),
+                text = text,
+                style = MaterialTheme.typography.subtitle1.copy(color = textColor)
+            )
             IconButton(modifier = Modifier.weight(0.2f), onClick = onRemove) {
                 Icon(
                     imageVector = Icons.Rounded.Clear,

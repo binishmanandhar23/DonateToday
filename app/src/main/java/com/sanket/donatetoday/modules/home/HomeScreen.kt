@@ -39,6 +39,7 @@ import androidx.compose.material.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
@@ -719,6 +720,7 @@ fun SettingsMainContainer(dashboardGetters: DashboardGetters) {
                 icon = Icons.Default.AccountCircle
             ),
             SettingsItem(settingsEnums = SettingsEnums.Logout, icon = Icons.Default.Logout),
+            SettingsItem(settingsEnums = SettingsEnums.Delete, icon = Icons.Default.Delete),
         )
     }
     Column(

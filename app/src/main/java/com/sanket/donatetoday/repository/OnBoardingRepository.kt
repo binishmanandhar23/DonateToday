@@ -19,16 +19,25 @@ import com.sanket.donatetoday.utils.DatabaseUtils.getUser
 import io.realm.kotlin.Realm
 import io.realm.kotlin.UpdatePolicy
 import io.realm.kotlin.ext.query
+import java.lang.Exception
 import javax.inject.Inject
 
-class OnBoardingRepository @Inject constructor(private val database: DatabaseReference, private val auth: FirebaseAuth, private val realm: Realm) {
+class OnBoardingRepository @Inject constructor(
+    private val database: DatabaseReference,
+    private val auth: FirebaseAuth,
+    private val realm: Realm
+) {
 
     fun isUserLoggedIn() = auth.currentUser != null
 
 
-    fun syncCurrentUserDataToDatabase(email: String? = auth.currentUser?.email, onSuccess: (UserDTO) -> Unit, onError: (String?) -> Unit){
+    fun syncCurrentUserDataToDatabase(
+        email: String? = auth.currentUser?.email,
+        onSuccess: (UserDTO) -> Unit,
+        onError: (String?) -> Unit
+    ) {
         getUserFromRealm(email = email)?.let {
-            auth.currentUser?.reload()?.addOnSuccessListener {_ ->
+            auth.currentUser?.reload()?.addOnSuccessListener { _ ->
                 database.addUser(
                     it.toUserDTO(verified = auth.currentUser?.isEmailVerified),
                     onSuccess = {
@@ -43,8 +52,12 @@ class OnBoardingRepository @Inject constructor(private val database: DatabaseRef
 
     fun sendEmailVerification() = auth.currentUser?.sendEmailVerification()
 
-    private fun getUser(email: String? = auth.currentUser?.email, onSuccess: (UserDTO) -> Unit, onError: (String?) -> Unit) {
-        if(email == null){
+    private fun getUser(
+        email: String? = auth.currentUser?.email,
+        onSuccess: (UserDTO) -> Unit,
+        onError: (String?) -> Unit
+    ) {
+        if (email == null) {
             onError("User not found")
             return
         }
@@ -55,7 +68,12 @@ class OnBoardingRepository @Inject constructor(private val database: DatabaseRef
     }
 
 
-    fun onSignIn(email: String, password: String, onSuccess: (UserDTO) -> Unit, onError: (String?) -> Unit) {
+    fun onSignIn(
+        email: String,
+        password: String,
+        onSuccess: (UserDTO) -> Unit,
+        onError: (String?) -> Unit
+    ) {
         auth.signInWithEmailAndPassword(email, password).addOnCompleteListener { task ->
             if (task.isSuccessful) {
                 getUser(email = email, onSuccess = onSuccess, onError = onError)
@@ -68,32 +86,70 @@ class OnBoardingRepository @Inject constructor(private val database: DatabaseRef
         onState(LoginUIState.Loading)
         database.child(FirebasePaths.Emails.node).get().addOnSuccessListener { dataSnapshot ->
             (dataSnapshot.getValue<List<EmailDTO>>()).let { listOfEmailDTO ->
-                if(listOfEmailDTO == null){
-                    setSignUpData(userDTO = userDTO, onState = onState, listOfEmails = listOf(EmailDTO(email = userDTO.emailAddress, id = userDTO.id, userType = userDTO.userType)))
-                } else if(listOfEmailDTO.map { it.email }.contains(userDTO.emailAddress)) {
+                if (listOfEmailDTO == null) {
+                    setSignUpData(
+                        userDTO = userDTO,
+                        onState = onState,
+                        listOfEmails = listOf(
+                            EmailDTO(
+                                email = userDTO.emailAddress,
+                                id = userDTO.id,
+                                userType = userDTO.userType
+                            )
+                        )
+                    )
+                } else if (listOfEmailDTO.mapNotNull {
+                        try {
+                            it.email
+                        }catch (ex: Exception){
+                            ex.printStackTrace()
+                            null
+                        }
+                    }.contains(userDTO.emailAddress)) {
                     onState(LoginUIState.Error("Email already exists"))
-                } else{
+                } else {
                     val newList = listOfEmailDTO.toMutableList()
-                    newList.add(EmailDTO(email = userDTO.emailAddress, id = userDTO.id, userType = userDTO.userType))
+                    newList.add(
+                        EmailDTO(
+                            email = userDTO.emailAddress,
+                            id = userDTO.id,
+                            userType = userDTO.userType
+                        )
+                    )
                     setSignUpData(userDTO = userDTO, onState = onState, listOfEmails = newList)
                 }
             }
         }.addOnFailureListener {
-            setSignUpData(userDTO = userDTO, onState = onState, listOfEmails = listOf(EmailDTO(email = userDTO.emailAddress, id = userDTO.id, userType = userDTO.userType)))
+            setSignUpData(
+                userDTO = userDTO,
+                onState = onState,
+                listOfEmails = listOf(
+                    EmailDTO(
+                        email = userDTO.emailAddress,
+                        id = userDTO.id,
+                        userType = userDTO.userType
+                    )
+                )
+            )
         }
     }
 
-    private fun setSignUpData(userDTO: UserDTO,listOfEmails: List<EmailDTO>, onState: (LoginUIState) -> Unit){
-        auth.createUserWithEmailAndPassword(userDTO.emailAddress, userDTO.password).addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                database.addListOfEmails(listOfEmailDTO = listOfEmails)
-                database.addDonationItems(userDTO = userDTO)
-                database.addUser(userDTO = userDTO)
-                saveUserToRealm(userEntity = userDTO.toUserEntity())
-                onState(LoginUIState.Success("Successfully created user"))
-            } else
-                onState(LoginUIState.Error(task.exception?.message))
-        }
+    private fun setSignUpData(
+        userDTO: UserDTO,
+        listOfEmails: List<EmailDTO>,
+        onState: (LoginUIState) -> Unit
+    ) {
+        auth.createUserWithEmailAndPassword(userDTO.emailAddress, userDTO.password)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    database.addListOfEmails(listOfEmailDTO = listOfEmails)
+                    database.addDonationItems(userDTO = userDTO)
+                    database.addUser(userDTO = userDTO)
+                    saveUserToRealm(userEntity = userDTO.toUserEntity())
+                    onState(LoginUIState.Success("Successfully created user"))
+                } else
+                    onState(LoginUIState.Error(task.exception?.message))
+            }
     }
 
     private fun saveUserToRealm(userEntity: UserEntity) =
@@ -101,5 +157,6 @@ class OnBoardingRepository @Inject constructor(private val database: DatabaseRef
             copyToRealm(userEntity, updatePolicy = UpdatePolicy.ALL)
         }
 
-    private fun getUserFromRealm(email: String?) = realm.query<UserEntity>("emailAddress == $0", email).first().find()
+    private fun getUserFromRealm(email: String?) =
+        realm.query<UserEntity>("emailAddress == $0", email).first().find()
 }

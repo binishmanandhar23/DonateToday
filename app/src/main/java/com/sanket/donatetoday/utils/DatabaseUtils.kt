@@ -13,6 +13,11 @@ import com.sanket.donatetoday.models.dto.DonationItemUserModel
 import com.sanket.donatetoday.models.dto.EmailDTO
 import com.sanket.donatetoday.models.dto.StatementDTO
 import com.sanket.donatetoday.models.dto.UserDTO
+import com.sanket.donatetoday.utils.DatabaseUtils.addDonationItems
+import com.sanket.donatetoday.utils.DatabaseUtils.addUser
+import com.sanket.donatetoday.utils.DatabaseUtils.deleteUser
+import com.sanket.donatetoday.utils.DatabaseUtils.getStatements
+import com.sanket.donatetoday.utils.DatabaseUtils.getUser
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resumeWithException
 
@@ -203,5 +208,96 @@ object DatabaseUtils {
             }.addOnFailureListener {
                 onError(it)
             }
+    }
+
+    fun DatabaseReference.deleteUser(
+        userDTO: UserDTO,
+        onSuccess: (() -> Unit),
+        onError: ((java.lang.Exception) -> Unit)
+    ) {
+        deleteFromDonationItems(userDTO = userDTO, onSuccess = {
+            deleteFromEmails(userDTO, onSuccess = {
+                deleteFromStatements(userDTO, onSuccess = {
+                    deleteFromUsers(userDTO, onSuccess, onError)
+                }, onError)
+            }, onError)
+        }, onError = onError)
+    }
+
+    private fun DatabaseReference.deleteFromDonationItems(
+        userDTO: UserDTO,
+        onSuccess: (() -> Unit),
+        onError: ((java.lang.Exception) -> Unit)
+    ) {
+        this.child(FirebasePaths.DonationItems.node).let { ref ->
+            userDTO.donationItemTypes.forEach { donationItem ->
+                ref.child(donationItem).child(userDTO.userType!!).get()
+                    .addOnSuccessListener { dataSnapshot ->
+                        (dataSnapshot.getValue<List<DonationItemUserModel>>()).let { listOfDonationItemUserModel ->
+                            val list = listOfDonationItemUserModel?.filterNot {
+                                try {
+                                    it.id == userDTO.id
+                                } catch (ex: java.lang.Exception) {
+                                    true
+                                }
+                            } ?: emptyList()
+                            dataSnapshot.ref.setValue(list)
+                            onSuccess()
+                        }
+                    }.addOnFailureListener {
+                        onError(it)
+                    }
+            }
+        }
+    }
+
+    private fun DatabaseReference.deleteFromEmails(
+        userDTO: UserDTO,
+        onSuccess: (() -> Unit),
+        onError: ((java.lang.Exception) -> Unit)
+    ) {
+        this.child(FirebasePaths.Emails.node).get().addOnSuccessListener { dataSnapshot ->
+            dataSnapshot.getValue<List<EmailDTO>>().let { listOfEmailDTO ->
+                val list = listOfEmailDTO?.filterNot {
+                    try {
+                        it.id == userDTO.id
+                    } catch (ex: java.lang.Exception){
+                        true
+                    }
+                } ?: emptyList()
+                dataSnapshot.ref.setValue(list)
+                onSuccess()
+            }
+        }.addOnFailureListener {
+            onError(it)
+        }
+    }
+
+    private fun DatabaseReference.deleteFromStatements(
+        userDTO: UserDTO,
+        onSuccess: (() -> Unit),
+        onError: ((java.lang.Exception) -> Unit)
+    ) {
+        this.child(FirebasePaths.Statements.node)
+            .child(if (userDTO.userType == UserType.Donor.type) FirebasePaths.Donated.node else FirebasePaths.Received.node)
+            .child(userDTO.id).removeValue().addOnSuccessListener {
+                onSuccess()
+            }.addOnFailureListener { onError(it) }
+    }
+
+    private fun DatabaseReference.deleteFromUsers(
+        userDTO: UserDTO,
+        onSuccess: () -> Unit,
+        onError: (java.lang.Exception) -> Unit
+    ) {
+        this.child(FirebasePaths.Users.node).let {
+            when (userDTO.userType) {
+                UserType.Donor.type -> it.child(FirebasePaths.Donors.node)
+                UserType.Organization.type -> it.child(FirebasePaths.Organizations.node)
+                else -> it
+            }
+        }.child(userDTO.id).removeValue().addOnSuccessListener {
+            onSuccess()
+        }.addOnFailureListener { onError(it) }
     }
 }

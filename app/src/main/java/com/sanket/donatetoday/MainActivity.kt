@@ -40,6 +40,7 @@ import com.sanket.donatetoday.modules.onboarding.LoginScreenMain
 import com.sanket.donatetoday.modules.onboarding.RegistrationScreenMain
 import com.sanket.donatetoday.modules.onboarding.SignUpOptionDialog
 import com.sanket.donatetoday.models.dto.UserDTO
+import com.sanket.donatetoday.modules.common.DonateTodayDeleteDialog
 import com.sanket.donatetoday.modules.common.DonateTodayMonthlyGoalDialog
 import com.sanket.donatetoday.modules.common.dialog.CustomDialogState
 import com.sanket.donatetoday.modules.common.enums.DonationItemTypes
@@ -159,6 +160,22 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                                                     )
                                                 }
                                             )
+                                        }
+
+                                        DialogTypes.DeleteUser -> {
+                                            val user by sharedViewModel.user.collectAsState()
+                                            DonateTodayDeleteDialog(onDelete = { password ->
+                                                customDialogState.hide()
+                                                if(user.password != password)
+                                                    customSnackBarState.show("Wrong password!", overridingDelay = SnackBarLengthMedium)
+                                                else {
+                                                    sharedViewModel.deleteUser(onSuccess = {
+                                                        mainNavController.logout()
+                                                    }, onError = {
+                                                        customSnackBarState.show(overridingText = it.message, overridingDelay = SnackBarLengthMedium)
+                                                    })
+                                                }
+                                            })
                                         }
 
                                         else -> Unit
@@ -282,6 +299,8 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                                 )
 
                                 SettingsEnums.Logout -> mainNavController.logout()
+
+                                SettingsEnums.Delete -> dialogState.show(dialog = DialogTypes.DeleteUser)
                                 else -> Unit
                             }
                         }, onOrganizationClick = {

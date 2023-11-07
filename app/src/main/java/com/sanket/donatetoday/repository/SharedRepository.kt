@@ -1,5 +1,6 @@
 package com.sanket.donatetoday.repository
 
+import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ktx.getValue
@@ -13,6 +14,7 @@ import com.sanket.donatetoday.models.dto.fillAll
 import com.sanket.donatetoday.models.entity.UserEntity
 import com.sanket.donatetoday.modules.common.enums.DonationItemTypes
 import com.sanket.donatetoday.modules.organization.data.GenericDonationData
+import com.sanket.donatetoday.utils.DatabaseUtils.deleteUser
 import com.sanket.donatetoday.utils.DatabaseUtils.getAllOrganizations
 import com.sanket.donatetoday.utils.DatabaseUtils.getStatements
 import com.sanket.donatetoday.utils.DatabaseUtils.getStatementsAsynchronously
@@ -482,10 +484,34 @@ class SharedRepository @Inject constructor(
             onError(it.message)
         })
 
-    suspend fun clearRealmData(){
+    suspend fun clearRealmData() {
         realm.write {
             val allUsers = this.query<UserEntity>().find()
             delete(allUsers)
         }
+    }
+
+    fun deleteUser(user: UserDTO, onSuccess: () -> Unit, onError: (java.lang.Exception) -> Unit) {
+        database.deleteUser(userDTO = user, onSuccess = {
+            deAuthenticate(userDTO = user, onSuccess, onError)
+        }, onError)
+    }
+
+    private fun deAuthenticate(userDTO: UserDTO, onSuccess: () -> Unit, onError: (java.lang.Exception) -> Unit) {
+        val credential = EmailAuthProvider
+            .getCredential(userDTO.emailAddress, userDTO.password);
+
+        // Prompt the user to re-provide their sign-in credentials
+        auth.currentUser?.reauthenticate(credential)
+            ?.addOnSuccessListener {
+                auth.currentUser?.delete()
+                    ?.addOnSuccessListener {
+                        onSuccess()
+                    }?.addOnFailureListener {
+                        onError(it)
+                    }
+            }?.addOnFailureListener {
+                onError(it)
+            }
     }
 }

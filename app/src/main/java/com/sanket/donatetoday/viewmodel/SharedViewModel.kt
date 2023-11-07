@@ -465,4 +465,8 @@ class SharedViewModel @Inject constructor(private val sharedRepository: SharedRe
                 _homeUIState.update { _ -> HomeUIState.Error(errorMessage = it) }
             })
     }
+
+    fun deleteUser(onSuccess: () -> Unit, onError: (Exception) -> Unit) = viewModelScope.launch(Dispatchers.IO) {
+        sharedRepository.deleteUser(user = user.value, onSuccess = onSuccess, onError = onError)
+    }
 }
