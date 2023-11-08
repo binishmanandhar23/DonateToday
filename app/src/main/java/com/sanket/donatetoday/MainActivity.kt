@@ -166,13 +166,19 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                                             val user by sharedViewModel.user.collectAsState()
                                             DonateTodayDeleteDialog(onDelete = { password ->
                                                 customDialogState.hide()
-                                                if(user.password != password)
-                                                    customSnackBarState.show("Wrong password!", overridingDelay = SnackBarLengthMedium)
+                                                if (user.password != password)
+                                                    customSnackBarState.show(
+                                                        "Wrong password!",
+                                                        overridingDelay = SnackBarLengthMedium
+                                                    )
                                                 else {
                                                     sharedViewModel.deleteUser(onSuccess = {
                                                         mainNavController.logout()
                                                     }, onError = {
-                                                        customSnackBarState.show(overridingText = it.message, overridingDelay = SnackBarLengthMedium)
+                                                        customSnackBarState.show(
+                                                            overridingText = it.message,
+                                                            overridingDelay = SnackBarLengthMedium
+                                                        )
                                                     })
                                                 }
                                             })
@@ -261,7 +267,12 @@ class MainActivity : ComponentActivity(), IntentDelegate by IntentDelegateImpl()
                         )
                     )
                 }, onAddDropOffLocations = {
-                    sharedViewModel.goToScreen(ScreenNavigator(screen = Screen.DropOffLocation))
+                    sharedViewModel.goToScreen(
+                        ScreenNavigator(
+                            screen = Screen.DropOffLocation,
+                            values = listOf("true")
+                        )
+                    )
                 })
             }
 
